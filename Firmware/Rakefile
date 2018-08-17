@@ -94,7 +94,8 @@ load 'rakefile.defaults' if File.exists?('rakefile.defaults')
 #puts "#{BUILDTYPE} build"
 
 # add lpcopen HAL files
-src = FileList['Hal/lpc_board_ngx_xplorer_4330/src/*.c', 'Hal/lpc_chip_43xx/src/*.c']
+src = FileList['Hal/**/*.{c,cpp,s}']
+src.exclude(/Adc|Pin/) # not done yet
 
 if TESTING
   # Unity tests
