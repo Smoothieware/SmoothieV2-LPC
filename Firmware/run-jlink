@@ -1,0 +1,1 @@
+/opt/jlink/JLinkGDBServer -device LPC4330_M4 -speed 10000

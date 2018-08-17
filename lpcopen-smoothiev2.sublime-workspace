@@ -1,0 +1,2315 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"_l",
+				"_loaded_ok"
+			],
+			[
+				"sc",
+				"schedule_interval"
+			],
+			[
+				"Bo",
+				"BooleanProperty"
+			],
+			[
+				"jogrose",
+				"jogrosemain"
+			],
+			[
+				"temp",
+				"temp_changed"
+			],
+			[
+				"stat",
+				"status"
+			],
+			[
+				"A",
+				"ActionButton\tKivy"
+			],
+			[
+				"is_",
+				"is_printing"
+			],
+			[
+				"bla",
+				"blank_screen"
+			],
+			[
+				"last",
+				"last_touch_time"
+			],
+			[
+				"Smo",
+				"SmoothieHost"
+			],
+			[
+				"bl",
+				"blank_timeout"
+			],
+			[
+				"_bl",
+				"_blank_clock"
+			],
+			[
+				"valu",
+				"value"
+			],
+			[
+				"tab",
+				"tab_top"
+			],
+			[
+				"sta",
+				"startswith"
+			],
+			[
+				"_start",
+				"_start_print"
+			],
+			[
+				"Str",
+				"StringProperty"
+			],
+			[
+				"ca",
+				"cancel"
+			],
+			[
+				"de",
+				"defs\tMethod"
+			],
+			[
+				"las",
+				"_last_kbd"
+			],
+			[
+				"transf",
+				"transform_pos"
+			],
+			[
+				"is",
+				"is_visible"
+			],
+			[
+				"CNC",
+				"0-CNC_accuracy"
+			],
+			[
+				"Main",
+				"MainWindow"
+			],
+			[
+				"show",
+				"show_dirs"
+			],
+			[
+				"file",
+				"filesystem"
+			],
+			[
+				"Lo",
+				"LoadDialog"
+			],
+			[
+				"wa",
+				"warning"
+			],
+			[
+				"s",
+				"startswith"
+			],
+			[
+				"res",
+				"restart_timer"
+			],
+			[
+				"done",
+				"done_cb"
+			],
+			[
+				"siz",
+				"size_hint_y"
+			],
+			[
+				"size",
+				"size_hint_y"
+			],
+			[
+				"tex",
+				"text"
+			],
+			[
+				"Tex",
+				"TextInput\tKivy"
+			],
+			[
+				"page",
+				"page_layout"
+			],
+			[
+				"B",
+				"BooleanProperty"
+			],
+			[
+				"hot",
+				"hotend_dg"
+			],
+			[
+				"fo",
+				"for\tFor Loop"
+			],
+			[
+				"rel",
+				"relativeValue"
+			],
+			[
+				"sel",
+				"selected_axis"
+			],
+			[
+				"fl",
+				"flush"
+			],
+			[
+				"F",
+				"Future"
+			],
+			[
+				"asy",
+				"asyncio"
+			],
+			[
+				"as",
+				"asyncio"
+			],
+			[
+				"File",
+				"FileSystemAbstract"
+			],
+			[
+				"net",
+				"net_connection"
+			],
+			[
+				"get",
+				"get_mw"
+			],
+			[
+				"main",
+				"main_window"
+			],
+			[
+				"ma",
+				"main_window"
+			],
+			[
+				"lo",
+				"load_user_buttons"
+			],
+			[
+				"chec",
+				"check_macros"
+			],
+			[
+				"Fil",
+				"FileSystemLocalEx"
+			],
+			[
+				"size_",
+				"size_hint_x"
+			],
+			[
+				"min",
+				"minimum_height\tGridLayout,StackLayout,TextInput,TreeView"
+			],
+			[
+				"se",
+				"select_mode"
+			],
+			[
+				"set",
+				"set_wpos"
+			],
+			[
+				"curre",
+				"current_z"
+			],
+			[
+				"P",
+				"PopMatrix"
+			],
+			[
+				"gc",
+				"gcode_file"
+			],
+			[
+				"G",
+				"GcodeViewerScreen"
+			],
+			[
+				"par",
+				"parse_gcode_file"
+			],
+			[
+				"size_hin",
+				"size_hint_y"
+			],
+			[
+				"start_",
+				"start_print_time"
+			],
+			[
+				"M",
+				"MainWindow"
+			],
+			[
+				"tim",
+				"timedelta"
+			],
+			[
+				"asyn",
+				"async_main_loop"
+			],
+			[
+				"lie",
+				"linecnt"
+			],
+			[
+				"lin",
+				"linecnt"
+			],
+			[
+				"dis",
+				"disconnect"
+			],
+			[
+				"size_hint",
+				"size_hint_x"
+			],
+			[
+				"last_",
+				"last_bed_temp"
+			],
+			[
+				"use_",
+				"use_com_port"
+			],
+			[
+				"change",
+				"change_port"
+			],
+			[
+				"pro",
+				"progress"
+			],
+			[
+				"print",
+				"printing"
+			],
+			[
+				"pin",
+				"ping_pong"
+			],
+			[
+				"_",
+				"_start_print"
+			],
+			[
+				"FIle",
+				"FileDialog"
+			],
+			[
+				"def",
+				"defs\tMethod"
+			],
+			[
+				"fil",
+				"filesPopup"
+			],
+			[
+				"re",
+				"release"
+			],
+			[
+				"Se",
+				"Semaphore"
+			],
+			[
+				"asyc",
+				"asyncio"
+			],
+			[
+				"_stre",
+				"_stream_pause"
+			],
+			[
+				"abort",
+				"abort_stream"
+			],
+			[
+				"ab",
+				"abort_stream"
+			],
+			[
+				"pa",
+				"pause_stream"
+			],
+			[
+				"E",
+				"Event"
+			],
+			[
+				"incom",
+				"incoming_error"
+			],
+			[
+				"end",
+				"end_event"
+			],
+			[
+				"Comm",
+				"CommsApp"
+			],
+			[
+				"stre",
+				"stream_finished"
+			],
+			[
+				"stream",
+				"stream_file"
+			],
+			[
+				"st",
+				"start_event"
+			],
+			[
+				"do",
+				"do_exit"
+			],
+			[
+				"setpoin",
+				"setpoint_thickness"
+			],
+			[
+				"value",
+				"value_to_angle"
+			],
+			[
+				"setpoint",
+				"setpoint_length"
+			],
+			[
+				"tic",
+				"tic_length"
+			],
+			[
+				"setp",
+				"setpoint_value"
+			],
+			[
+				"draw_",
+				"draw_setpoint"
+			],
+			[
+				"draw",
+				"draw_setpoint"
+			],
+			[
+				"an",
+				"annular_canvas"
+			],
+			[
+				"annu",
+				"annular_thickness"
+			],
+			[
+				"log",
+				"log_window"
+			],
+			[
+				"data",
+				"data_buffer"
+			],
+			[
+				"async",
+				"asyncio"
+			],
+			[
+				"t",
+				"timer"
+			],
+			[
+				"_write",
+				"_write_hipri"
+			],
+			[
+				"hi",
+				"hipri_queue"
+			],
+			[
+				"h",
+				"hipri"
+			],
+			[
+				"K",
+				"KbdWidget"
+			],
+			[
+				"Ex",
+				"ExtruderWidget"
+			],
+			[
+				"__",
+				"__init__"
+			],
+			[
+				"in",
+				"__init__"
+			],
+			[
+				"bed_",
+				"bed_temp"
+			],
+			[
+				"hote",
+				"hotend_setpoint"
+			],
+			[
+				"bed",
+				"bed_setpoint"
+			],
+			[
+				"hand",
+				"handle_tempdisplay"
+			],
+			[
+				"dial_",
+				"dial_diameter"
+			],
+			[
+				"dial",
+				"dial_diameter"
+			],
+			[
+				"hu",
+				"hub_radius"
+			],
+			[
+				"ori",
+				"orientation"
+			],
+			[
+				"di",
+				"dial_size"
+			],
+			[
+				"scal",
+				"scale_increment"
+			],
+			[
+				"angle",
+				"angle_stop"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/User/Rake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/Rake.sublime-build",
+					"Upload"
+				],
+				[
+					"Packages/User/Rake.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/Rake.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/User/Rake.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"smoothie",
+					""
+				],
+				[
+					"smoothie",
+					"Run"
+				],
+				[
+					"smoothie",
+					"Clean"
+				]
+			],
+			[
+				"smoothie",
+				""
+			]
+		],
+		[
+			[
+				[
+					"smoothie",
+					""
+				],
+				[
+					"smoothie",
+					"Run"
+				],
+				[
+					"smoothie",
+					"Clean"
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/GNUC++11.sublime-build",
+					""
+				],
+				[
+					"Packages/User/GNUC++11.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/Rake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/Rake.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/Rake.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"smoothie",
+				""
+			]
+		],
+		[
+			[
+				[
+					"smoothie-testing",
+					""
+				],
+				[
+					"smoothie-testing",
+					"Clean"
+				],
+				[
+					"smoothie-testing",
+					"Upload"
+				]
+			],
+			[
+				"smoothie-testing",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 32.0,
+		"last_filter": "Package Control: ",
+		"selected_items":
+		[
+			[
+				"Package Control: ",
+				"Package Control: Install Package"
+			],
+			[
+				"orgmode",
+				"Preferences: orgmode Settings – Default"
+			],
+			[
+				"todo",
+				"TodoReview: Project Files"
+			],
+			[
+				"up",
+				"Package Control: Upgrade Package"
+			],
+			[
+				"rem",
+				"Package Control: Remove Package"
+			],
+			[
+				"ins",
+				"Package Control: Install Package"
+			],
+			[
+				"Snippet: ",
+				"Snippet: mpre"
+			],
+			[
+				"clea",
+				"Build With: smoothie - Clean"
+			],
+			[
+				"diab",
+				"Package Control: Disable Package"
+			],
+			[
+				"pack",
+				"Package Control: Install Package"
+			],
+			[
+				"who",
+				"WhoCalled: Add/remove project folders"
+			],
+			[
+				"upg",
+				"Package Control: Upgrade Package"
+			],
+			[
+				"in",
+				"Package Control: Install Package"
+			],
+			[
+				"prv",
+				"PackageResourceViewer: Open Resource"
+			],
+			[
+				"pac",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: in",
+				"Package Control: Install Package"
+			],
+			[
+				"pa",
+				"Package Control: List Packages"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"inden",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"tab",
+				"View: Toggle Tabs"
+			],
+			[
+				"buil",
+				"Build: Upload"
+			],
+			[
+				"file",
+				"Snippet: Read File Into Vector"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"if",
+				"Snippet: If Condition"
+			],
+			[
+				"add",
+				"Project: Add Folder"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 495.0
+	},
+	"console":
+	{
+		"height": 186.0,
+		"history":
+		[
+			"gtags",
+			"sublime.executable_path()",
+			"import urllib.request,os; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); open(os.path.join(ipp, pf), 'wb').write(urllib.request.urlopen( 'http://sublime.wbond.net/' + pf.replace(' ','%20')).read()) "
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/morris/work/reprap/lpcopen-smoothie2"
+	],
+	"file_history":
+	[
+		"/home/morris/work/reprap/smoothie-host/Stuff/Kivy/kivy/uix/videoplayer.py",
+		"/home/morris/work/reprap/smoothie-host/mjpegviewer.py",
+		"/usr/local/lib/python3.5/dist-packages/kivy/uix/screenmanager.py",
+		"/home/morris/work/reprap/smoothie-host/kivy/properties.pyx",
+		"/home/morris/work/reprap/smoothie-host/viewer.py",
+		"/home/morris/work/reprap/smoothie-host/mpg_knob.py",
+		"/home/morris/work/reprap/smoothie-host/rpi.kv",
+		"/home/morris/work/reprap/smoothie-host/desktop.kv",
+		"/home/morris/work/reprap/smoothie-host/dro.kv",
+		"/home/morris/work/reprap/smoothie-host/extruder.kv",
+		"/home/morris/work/reprap/smoothie-host/jogrose.kv",
+		"/home/morris/work/reprap/smoothie-host/macros.kv",
+		"/home/morris/work/reprap/smoothie-host/file_dialog.py",
+		"/home/morris/work/reprap/smoothie-host/kbd.kv",
+		"/home/morris/work/reprap/smoothie-host/web_server.py",
+		"/home/morris/.config/sublime-text-3/Packages/MarkdownEditing/Default (Linux).sublime-keymap",
+		"/home/morris/work/reprap/smoothie-host/README.md",
+		"/usr/local/lib/python3.5/dist-packages/kivy/uix/tabbedpanel.py",
+		"/home/morris/work/reprap/smoothie-host/mpg.kv",
+		"/usr/local/lib/python3.5/dist-packages/kivy/lang/parser.py",
+		"/home/morris/work/reprap/smoothie-host/numeric.json",
+		"/home/morris/work/reprap/smoothie-host/smoothiehost.ini",
+		"/usr/local/lib/python3.5/dist-packages/kivy/uix/behaviors/focus.py",
+		"/home/morris/work/reprap/smoothie-host/dial-gauge.py",
+		"/home/morris/work/reprap/smoothie-host/input_box.py",
+		"/home/morris/work/reprap/smoothie-host/selection_box.py",
+		"/home/morris/work/reprap/smoothie-host/message_box.py",
+		"/home/morris/work/reprap/smoothie-host/test-parse-status.py",
+		"/home/morris/.config/sublime-text-3/Packages/User/Markdown.sublime-settings",
+		"/home/morris/.config/sublime-text-3/Packages/MarkdownEditing/Markdown.sublime-settings",
+		"/home/morris/work/reprap/smoothie-host/macros.ini",
+		"/home/morris/work/reprap/smoothie-host/circle-test.g",
+		"/home/morris/work/reprap/smoothie-host/tests/test.gcode",
+		"/home/morris/work/reprap/smoothie-host/tests/pyserial-asyncio/serial_asyncio/__init__.py",
+		"/home/morris/work/reprap/smoothie-host/comms-net.py",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/Block.h",
+		"/home/morris/work/reprap/smoothie-host/tests/async-file.py",
+		"/home/morris/work/reprap/smoothie-host/tests/dial-guage.py",
+		"/usr/lib/python2.7/dist-packages/kivy/lang.py",
+		"/home/morris/work/reprap/smoothie-host/tests/boost/main.cpp",
+		"/home/morris/work/reprap/smoothie-host/smoothie-host.sublime-project",
+		"/home/morris/work/reprap/smoothie-host/tests/boost/GCodeSender.hpp",
+		"/home/morris/work/reprap/smoothie-host/tests/boost/GCodeSender.cpp",
+		"/home/morris/work/reprap/smoothie-host/main.py",
+		"/home/morris/work/reprap/smoothie-host/kivy-pronterface.sublime-project",
+		"/home/morris/work/reprap/kivy-pronterface/kbd.kv",
+		"/home/morris/work/reprap/kivy-pronterface/kbd_widget.py",
+		"/home/morris/work/reprap/kivy-pronterface/kbd_widget.pyc",
+		"/home/morris/work/reprap/kivy-pronterface/mainwindow.kv",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/motordrivercontrol/drivers/TMC26X/TMC26X.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/ZProbe.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/DeltaCalibrationStrategy.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/endstops/Endstops.h",
+		"/home/morris/work/reprap/Smoothie/src/libs/USBDevice/USBSerial/USBSerial.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/endstops/Endstops.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/extruder/Extruder.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/ThreePointStrategy.cpp",
+		"/home/morris/work/reprap/Smoothie/build/mbed_custom.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/CartGridStrategy.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/SlowTicker.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/BlockQueue.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/BlockQueue.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/StepperMotor.h",
+		"/home/morris/work/reprap/Smoothie/src/libs/StepperMotor.cpp",
+		"/home/morris/work/reprap/Smoothie/new-acceleration-sim-multi-fp-64.rb",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/temperaturecontrol/TemperatureControl.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/MemoryPool.h",
+		"/home/morris/work/reprap/Smoothie/src/libs/MemoryPool.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/temperaturecontrol/TemperatureControlPool.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/Watchdog.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/switch/SwitchPool.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/switch/Switch.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/switch/Switch.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/HeapRing.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/HeapRing.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/panels/rrdglcd/RrdGlcd.cpp",
+		"/home/morris/work/reprap/Smoothie/mri/mri.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/motordrivercontrol/MotorDriverControl.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/killbutton/KillButton.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/killbutton/KillButton.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/ActuatorCoordinates.h",
+		"/home/morris/work/reprap/Smoothie/src/main.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/endstops/EndstopsPublicAccess.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/rotarydeltacalibration/RotaryDeltaCalibration.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/screens/cnc/WatchScreen.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/screens/ControlScreen.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/PanelScreen.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/screens/cnc/WatchScreen.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/Conveyor.h",
+		"/home/morris/work/reprap/Smoothie/src/libs/RingBuffer.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/communication/SerialConsole.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/communication/SerialConsole.h",
+		"/home/morris/work/reprap/Smoothie/src/libs/USBDevice/USBSerial/USBSerial.h",
+		"/home/morris/work/reprap/Smoothie/src/libs/USBDevice/USBSerial/CircBuffer.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/arm_solutions/CartesianSolution.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/arm_solutions/CartesianSolution.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/Conveyor.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/Planner.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/StepTicker.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/StepTicker.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/DeltaGridStrategy.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/Robot.cpp",
+		"/home/morris/work/reprap/Smoothie/src/version.h",
+		"/home/morris/work/reprap/Smoothie/src/version.cpp",
+		"/home/morris/work/reprap/Smoothie/ConfigSamples/Snippets/soft-endstops.config",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/Panel.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/currentcontrol/CurrentControl.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/currentcontrol/mcp4451.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/screens/3dprinter/JogScreen.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/screens/ControlScreen.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/screens/cnc/JogScreen.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/DeltaGridStrategy.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/CartGridStrategy.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/temperatureswitch/TemperatureSwitch.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/robot/Robot.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/laser/Laser.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/laser/Laser.h",
+		"/home/morris/work/reprap/Smoothie/mbed/drop/PwmOut.h",
+		"/home/morris/work/reprap/Smoothie/mbed/src/vendor/NXP/capi/pwmout_api.c",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/spindle/SpindleControl.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/Pwm.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/spindle/AnalogSpindleControl.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/Pin.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/spindle/PWMSpindleControl.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/extruder/ExtruderPublicAccess.h",
+		"/home/morris/work/reprap/Smoothie/src/modules/tools/drillingcycles/Drillingcycles.cpp",
+		"/home/morris/work/reprap/Smoothie/src/modules/utils/panel/screens/cnc/LaserScreen.cpp",
+		"/home/morris/work/reprap/Smoothie/src/libs/ConfigCache.h"
+	],
+	"find":
+	{
+		"height": 24.0
+	},
+	"find_in_files":
+	{
+		"height": 95.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 24.0
+	},
+	"input":
+	{
+		"height": 36.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.1443603325.5778918":
+	{
+		"height": 120.0
+	},
+	"output.DRO":
+	{
+		"height": 120.0
+	},
+	"output.GSL1680":
+	{
+		"height": 120.0
+	},
+	"output.Marlin":
+	{
+		"height": 120.0
+	},
+	"output.MotorTest":
+	{
+		"height": 120.0
+	},
+	"output.astyle_error_message":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe|1443603793.2772863":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/reprap/Smoothie|1443603848.4895167":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/balance|1443603020.302998":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443602919.9554665":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443602956.8481162":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443602996.695358":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443603686.2752347":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443603700.409651":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443603771.717971":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443606383.3401492":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443650437.3020523":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443651779.193062":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443651794.8125145":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443652073.3624525":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443653670.6392183":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443653677.3764827":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/robots/openbeam-robot/code/testmotor|1443654383.1078434":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452324031.560106":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452325105.2510877":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452325138.846442":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452325945.386845":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452326043.5136683":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452326097.1829274":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452326155.9174266":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452326251.2358458":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452326279.1809998":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452327276.826493":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452329328.7818694":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452332451.6361747":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452333065.4246664":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452333185.2172725":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452333233.7155478":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452334121.958878":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452334244.1265297":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452334444.8735445":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452369630.5711632":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452369645.4239538":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452369663.5672312":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452370518.452638":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452370643.484584":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452370876.2289598":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452370946.160138":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452374058.223424":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452375070.576316":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452375196.4209409":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452375591.5495203":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452376068.9463031":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452376077.5600305":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452376474.3591323":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452376658.1308646":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452376918.314939":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452376936.5922809":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/DRO|1452377102.72879":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/lidar|1450417683.5563757":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/lidar|1450420362.1914854":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/lidar|1450420434.734244":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/lidar|1450420469.5441384":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/lidar|1450420483.582803":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445556064.8897028":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445556831.6726232":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445556843.1012402":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445557474.2588348":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445557485.8883402":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445559632.1322014":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445559644.869306":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445561345.6673286":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445561361.2036276":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445561604.7986898":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445569824.5045156":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445570394.554703":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445570430.2911973":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445582007.5227392":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445582199.7757893":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445582209.363953":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445582219.7346485":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445584237.6455097":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445585543.37412":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445585569.783063":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445585963.146613":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445586140.6312485":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445676976.8902314":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445677354.5991602":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445677391.1894438":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449179903.2428908":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449180098.5240197":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449180152.4553928":
+	{
+		"height": 120.0
+	},
+	"output.build|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449180180.1417038":
+	{
+		"height": 120.0
+	},
+	"output.build|/opt/arduino-1.6.5-r5/hardware/arduino/avr/cores/arduino|1452326068.7865734":
+	{
+		"height": 120.0
+	},
+	"output.endstops":
+	{
+		"height": 120.0
+	},
+	"output.exec":
+	{
+		"height": 171.0
+	},
+	"output.find_results":
+	{
+		"height": 120.0
+	},
+	"output.git":
+	{
+		"height": 118.0
+	},
+	"output.hex_viewer_inspector":
+	{
+		"height": 120.0
+	},
+	"output.mdpopups":
+	{
+		"height": 0.0
+	},
+	"output.quadruped":
+	{
+		"height": 120.0
+	},
+	"output.robot":
+	{
+		"height": 120.0
+	},
+	"output.servotest":
+	{
+		"height": 120.0
+	},
+	"output.servotestAF":
+	{
+		"height": 120.0
+	},
+	"output.spi2i2clcd":
+	{
+		"height": 120.0
+	},
+	"output.spi_slave":
+	{
+		"height": 120.0
+	},
+	"output.spi_slave_duplex":
+	{
+		"height": 120.0
+	},
+	"output.stino_log":
+	{
+		"height": 120.0
+	},
+	"output.testmotor":
+	{
+		"height": 120.0
+	},
+	"output.universal_panel_adapter":
+	{
+		"height": 120.0
+	},
+	"output.unsaved_changes":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/robots/openbeam-robot/code/testmotor|1443605482.1659894":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/robots/openbeam-robot/code/testmotor|1443606396.5812979":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/robots/openbeam-robot/code/testmotor|1443652608.7229288":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/robots/openbeam-robot/code/testmotor|1443653213.4189556":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/robots/openbeam-robot/code/testmotor|1443653696.5831964":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452329182.900352":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452332508.247829":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452334312.7522254":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452334494.735333":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452373809.7850723":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452374030.3639307":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452374059.7933755":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452374366.1699653":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452374403.4889486":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452374549.96009":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452375198.1551814":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452375593.2494256":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452376080.1940072":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452376659.8203533":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452376938.159751":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452377106.059917":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452377280.9758365":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452377428.4295962":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452377650.9764974":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/DRO|1452377971.1204727":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450400821.8996117":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450400913.1193027":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450400957.9012945":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450401298.5380862":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450401419.1453478":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450401510.7487576":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450401574.6581972":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450401601.8370152":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450416911.3104525":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450418210.6390982":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450418237.4468703":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450418644.8213327":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450420492.3099864":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450421523.8326113":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450421736.0278852":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450421899.1200175":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/lidar|1450422008.0398188":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445558872.774877":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445559043.7478752":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445559057.1321473":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445559153.980018":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445559825.3483946":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445561368.9019132":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445569739.6348362":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445569794.5655816":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445569828.8575323":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445569890.9167771":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445570435.590185":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445570523.9989297":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445585586.3000069":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445677063.4372084":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/linuxcnc-ramps-passsthru|1445677409.2833886":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449182839.055448":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449183947.9628546":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449183973.7056103":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449184188.8259997":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449184253.5555713":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449184453.2905314":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449184470.207495":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449184476.6987839":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449184590.5644903":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449184793.0344484":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449185135.6140227":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449185186.7396193":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449185192.1813967":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449185199.189343":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449185349.535842":
+	{
+		"height": 120.0
+	},
+	"output.upload|/home/morris/work/sketchbook/servotest-quad-AF.ino|1449205292.249293":
+	{
+		"height": 120.0
+	},
+	"pinned_build_system": "smoothie-host",
+	"project": "lpcopen-smoothiev2.sublime-project",
+	"replace":
+	{
+		"height": 44.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"swi",
+				"src/modules/tools/switch/Switch.cpp"
+			],
+			[
+				"en",
+				"src/modules/tools/endstops/Endstops.cpp"
+			],
+			[
+				"three",
+				"src/modules/tools/zprobe/ThreePointStrategy.cpp"
+			],
+			[
+				"ex",
+				"src/modules/tools/extruder/Extruder.cpp"
+			],
+			[
+				"laser",
+				"src/modules/utils/panel/screens/cnc/LaserScreen.cpp"
+			],
+			[
+				"lase",
+				"src/modules/tools/laser/Laser.cpp"
+			],
+			[
+				"end",
+				"src/modules/tools/endstops/Endstops.cpp"
+			],
+			[
+				"zpr",
+				"src/modules/tools/zprobe/ZProbe.cpp"
+			],
+			[
+				"delt",
+				"src/modules/tools/zprobe/DeltaCalibrationStrategy.cpp"
+			],
+			[
+				"temp",
+				"src/modules/tools/temperaturecontrol/TemperatureControl.cpp"
+			],
+			[
+				"grid",
+				"src/modules/tools/zprobe/CartGridStrategy.cpp"
+			],
+			[
+				"wat",
+				"src/libs/Watchdog.cpp"
+			],
+			[
+				"bloc",
+				"src/modules/robot/BlockQueue.cpp"
+			],
+			[
+				"memor",
+				"src/libs/MemoryPool.cpp"
+			],
+			[
+				"rr",
+				"src/modules/utils/panel/panels/rrdglcd/RrdGlcd.cpp"
+			],
+			[
+				"main",
+				"src/main.cpp"
+			],
+			[
+				"mot",
+				"src/modules/utils/motordrivercontrol/MotorDriverControl.cpp"
+			],
+			[
+				"pla",
+				"src/modules/robot/Planner.cpp"
+			],
+			[
+				"serial",
+				"src/modules/communication/SerialConsole.cpp"
+			],
+			[
+				"blo",
+				"src/modules/robot/Block.h"
+			],
+			[
+				"ste",
+				"src/libs/StepperMotor.cpp"
+			],
+			[
+				"watc",
+				"src/modules/utils/panel/screens/cnc/WatchScreen.cpp"
+			],
+			[
+				"kil",
+				"src/modules/utils/killbutton/KillButton.cpp"
+			],
+			[
+				"gc",
+				"src/modules/communication/GcodeDispatch.cpp"
+			],
+			[
+				"sim",
+				"src/modules/utils/simpleshell/SimpleShell.cpp"
+			],
+			[
+				"pan",
+				"src/modules/utils/panel/Panel.cpp"
+			],
+			[
+				"tmc",
+				"src/modules/utils/motordrivercontrol/drivers/TMC26X/TMC26X.cpp"
+			],
+			[
+				"plann",
+				"src/modules/robot/Planner.cpp"
+			],
+			[
+				"jog",
+				"src/modules/utils/panel/screens/3dprinter/JogScreen.cpp"
+			],
+			[
+				"kern",
+				"src/libs/Kernel.cpp"
+			],
+			[
+				"curr",
+				"src/modules/utils/currentcontrol/CurrentControl.cpp"
+			],
+			[
+				"spin",
+				"src/modules/tools/spindle/SpindleControl.cpp"
+			],
+			[
+				"spindle",
+				"src/modules/tools/spindle/SpindleControl.cpp"
+			],
+			[
+				"swit",
+				"src/modules/tools/switch/Switch.cpp"
+			],
+			[
+				"26",
+				"src/modules/utils/motordrivercontrol/drivers/TMC26X/TMC26X.cpp"
+			],
+			[
+				"zpro",
+				"src/modules/tools/zprobe/ZProbe.cpp"
+			],
+			[
+				"drill",
+				"src/modules/tools/drillingcycles/Drillingcycles.cpp"
+			],
+			[
+				"alaser",
+				"src/modules/utils/panel/screens/cnc/LaserScreen.cpp"
+			],
+			[
+				"file",
+				"src/libs/ConfigSources/FileConfigSource.cpp"
+			],
+			[
+				"config",
+				"src/modules/utils/configurator/Configurator.cpp"
+			],
+			[
+				"filecon",
+				"src/libs/ConfigSources/FileConfigSource.cpp"
+			],
+			[
+				"wa",
+				"src/modules/utils/panel/screens/3dprinter/WatchScreen.cpp"
+			],
+			[
+				"delta",
+				"src/modules/tools/zprobe/DeltaCalibrationStrategy.cpp"
+			],
+			[
+				"ext",
+				"src/modules/tools/extruder/Extruder.cpp"
+			],
+			[
+				"dhcp",
+				"src/libs/Network/uip/dhcpc/dhcpc.c"
+			],
+			[
+				"dhc",
+				"src/libs/Network/uip/dhcpc/dhcpc.c"
+			],
+			[
+				"cart",
+				"src/modules/tools/zprobe/CartGridStrategy.cpp"
+			],
+			[
+				"rrd",
+				"src/modules/utils/panel/panels/rrdglcd/RrdGlcd.cpp"
+			],
+			[
+				"max3",
+				"src/modules/tools/temperaturecontrol/max31855.cpp"
+			],
+			[
+				"stept",
+				"src/libs/StepTicker.cpp"
+			],
+			[
+				"tem",
+				"src/modules/tools/temperatureswitch/TemperatureSwitch.cpp"
+			],
+			[
+				"gcode",
+				"src/modules/communication/GcodeDispatch.cpp"
+			],
+			[
+				"kill",
+				"src/modules/utils/killbutton/KillButton.cpp"
+			],
+			[
+				"switch",
+				"src/modules/tools/switch/Switch.cpp"
+			],
+			[
+				"rob",
+				"src/modules/robot/Robot.cpp"
+			],
+			[
+				"armso",
+				"src/modules/robot/arm_solutions/LinearDeltaSolution.cpp"
+			],
+			[
+				"del",
+				"src/modules/tools/zprobe/DeltaCalibrationStrategy.cpp"
+			],
+			[
+				"ends",
+				"src/modules/tools/endstops/Endstops.cpp"
+			],
+			[
+				"robo",
+				"src/modules/robot/Robot.cpp"
+			],
+			[
+				"ad",
+				"src/libs/Adc.cpp"
+			],
+			[
+				"adc",
+				"src/libs/Adc.cpp"
+			],
+			[
+				"ther",
+				"src/modules/tools/temperaturecontrol/Thermistor.cpp"
+			],
+			[
+				"rota",
+				"src/modules/robot/arm_solutions/RotaryDeltaSolution.cpp"
+			],
+			[
+				"mai",
+				"src/main.cpp"
+			],
+			[
+				"pi",
+				"src/libs/Pin.h"
+			],
+			[
+				"extr",
+				"src/modules/tools/extruder/Extruder.cpp"
+			],
+			[
+				"circ",
+				"src/libs/USBDevice/USBSerial/CircBuffer.h"
+			],
+			[
+				"robot",
+				"src/modules/robot/Robot.cpp"
+			],
+			[
+				"play",
+				"src/modules/utils/PlayLed/PlayLed.cpp"
+			],
+			[
+				"pred",
+				"src/modules/tools/temperaturecontrol/predefined_thermistors.h"
+			],
+			[
+				"extruder",
+				"src/modules/tools/extruder/Extruder.cpp"
+			],
+			[
+				"endstop",
+				"src/modules/tools/endstops/Endstops.cpp"
+			],
+			[
+				"mainm",
+				"src/modules/utils/panel/screens/3dprinter/MainMenuScreen.cpp"
+			],
+			[
+				"ro",
+				"src/modules/robot/Robot.cpp"
+			],
+			[
+				"gco",
+				"src/modules/communication/GcodeDispatch.cpp"
+			],
+			[
+				"plan",
+				"src/modules/robot/Planner.cpp"
+			],
+			[
+				"usbs",
+				"src/libs/USBDevice/USBSerial/USBSerial.cpp"
+			],
+			[
+				"las",
+				"src/modules/tools/laser/Laser.cpp"
+			],
+			[
+				"conv",
+				"src/modules/robot/Conveyor.cpp"
+			],
+			[
+				"usb",
+				"src/libs/USBDevice/USBSerial/USBSerial.cpp"
+			],
+			[
+				"sw",
+				"src/modules/tools/switch/Switch.cpp"
+			],
+			[
+				"usbse",
+				"src/libs/USBDevice/USBSerial/USBSerial.cpp"
+			],
+			[
+				"htt",
+				"src/libs/Network/uip/webserver/httpd.c"
+			],
+			[
+				"sdcard",
+				"src/libs/USBDevice/USBMSD/SDCard.h"
+			],
+			[
+				"act",
+				"src/modules/robot/ActuatorCoordinates.h"
+			],
+			[
+				"cu",
+				"src/modules/utils/currentcontrol/CurrentControl.cpp"
+			],
+			[
+				"z",
+				"src/modules/tools/zprobe/ZProbe.cpp"
+			],
+			[
+				"ma",
+				"src/main.cpp"
+			],
+			[
+				"sdf",
+				"src/libs/SDFAT.cpp"
+			],
+			[
+				"thr",
+				"src/modules/tools/zprobe/ThreePointStrategy.cpp"
+			],
+			[
+				"usbser",
+				"src/libs/USBDevice/USBSerial/USBSerial.cpp"
+			],
+			[
+				"pinnam",
+				"mbed/drop/LPC1768/PinNames.h"
+			],
+			[
+				"gpio",
+				"src/libs/gpio.h"
+			],
+			[
+				"pin",
+				"src/libs/Pin.h"
+			],
+			[
+				"wac",
+				"src/libs/Watchdog.cpp"
+			],
+			[
+				"step",
+				"src/libs/StepperMotor.h"
+			],
+			[
+				"ker",
+				"src/libs/Kernel.cpp"
+			],
+			[
+				"st",
+				"src/modules/utils/panel/panels/ST7565.cpp"
+			],
+			[
+				"conve",
+				"src/modules/robot/Conveyor.cpp"
+			],
+			[
+				"simp",
+				"src/modules/utils/simpleshell/SimpleShell.cpp"
+			],
+			[
+				"mod",
+				"src/libs/Module.h"
+			],
+			[
+				"block",
+				"src/modules/robot/Block.h"
+			],
+			[
+				"stepp",
+				"src/libs/StepperMotor.cpp"
+			],
+			[
+				"temper",
+				"src/modules/tools/temperaturecontrol/TemperatureControl.cpp"
+			],
+			[
+				"wath",
+				"src/libs/Watchdog.cpp"
+			],
+			[
+				"mbed",
+				"build/mbed_custom.cpp"
+			],
+			[
+				"pane",
+				"src/modules/utils/panel/Panel.cpp"
+			],
+			[
+				"deltagr",
+				"src/modules/tools/zprobe/DeltaGridStrategy.cpp"
+			],
+			[
+				"ut",
+				"src/libs/utils.cpp"
+			],
+			[
+				"ad8",
+				"src/modules/tools/temperaturecontrol/AD8495.cpp"
+			],
+			[
+				"main.cpp",
+				"src/main.cpp"
+			],
+			[
+				"pida",
+				"src/modules/tools/temperaturecontrol/PID_Autotuner.cpp"
+			],
+			[
+				"tool",
+				"src/modules/tools/toolmanager/ToolManager.cpp"
+			],
+			[
+				"rot",
+				"src/modules/tools/rotarydeltacalibration/RotaryDeltaCalibration.cpp"
+			],
+			[
+				"nut",
+				"src/libs/nuts_bolts.h"
+			],
+			[
+				"panel",
+				"src/modules/utils/panel/Panel.cpp"
+			],
+			[
+				"util",
+				"src/libs/utils.cpp"
+			],
+			[
+				"motor",
+				"src/modules/utils/motordrivercontrol/MotorDriverControl.cpp"
+			],
+			[
+				"dyn",
+				"src/modules/utils/panel/screens/DynMenuScreen.cpp"
+			],
+			[
+				"la",
+				"src/modules/utils/panel/screens/cnc/LaserScreen.cpp"
+			],
+			[
+				"watch",
+				"src/libs/Watchdog.cpp"
+			],
+			[
+				"8495",
+				"src/modules/tools/temperaturecontrol/AD8495.cpp"
+			],
+			[
+				"pre",
+				"src/modules/utils/panel/screens/cnc/PrepareScreen.cpp"
+			],
+			[
+				"prep",
+				"src/modules/utils/panel/screens/3dprinter/PrepareScreen.cpp"
+			],
+			[
+				"cus",
+				"src/modules/utils/panel/screens/CustomScreen.cpp"
+			],
+			[
+				"uti",
+				"src/libs/utils.h"
+			],
+			[
+				"led",
+				"src/modules/utils/led_ring/LedRing.cpp"
+			],
+			[
+				"fil",
+				"src/modules/tools/filamentdetector/FilamentDetector.cpp"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 503.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"~/work/reprap/objects/scad.sublime-project"
+			],
+			[
+				"u",
+				"/home/morris/work/reprap/Smoothie/smoothie.sublime-project"
+			]
+		],
+		"width": 382.0
+	},
+	"select_symbol":
+	{
+		"height": 55.0,
+		"last_filter": "on_idle",
+		"selected_items":
+		[
+			[
+				"on_idle",
+				"on_idle"
+			],
+			[
+				"get_",
+				"get_command"
+			],
+			[
+				"moves_finished",
+				"signal_moves_finished"
+			],
+			[
+				"append",
+				"append_block"
+			],
+			[
+				"send",
+				"sendline"
+			]
+		],
+		"width": 399.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 271.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
