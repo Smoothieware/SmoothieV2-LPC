@@ -61,7 +61,7 @@ extern void SystemInit(void);
 //*****************************************************************************
 //
 // Forward declaration of the default handlers. These are aliased.
-// When the application defines a handler (with the same name), this will 
+// When the application defines a handler (with the same name), this will
 // automatically take precedence over these weak definitions
 //
 //*****************************************************************************
@@ -81,7 +81,7 @@ WEAK void IntDefaultHandler(void);
 //
 // Forward declaration of the specific IRQ handlers. These are aliased
 // to the IntDefaultHandler, which is a 'forever' loop. When the application
-// defines a handler (with the same name), this will automatically take 
+// defines a handler (with the same name), this will automatically take
 // precedence over these weak definitions
 //
 //*****************************************************************************
@@ -446,6 +446,8 @@ void ResetISR(void) {
     }
 }
 
+#define __debugbreak()  { __asm volatile ("bkpt #0"); }
+
 //*****************************************************************************
 // Default exception handlers. Override the ones here by defining your own
 // handler routines in your application code.
@@ -457,6 +459,7 @@ void NMI_Handler(void) {
 }
 __attribute__ ((section(".after_vectors")))
 void HardFault_Handler(void) {
+    __debugbreak();
     while (1) {
     }
 }

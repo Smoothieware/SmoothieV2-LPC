@@ -57,9 +57,9 @@ REGISTER_TEST(ConfigTest, load_sub_sections)
     ConfigReader::sub_section_map_t ssmap;
     TEST_ASSERT_TRUE(ssmap.empty());
 
-    // systime_t st = clock_systimer();
-    // TEST_ASSERT_TRUE(cr.get_sub_sections("switch", ssmap));
-    // systime_t en = clock_systimer();
+    //systime_t st = clock_systimer();
+    TEST_ASSERT_TRUE(cr.get_sub_sections("switch", ssmap));
+    //systime_t en = clock_systimer();
     // printf("elapsed time %d us\n", TICK2USEC(en-st));
 
     TEST_ASSERT_EQUAL_STRING("switch", cr.get_current_section().c_str());

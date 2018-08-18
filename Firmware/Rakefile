@@ -97,6 +97,9 @@ load 'rakefile.defaults' if File.exists?('rakefile.defaults')
 src = FileList['Hal/**/*.{c,cpp,s}']
 src.exclude(/Adc|Pin/) # not done yet
 
+# RTOS
+src += FileList['RTOS/**/*.{c,cpp,s}']
+
 if TESTING
   # Unity tests
   src += FileList['Unity/src/*.c', 'src/**/*.{c,cpp,s}']
@@ -145,7 +148,8 @@ SRC.each do |s|
   FileUtils.mkdir_p(d) unless Dir.exists?(d)
 end
 
-include_dirs = ["./Hal/lpc_board_ngx_xplorer_4330/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx"] + [Dir.glob(['./src/**/'])].flatten # ,'./staging/**/'
+include_dirs = ["./Hal/lpc_board_bambino/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx", "./RTOS/include"] +
+               [Dir.glob(['./src/**/'])].flatten # ,'./staging/**/'
 sys_include_dirs = []
 
 # [Dir.glob([PROG + '/**/Inc/**', './mri/**/'])].flatten

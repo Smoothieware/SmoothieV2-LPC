@@ -79,8 +79,13 @@ static int run_tests(int argc, char *argv[])
 }
 
 void configureSPIFI();
+void start_rtos();
+
 int main() //int argc, char *argv[])
 {
+    //HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
+    NVIC_SetPriorityGrouping( 0 );
+
     configureSPIFI(); // full speed ahead
 
     // int ret = boardctl(BOARDIOC_INIT, 0);
@@ -96,13 +101,18 @@ int main() //int argc, char *argv[])
 
     // Read clock settings and update SystemCoreClock variable
     SystemCoreClockUpdate();
+
     // Set up and initialize all required blocks and
     // functions related to the board hardware
     Board_Init();
     // Set the LED to the state of "On"
     Board_LED_Set(0, true);
 
-    return run_tests(0, nullptr); // argc, argv);
+    printf("MCU clock rate= %lu Hz", SystemCoreClock);
+
+    run_tests(0, nullptr); // argc, argv);
+
+    start_rtos();
 }
 
 #if 0
@@ -125,3 +135,84 @@ void print_to_all_consoles(const char *str)
     printf("%s", str);
 }
 #endif
+
+
+// FreeRTOS stuff needs to be moved
+#include "FreeRTOS.h"
+#include "task.h"
+#include "timers.h"
+#include "semphr.h"
+
+/* LED1 toggle thread */
+extern "C" void vLEDTask1(void *pvParameters) {
+    bool LedState = false;
+
+    while (1) {
+        Board_LED_Set(0, LedState);
+        LedState = (bool) !LedState;
+
+        /* About a 3Hz on/off toggle rate */
+        vTaskDelay(configTICK_RATE_HZ / 6);
+    }
+}
+
+void start_rtos()
+{
+    /* LED1 toggle thread */
+    xTaskCreate(vLEDTask1, "vTaskLed1", configMINIMAL_STACK_SIZE,
+            NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
+
+    /* Start the scheduler */
+    vTaskStartScheduler();
+}
+
+
+extern "C" void vApplicationTickHook( void )
+{
+    /* This function will be called by each tick interrupt if
+    configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h.  User code can be
+    added here, but the tick hook is called from an interrupt context, so
+    code must not attempt to block, and only the interrupt safe FreeRTOS API
+    functions can be used (those that end in FromISR()). */
+}
+
+extern "C" void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
+{
+    ( void ) pcTaskName;
+    ( void ) pxTask;
+
+    /* Run time stack overflow checking is performed if
+    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
+    function is called if a stack overflow is detected. */
+    taskDISABLE_INTERRUPTS();
+    for( ;; );
+}
+
+extern "C" void vApplicationIdleHook( void )
+{
+    /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
+    to 1 in FreeRTOSConfig.h.  It will be called on each iteration of the idle
+    task.  It is essential that code added to this hook function never attempts
+    to block in any way (for example, call xQueueReceive() with a block time
+    specified, or call vTaskDelay()).  If the application makes use of the
+    vTaskDelete() API function (as this demo application does) then it is also
+    important that vApplicationIdleHook() is permitted to return to its calling
+    function, because it is the responsibility of the idle task to clean up
+    memory allocated by the kernel to any task that has since been deleted. */
+}
+
+extern "C" void vApplicationMallocFailedHook( void )
+{
+    /* vApplicationMallocFailedHook() will only be called if
+    configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h.  It is a hook
+    function that will get called if a call to pvPortMalloc() fails.
+    pvPortMalloc() is called internally by the kernel whenever a task, queue,
+    timer or semaphore is created.  It is also called by various parts of the
+    demo application.  If heap_1.c or heap_2.c are used, then the size of the
+    heap available to pvPortMalloc() is defined by configTOTAL_HEAP_SIZE in
+    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
+    to query the size of free heap space that remains (although it does not
+    provide information on how the remaining heap might be fragmented). */
+    taskDISABLE_INTERRUPTS();
+    for( ;; );
+}

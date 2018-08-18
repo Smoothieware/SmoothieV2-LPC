@@ -102,33 +102,33 @@ void Board_UARTPutSTR(const char *str)
 static void Board_LED_Init()
 {
 	/* P2.12 : LED D2 as output */
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 1, 12);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 7);
 
 	/* P2.11 : LED D3 as output */
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 1, 11);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 5);
 
 	/* Set initial states to off (true to disable) */
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 1, 12, (bool) true);
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 1, 11, (bool) true);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, (bool) true);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, (bool) true);
 }
 
 void Board_LED_Set(uint8_t LEDNumber, bool On)
 {
 	if (LEDNumber == 0) {
-		Chip_GPIO_SetPinState(LPC_GPIO_PORT, 1, 12, (bool) !On);
+		Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, (bool) !On);
 	}
 	else if (LEDNumber == 1) {
-		Chip_GPIO_SetPinState(LPC_GPIO_PORT, 1, 11, (bool) !On);
+		Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, (bool) !On);
 	}
 }
 
 bool Board_LED_Test(uint8_t LEDNumber)
 {
 	if (LEDNumber == 0) {
-		return (bool) !Chip_GPIO_GetPinState(LPC_GPIO_PORT, 1, 12);
+		return (bool) !Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 7);
 	}
 	else if (LEDNumber == 1) {
-		return (bool) !Chip_GPIO_GetPinState(LPC_GPIO_PORT, 1, 11);
+		return (bool) !Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 5);
 	}
 
 	return false;
@@ -181,11 +181,11 @@ void Board_Init(void)
 	Chip_GPIO_Init(LPC_GPIO_PORT);
 
 	/* Setup GPIOs for USB demos */
-	Chip_SCU_PinMuxSet(0x2, 6, (SCU_MODE_PULLUP | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));			/* P2_6 USB1_PWR_EN, USB1 VBus function */
-	Chip_SCU_PinMuxSet(0x2, 5, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));	/* P2_5 USB1_VBUS, MUST CONFIGURE THIS SIGNAL FOR USB1 NORMAL OPERATION */
-	Chip_SCU_PinMuxSet(0x1, 7, (SCU_MODE_PULLUP | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));			/* P1_7 USB0_PWR_EN, USB0 VBus function Xplorer */
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 6);							/* GPIO5[6] = USB1_PWR_EN */
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 6, true);							/* GPIO5[6] output high */
+//	Chip_SCU_PinMuxSet(0x2, 6, (SCU_MODE_PULLUP | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));			/* P2_6 USB1_PWR_EN, USB1 VBus function */
+//	Chip_SCU_PinMuxSet(0x2, 5, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));	/* P2_5 USB1_VBUS, MUST CONFIGURE THIS SIGNAL FOR USB1 NORMAL OPERATION */
+//	Chip_SCU_PinMuxSet(0x1, 7, (SCU_MODE_PULLUP | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));			/* P1_7 USB0_PWR_EN, USB0 VBus function Xplorer */
+//	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 6);							/* GPIO5[6] = USB1_PWR_EN */
+//	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 6, true);							/* GPIO5[6] output high */
 
 	/* Initialize LEDs */
 	Board_LED_Init();
