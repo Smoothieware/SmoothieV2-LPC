@@ -29,10 +29,12 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
-// #include "LPC43xx.h"
-// #include "core_cm4.h"
-#undef __NVIC_PRIO_BITS
-#define __NVIC_PRIO_BITS          3         /*!< Number of Bits used for Priority Levels */
+#include "board.h"
+
+#if __NVIC_PRIO_BITS != 3
+#error __NVIC_PRIO_BITS is wrong
+//#define __NVIC_PRIO_BITS          3         /*!< Number of Bits used for Priority Levels */
+#endif
 
 /*-----------------------------------------------------------
  * Application specific definitions.
