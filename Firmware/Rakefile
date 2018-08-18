@@ -107,7 +107,7 @@ if TESTING
   if ENV['test'].nil?
     # all tests
     src += FileList['TestUnits/TEST_*.cpp']
-    src.exclude("TestUnits/TEST_sdcard.cpp") # sdcard is not always present
+    #src.exclude("TestUnits/TEST_sdcard.cpp") # sdcard is not always present
     if ENV['exclude']
       ENV['exclude'].split(',').map { |i| "TestUnits/TEST_#{i}.cpp" }.each do |e|
         src.exclude(e)
@@ -148,7 +148,8 @@ SRC.each do |s|
   FileUtils.mkdir_p(d) unless Dir.exists?(d)
 end
 
-include_dirs = ["./Hal/lpc_board_bambino/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx", "./RTOS/include"] +
+include_dirs = ["./Hal/lpc_board_bambino/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx",
+                "./RTOS/include",  "./Hal/sdmmc/inc", "./Hal/sdmmc/fatfs"] +
                [Dir.glob(['./src/**/'])].flatten # ,'./staging/**/'
 sys_include_dirs = []
 
