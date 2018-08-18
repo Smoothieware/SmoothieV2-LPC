@@ -205,20 +205,11 @@ uint8_t Joystick_GetStatus(void);
 uint32_t Buttons_GetStatus (void);
 
 /**
- * @brief	Initialize I2S interface for the board and UDA1380
- * @param	pI2S	: Pointer to I2S register interface used on this board
- * @param	micIn	: If 1 MIC will be used as input, if 0 LINE_IN will be used
- * @return	Nothing
- */
-void Board_Audio_Init(LPC_I2S_T *pI2S, int micIn);
-
-/**
  * @}
  */
 
 #include "board_api.h"
 #include "lpc_phy.h"
-#include "uda1380.h"
 
 #ifdef __cplusplus
 }

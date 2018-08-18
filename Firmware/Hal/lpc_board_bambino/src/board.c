@@ -235,44 +235,6 @@ void Board_SSP_Init(LPC_SSP_T *pSSP)
 	}
 }
 
-static void delay(uint32_t i) {
-	while (i--) {}
-}
-
-/* Initialize Audio Codec */
-static Status Board_Audio_CodecInit(int micIn)
-{
-	/* Reset UDA1380 on board NGX Xplorer */
-	Chip_SCU_PinMuxSet(0x2, 10, (SCU_MODE_PULLUP | SCU_MODE_FUNC0));
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 0, 14);
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 0, 14, true);
-	// delay 1us
-	delay(100000);
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 0, 14, false);
-	delay(100000);
-
-	if (!UDA1380_Init(UDA1380_MIC_IN_LR & - (micIn != 0))) {
-		return ERROR;
-	}
-
-	return SUCCESS;
-}
-
-/* Board Audio initialization */
-void Board_Audio_Init(LPC_I2S_T *pI2S, int micIn)
-{
-	I2S_AUDIO_FORMAT_T I2S_Config;
-
-	I2S_Config.SampleRate = 48000;
-	I2S_Config.ChannelNumber = 2;		/* 1 is mono, 2 is stereo */
-	I2S_Config.WordWidth =  16;			/* 8, 16 or 32 bits */
-	Chip_I2S_Init(pI2S);
-	Chip_I2S_TxConfig(pI2S, &I2S_Config);
-
-	/* Init UDA1380 CODEC */
-	while (Board_Audio_CodecInit(micIn) != SUCCESS) {}
-}
-
 /**
  * @}
  */
