@@ -278,7 +278,8 @@ SECTIONS
          . = ALIGN(4) ;
         _end_noinit = .;
     } > RamLoc128
-    PROVIDE(_pvHeapStart = DEFINED(__user_heap_base) ? __user_heap_base : .);
+
+    PROVIDE(__HeapBase = DEFINED(__user_heap_base) ? __user_heap_base : .);
     PROVIDE(_vStackTop = DEFINED(__user_stack_top) ? __user_stack_top : __top_RamLoc128 - 0);
 
     /* ## Create checksum value (used in startup) ## */

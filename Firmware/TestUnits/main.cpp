@@ -4,9 +4,12 @@
 #include <tuple>
 #include <functional>
 
+#include <malloc.h>
+
 #include "../Unity/src/unity.h"
 #include "TestRegistry.h"
 #include "board.h"
+#include "FreeRTOS.h"
 
 // #include "OutputStream.h"
 
@@ -111,6 +114,8 @@ int main() //int argc, char *argv[])
     printf("MCU clock rate= %lu Hz", SystemCoreClock);
 
     run_tests(0, nullptr); // argc, argv);
+    struct mallinfo mi = mallinfo();
+    printf("free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize()-mi.fordblks, xPortGetFreeHeapSize());
 
     start_rtos();
 }
@@ -214,5 +219,6 @@ extern "C" void vApplicationMallocFailedHook( void )
     to query the size of free heap space that remains (although it does not
     provide information on how the remaining heap might be fragmented). */
     taskDISABLE_INTERRUPTS();
+    __asm("bkpt #0");
     for( ;; );
 }
