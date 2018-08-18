@@ -92,7 +92,7 @@ static void App_SDMMC_Init()
  * @brief   SDIO controller interrupt handler
  * @return  Nothing
  */
-void SDIO_IRQHandler(void)
+extern "C" void SDIO_IRQHandler(void)
 {
     /* All SD based register handling is done in the callback
        function. The SDIO interrupt is not enabled as part of this
@@ -129,11 +129,11 @@ REGISTER_TEST(SDCardTest, raw_read_write)
 
     // delete it if it was there
     ret= f_unlink(fn);
-    TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+    //TEST_ASSERT_EQUAL_INT(FR_OK, ret);
 
     FIL fp;  /* File object */
 
-    ret = f_open(&fp, fn, FA_WRITE); // fopen(fn, "w");
+    ret = f_open(&fp, fn, FA_WRITE|FA_CREATE_ALWAYS); // fopen(fn, "w");
     TEST_ASSERT_EQUAL_INT(FR_OK, ret);
 
     for (int i = 1; i <= 10; ++i) {
@@ -172,6 +172,7 @@ REGISTER_TEST(SDCardTest, raw_read_write)
 }
 
 #if 0
+// using posix calls
 REGISTER_TEST(SDCardTest, write_read)
 {
     char fn[64];
