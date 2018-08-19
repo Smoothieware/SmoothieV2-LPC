@@ -2,7 +2,6 @@
 #include "TestRegistry.h"
 
 #include <fcntl.h>
-//#include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -31,8 +30,7 @@ static void sdmmc_waitms(uint32_t time)
 
     if ((final < 0) && (curr > 0)) {
         while (Chip_RIT_GetCounter(LPC_RITIMER) < (uint32_t) final) {}
-    }
-    else {
+    } else {
         while ((int32_t) Chip_RIT_GetCounter(LPC_RITIMER) < final) {}
     }
 
@@ -125,20 +123,20 @@ REGISTER_TEST(SDCardTest, raw_read_write)
 {
     int ret;
     char fn[64];
-    strcat(fn, "/sd/test_file.raw");
+    strcpy(fn, "/sd/test_file.raw");
 
     // delete it if it was there
-    ret= f_unlink(fn);
+    ret = f_unlink(fn);
     //TEST_ASSERT_EQUAL_INT(FR_OK, ret);
 
     FIL fp;  /* File object */
 
-    ret = f_open(&fp, fn, FA_WRITE|FA_CREATE_ALWAYS); // fopen(fn, "w");
+    ret = f_open(&fp, fn, FA_WRITE | FA_CREATE_ALWAYS); // fopen(fn, "w");
     TEST_ASSERT_EQUAL_INT(FR_OK, ret);
 
     for (int i = 1; i <= 10; ++i) {
         char buf[32];
-        int n= snprintf(buf, sizeof(buf), "Line %d\n", i);
+        int n = snprintf(buf, sizeof(buf), "Line %d\n", i);
         unsigned x;
         ret = f_write(&fp, buf, n, &x);
         TEST_ASSERT_EQUAL_INT(FR_OK, ret);
@@ -155,19 +153,19 @@ REGISTER_TEST(SDCardTest, raw_read_write)
     for (int i = 1; i <= 10; ++i) {
         TEST_ASSERT_TRUE(f_eof(&fp) == 0);
         char buf[32];
-        char *l= f_gets(buf, sizeof(buf), &fp);
+        char *l = f_gets(buf, sizeof(buf), &fp);
         TEST_ASSERT_NOT_NULL(l);
         printf("test: %s", buf);
         // now verify
         char vbuf[32];
-        int n= snprintf(vbuf, sizeof(vbuf), "Line %d\n", i);
+        int n = snprintf(vbuf, sizeof(vbuf), "Line %d\n", i);
         TEST_ASSERT_EQUAL_INT(0, strncmp(buf, vbuf, n));
         TEST_ASSERT_TRUE(f_error(&fp) == 0);
     }
 
     TEST_ASSERT_TRUE(f_eof(&fp) != 0);
 
-    ret= f_close(&fp);
+    ret = f_close(&fp);
     TEST_ASSERT_EQUAL_INT(FR_OK, ret);
 }
 
@@ -175,7 +173,7 @@ REGISTER_TEST(SDCardTest, raw_read_write)
 REGISTER_TEST(SDCardTest, write_read)
 {
     char fn[64];
-    strcat(fn, "/sd/test_file.tst");
+    strcpy(fn, "/sd/test_file.tst");
 
     // delete it if it was there
     unlink(fn);
@@ -186,8 +184,8 @@ REGISTER_TEST(SDCardTest, write_read)
 
     for (int i = 1; i <= 10; ++i) {
         char buf[32];
-        int n= snprintf(buf, sizeof(buf), "Line %d\n", i);
-        int x= fwrite(buf, 1, n, fp);
+        int n = snprintf(buf, sizeof(buf), "Line %d\n", i);
+        int x = fwrite(buf, 1, n, fp);
         TEST_ASSERT_EQUAL_INT(n, x);
     }
 
@@ -201,28 +199,60 @@ REGISTER_TEST(SDCardTest, write_read)
     for (int i = 1; i <= 10; ++i) {
         TEST_ASSERT_TRUE(!feof(fp));
         char buf[32];
-        char *l= fgets(buf, sizeof(buf), fp);
+        char *l = fgets(buf, sizeof(buf), fp);
         TEST_ASSERT_NOT_NULL(l);
         printf("test: %s", buf);
         // now verify
         char vbuf[32];
-        int n= snprintf(vbuf, sizeof(vbuf), "Line %d\n", i);
+        int n = snprintf(vbuf, sizeof(vbuf), "Line %d\n", i);
         TEST_ASSERT_EQUAL_INT(0, strncmp(buf, vbuf, n));
     }
     fclose(fp);
 }
 
-#if 0
 REGISTER_TEST(SDCardTest, directory)
 {
+#if 1
+    // newlib does not support dirent so use ff lib directly
+    DIR dir;
+    FILINFO finfo;
+    FATFS *fs;
+    FRESULT res = f_opendir(&dir, "/sd");
+    TEST_ASSERT_EQUAL_INT(FR_OK, res);
+    DWORD p1, s1, s2;
+    p1 = s1 = s2 = 0;
+    for(;;) {
+        res = f_readdir(&dir, &finfo);
+        if ((res != FR_OK) || !finfo.fname[0]) break;
+        if (finfo.fattrib & AM_DIR) {
+            s2++;
+        } else {
+            s1++; p1 += finfo.fsize;
+        }
+        printf("%c%c%c%c%c %u/%02u/%02u %02u:%02u %9lu  %s\n",
+                (finfo.fattrib & AM_DIR) ? 'D' : '-',
+                (finfo.fattrib & AM_RDO) ? 'R' : '-',
+                (finfo.fattrib & AM_HID) ? 'H' : '-',
+                (finfo.fattrib & AM_SYS) ? 'S' : '-',
+                (finfo.fattrib & AM_ARC) ? 'A' : '-',
+                (finfo.fdate >> 9) + 1980, (finfo.fdate >> 5) & 15, finfo.fdate & 31,
+                (finfo.ftime >> 11), (finfo.ftime >> 5) & 63,
+                (DWORD)finfo.fsize, finfo.fname);
+    }
+    printf("%4lu File(s),%10lu bytes total\n%4lu Dir(s)", s1, p1, s2);
+    res = f_getfree("/sd", (DWORD*)&p1, &fs);
+    TEST_ASSERT_EQUAL_INT(FR_OK, res);
+    printf(", %10lu bytes free\n", p1 * fs->csize * 512);
+
+#else
     DIR *dirp;
 
     /* Open the directory */
-    dirp = opendir(g_target);
+    dirp = opendir("/sd");
     TEST_ASSERT_NOT_NULL(dirp);
 
     /* Read each directory entry */
-    int cnt= 0;
+    int cnt = 0;
     for (; ; ) {
         struct dirent *entryp = readdir(dirp);
         if (entryp == NULL) {
@@ -235,9 +265,11 @@ REGISTER_TEST(SDCardTest, directory)
     }
     closedir(dirp);
     TEST_ASSERT_TRUE(cnt > 0);
+#endif
 }
 
-REGISTER_TEST(SDCardTest,read_config_init)
+#if 0
+REGISTER_TEST(SDCardTest, read_config_init)
 {
     TEST_IGNORE();
 }
@@ -258,17 +290,17 @@ REGISTER_TEST(SDCardTest, time_read_write)
 
     systime_t st = clock_systimer();
 
-    uint32_t n= 5000;
+    uint32_t n = 5000;
     for (uint32_t i = 1; i <= n; ++i) {
         char buf[512];
-        size_t x= fwrite(buf, 1, sizeof(buf), fp);
+        size_t x = fwrite(buf, 1, sizeof(buf), fp);
         if(x != sizeof(buf)) {
             TEST_FAIL();
         }
     }
 
     systime_t en = clock_systimer();
-    printf("elapsed time %d us for writing %d bytes, %1.4f bytes/sec\n", TICK2USEC(en-st), n*512, (n*512.0F) / (TICK2USEC(en-st)/1e6F));
+    printf("elapsed time %d us for writing %d bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
 
@@ -280,19 +312,19 @@ REGISTER_TEST(SDCardTest, time_read_write)
     st = clock_systimer();
     for (uint32_t i = 1; i <= n; ++i) {
         char buf[512];
-        size_t x= fread(buf, 1, sizeof(buf), fp);
+        size_t x = fread(buf, 1, sizeof(buf), fp);
         if(x != sizeof(buf)) {
             TEST_FAIL();
         }
     }
     en = clock_systimer();
-    printf("elapsed time %d us for reading %d bytes, %1.4f bytes/sec\n", TICK2USEC(en-st), n*512, (n*512.0F) / (TICK2USEC(en-st)/1e6F));
+    printf("elapsed time %d us for reading %d bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
 }
 #endif
 
-REGISTER_TEST(SDCardTest,unmount)
+REGISTER_TEST(SDCardTest, unmount)
 {
     int ret = f_unmount("sd");
     TEST_ASSERT_EQUAL_INT(FR_OK, ret);
