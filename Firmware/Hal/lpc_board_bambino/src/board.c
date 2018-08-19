@@ -27,8 +27,6 @@
 #include "board.h"
 #include "string.h"
 
-#include "retarget.h"
-
 /** @ingroup BOARD_NGX_XPLORER_18304330
  * @{
  */

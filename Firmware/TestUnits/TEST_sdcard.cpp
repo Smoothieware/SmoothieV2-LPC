@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <unistd.h>
 
 /* Start of support routines for sdmmc, need sto go into a support file of some sort */
 #include "board.h"
@@ -125,7 +125,7 @@ REGISTER_TEST(SDCardTest, raw_read_write)
 {
     int ret;
     char fn[64];
-    strcat(fn, "/sd/test_file.tst");
+    strcat(fn, "/sd/test_file.raw");
 
     // delete it if it was there
     ret= f_unlink(fn);
@@ -171,7 +171,6 @@ REGISTER_TEST(SDCardTest, raw_read_write)
     TEST_ASSERT_EQUAL_INT(FR_OK, ret);
 }
 
-#if 0
 // using posix calls
 REGISTER_TEST(SDCardTest, write_read)
 {
@@ -213,6 +212,7 @@ REGISTER_TEST(SDCardTest, write_read)
     fclose(fp);
 }
 
+#if 0
 REGISTER_TEST(SDCardTest, directory)
 {
     DIR *dirp;

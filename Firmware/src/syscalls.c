@@ -7,17 +7,26 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <fcntl.h>
 
 #include "board.h"
+#include "ff.h"
+
+extern int fatfs_to_errno( FRESULT Result );
+
+/*
+ * Map newlib calls to fflib
+ */
 
 #define __debugbreak()  { __asm volatile ("bkpt #0"); }
 
-/* Variables */
-#undef errno
-extern int errno;
+// support routines
+static int allocate_fh(FIL *fh)
+{
 
-char *__env[1] = { 0 };
-char **environ = __env;
+    return -1;
+}
+
 
 int _getpid(void)
 {
@@ -36,9 +45,9 @@ void _exit (int status)
 	while (1) {}		/* Make sure we hang here */
 }
 
-#if 0
 int _write(int iFileHandle, char *pcBuffer, int iLength)
 {
+    if(iFileHandle < 3) {
 #if defined(DEBUG_ENABLE)
         unsigned int i;
         for (i = 0; i < iLength; i++) {
@@ -47,14 +56,19 @@ int _write(int iFileHandle, char *pcBuffer, int iLength)
 #endif
 
         return iLength;
+    }
+
+    errno= EBADF;
+    return -1;
 }
 
 /* Called by bottom level of scanf routine within RedLib C library to read
    a character. With the default semihosting stub, this would read the character
    from the debugger console window (which acts as stdin). But this version reads
    the character from the LPC1768/RDB1768 UART. */
-int _read(void)
+int _read(int iFileHandle, char *pcBuffer, int iLength)
 {
+    if(iFileHandle < 3) {
 #if defined(DEBUG_ENABLE)
         int c = Board_UARTGetChar();
         return c;
@@ -62,12 +76,57 @@ int _read(void)
 #else
         return (int) -1;
 #endif
+    }
+
+    errno= EBADF;
+    return -1;
 }
-#endif
+
+int _open(char *path, int flags, ...)
+{
+    /* POSIX flags -> FatFS open mode */
+    BYTE openmode;
+    if(flags & O_RDWR) {
+        openmode = FA_READ|FA_WRITE;
+    } else if(flags & O_WRONLY) {
+        openmode = FA_WRITE;
+    } else {
+        openmode = FA_READ;
+    }
+    if(flags & O_CREAT) {
+        if(flags & O_TRUNC) {
+            openmode |= FA_CREATE_ALWAYS;
+        } else {
+            openmode |= FA_OPEN_ALWAYS;
+        }
+    }
+    if(flags & O_APPEND) {
+        openmode |= FA_OPEN_APPEND;
+    }
+
+    FIL *fh= malloc(sizeof(FIL));
+    FRESULT res = f_open(fh, path, openmode);
+    if(res != FR_OK) {
+        free(fh);
+        errno= fatfs_to_errno(res);
+        return -1;
+    }
+
+    // save the fn to fh mapping
+    int fn= allocate_fh(fh);
+    if(fn < 0) {
+        free(fh);
+        errno= ENFILE;
+        return -1;
+    }
+    return fn;
+}
 
 int _close(int file)
 {
-	return -1;
+
+    errno= EBADF;
+    return -1;
 }
 
 int _fstat(int file, struct stat *st)
@@ -78,7 +137,7 @@ int _fstat(int file, struct stat *st)
 
 int _isatty(int file)
 {
-	return 1;
+	return (file >= 0 || file <=2) ? 1 : 0;
 }
 
 int _lseek(int file, int ptr, int dir)
@@ -86,11 +145,6 @@ int _lseek(int file, int ptr, int dir)
 	return 0;
 }
 
-int _open(char *path, int flags, ...)
-{
-	/* Pretend like we always fail */
-	return -1;
-}
 
 int _wait(int *status)
 {
@@ -100,8 +154,13 @@ int _wait(int *status)
 
 int _unlink(char *name)
 {
-	errno = ENOENT;
-	return -1;
+    FRESULT res= f_unlink(name);
+    if(res != FR_OK) {
+        errno= fatfs_to_errno(res);
+        return -1;
+    }
+
+	return 0;
 }
 
 int _times(struct tms *buf)
