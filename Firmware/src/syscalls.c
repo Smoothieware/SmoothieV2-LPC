@@ -20,13 +20,32 @@ extern int fatfs_to_errno( FRESULT Result );
 
 #define __debugbreak()  { __asm volatile ("bkpt #0"); }
 
-// support routines
+// support routines for mapping file numbers to file handles
+#define NFH 10
+static FIL* fh_map[NFH]= {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 static int allocate_fh(FIL *fh)
 {
-
+    for (int i = 0; i < NFH; ++i) {
+        if(fh_map[i] == NULL) {
+            fh_map[i] = fh;
+            return i+3;
+        }
+    }
     return -1;
 }
 
+static FIL* get_fh(int fn)
+{
+    if(fn-3 >= NFH) return NULL;
+    return fh_map[fn-3];
+}
+
+static void deallocate_fh(int fn)
+{
+    if(fn-3 < NFH) {
+        fh_map[fn-3]= NULL;
+    }
+}
 
 int _getpid(void)
 {
@@ -43,43 +62,6 @@ void _exit (int status)
 {
 	_kill(status, -1);
 	while (1) {}		/* Make sure we hang here */
-}
-
-int _write(int iFileHandle, char *pcBuffer, int iLength)
-{
-    if(iFileHandle < 3) {
-#if defined(DEBUG_ENABLE)
-        unsigned int i;
-        for (i = 0; i < iLength; i++) {
-                Board_UARTPutChar(pcBuffer[i]);
-        }
-#endif
-
-        return iLength;
-    }
-
-    errno= EBADF;
-    return -1;
-}
-
-/* Called by bottom level of scanf routine within RedLib C library to read
-   a character. With the default semihosting stub, this would read the character
-   from the debugger console window (which acts as stdin). But this version reads
-   the character from the LPC1768/RDB1768 UART. */
-int _read(int iFileHandle, char *pcBuffer, int iLength)
-{
-    if(iFileHandle < 3) {
-#if defined(DEBUG_ENABLE)
-        int c = Board_UARTGetChar();
-        return c;
-
-#else
-        return (int) -1;
-#endif
-    }
-
-    errno= EBADF;
-    return -1;
 }
 
 int _open(char *path, int flags, ...)
@@ -124,9 +106,83 @@ int _open(char *path, int flags, ...)
 
 int _close(int file)
 {
+    if(file < 3) return 0;
 
-    errno= EBADF;
-    return -1;
+    FIL *fh= get_fh(file);
+    if(fh == NULL) {
+        errno= EBADF;
+        return -1;
+    }
+
+    FRESULT res = f_close(fh);
+    free(fh);
+    deallocate_fh(file);
+
+    if(res != FR_OK) {
+        errno= fatfs_to_errno(res);
+        return -1;
+    }
+    return 0;
+}
+
+int _write(int file, char *buffer, int length)
+{
+    if(file < 3) {
+#if defined(DEBUG_ENABLE)
+        unsigned int i;
+        for (i = 0; i < length; i++) {
+                Board_UARTPutChar(buffer[i]);
+        }
+#endif
+        return length;
+    }
+
+    FIL *fh= get_fh(file);
+    if(fh == NULL) {
+        errno= EBADF;
+        return -1;
+    }
+
+    UINT n;
+    FRESULT res = f_write(fh, buffer, length, &n);
+    if(res != FR_OK) {
+        errno= fatfs_to_errno(res);
+        return -1;
+    }
+
+    return n;
+}
+
+/* Called by bottom level of scanf routine within RedLib C library to read
+   a character. With the default semihosting stub, this would read the character
+   from the debugger console window (which acts as stdin). But this version reads
+   the character from the LPC1768/RDB1768 UART. */
+int _read(int file, char *buffer, int length)
+{
+    if(file < 3) {
+#if defined(DEBUG_ENABLE)
+        for (int i = 0; i < length; ++i) {
+            buffer[i] = Board_UARTGetChar();
+        }
+        return length;
+#else
+        return (int) -1;
+#endif
+    }
+
+    FIL *fh= get_fh(file);
+    if(fh == NULL) {
+        errno= EBADF;
+        return -1;
+    }
+
+    UINT n;
+    FRESULT res = f_read(fh, buffer, length, &n);
+    if(res != FR_OK) {
+        errno= fatfs_to_errno(res);
+        return -1;
+    }
+    return n;
 }
 
 int _fstat(int file, struct stat *st)
