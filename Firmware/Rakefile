@@ -217,7 +217,7 @@ end
 
 task :default => [:build] #, :size]
 
-task :build => ["#{PROG}.bin"]
+task :build => ["#{OBJDIR}/#{PROG}.bin"]
 
 task :size do
   sh "#{SIZE} #{OBJDIR}/#{PROG}.elf"
@@ -228,19 +228,19 @@ task :disasm do
 end
 
 
-file "#{PROG}.bin" => ["#{PROG}.elf"] do
-  puts "Creating .bin for #{TARGET}"
+file "#{OBJDIR}/#{PROG}.bin" => ["#{OBJDIR}/#{PROG}.elf"] do |t|
+  puts "Creating #{t.name} for #{TARGET}"
   sh "#{OBJCOPY} -O binary #{OBJDIR}/#{PROG}.elf #{OBJDIR}/#{PROG}.bin"
 end
 
-file "#{PROG}.elf" => OBJ + ["libhal.a"] do |t|
-  puts "Linking for #{TARGET}"
-  sh "#{$using_cpp ? LDCPP : LD} #{OBJ} -L#{OBJDIR} -lhal #{LDFLAGS} -o #{OBJDIR}/#{t.name}"
+file "#{OBJDIR}/#{PROG}.elf" => OBJ + ["#{OBJDIR}/libhal.a"] do |t|
+  puts "Linking #{t.name} for #{TARGET}"
+  sh "#{$using_cpp ? LDCPP : LD} #{OBJ} -L#{OBJDIR} -lhal #{LDFLAGS} -o #{t.name}"
 end
 
-file "libhal.a" => HAL_OBJ do |t|
+file "#{OBJDIR}/libhal.a" => HAL_OBJ do |t|
   puts "Creating #{t.name} for #{TARGET}"
-  sh "#{AR} #{ARFLAGS} #{OBJDIR}/#{t.name} #{HAL_OBJ}"
+  sh "#{AR} #{ARFLAGS} #{t.name} #{HAL_OBJ}"
 end
 
 #arm-none-eabi-objcopy -R .stack -O ihex ../LPC1768/main.elf ../LPC1768/main.hex
