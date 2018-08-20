@@ -210,6 +210,13 @@ REGISTER_TEST(SDCardTest, write_read)
     fclose(fp);
 }
 
+REGISTER_TEST(SDCardTest, errors)
+{
+    FILE *fp = fopen("no_such_file.xyz", "r");
+    TEST_ASSERT_NULL(fp);
+    TEST_ASSERT_EQUAL_INT(ENOENT, errno);
+}
+
 REGISTER_TEST(SDCardTest, directory)
 {
 #if 1
