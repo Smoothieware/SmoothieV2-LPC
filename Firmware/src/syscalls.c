@@ -187,8 +187,40 @@ int _read(int file, char *buffer, int length)
 
 int _fstat(int file, struct stat *st)
 {
-	st->st_mode = S_IFCHR;
-	return 0;
+    if(file < 3) {
+       st->st_mode = S_IFCHR;
+	   return 0;
+    }
+
+    FIL *fh= get_fh(file);
+    if(fh == NULL) {
+        errno= EBADF;
+        return -1;
+    }
+
+    st->st_size= f_size(fh);
+    st->st_mode= S_IFBLK|S_IFREG;
+
+    return 0;
+}
+
+int _stat(char *file, struct stat *st)
+{
+    FILINFO fno;
+    FRESULT res= f_stat(file, &fno);
+    if(res != FR_OK) {
+        errno= fatfs_to_errno(res);
+        return -1;
+    }
+
+    if(fno.fattrib & AM_DIR) {
+        st->st_mode= S_IFBLK|S_IFDIR;
+    }else{
+        st->st_size= fno.fsize;
+        st->st_mode= S_IFBLK|S_IFREG;
+    }
+
+    return 0;
 }
 
 int _isatty(int file)
@@ -196,9 +228,34 @@ int _isatty(int file)
 	return (file >= 0 || file <=2) ? 1 : 0;
 }
 
-int _lseek(int file, int ptr, int dir)
+int _lseek(int file, int position, int whence)
 {
-	return 0;
+    if(file < 3) {
+       return 0;
+    }
+
+    FIL *fh= get_fh(file);
+    if(fh == NULL) {
+        errno= EBADF;
+        return -1;
+    }
+
+    if(whence == SEEK_END) {
+        position += f_size(fh);
+    } else if(whence==SEEK_CUR) {
+        position += f_tell(fh);
+    } else if(whence!=SEEK_SET) {
+        errno= EINVAL;
+        return -1;
+    }
+
+    FRESULT res = f_lseek(fh, position);
+    if(res != FR_OK) {
+        errno= fatfs_to_errno(res);
+        return -1;
+    }
+
+    return position;
 }
 
 
@@ -222,12 +279,6 @@ int _unlink(char *name)
 int _times(struct tms *buf)
 {
 	return -1;
-}
-
-int _stat(char *file, struct stat *st)
-{
-	st->st_mode = S_IFCHR;
-	return 0;
 }
 
 int _link(char *old, char *new)
