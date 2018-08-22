@@ -10,6 +10,9 @@
 #include "TestRegistry.h"
 #include "board.h"
 #include "FreeRTOS.h"
+#include "task.h"
+#include "timers.h"
+#include "semphr.h"
 
 // #include "OutputStream.h"
 
@@ -41,7 +44,7 @@ static void test_wrapper(void)
 
 static int test_runner(void)
 {
-    auto tests= TestRegistry::instance().get_tests();
+    auto tests = TestRegistry::instance().get_tests();
     printf("There are %d registered tests...\n", tests.size());
     for(auto& i : tests) {
         printf("  %s\n", std::get<1>(i));
@@ -50,18 +53,18 @@ static int test_runner(void)
     UnityBegin("TestUnits");
 
     for(auto i : tests) {
-        TestBase *fnc= std::get<0>(i);
-        const char *name= std::get<1>(i);
-        int ln= std::get<2>(i);
-        Unity.TestFile= std::get<3>(i);
-        test_wrapper_fnc= std::bind(&TestBase::test, fnc);
-        bool st= std::get<4>(i);
+        TestBase *fnc = std::get<0>(i);
+        const char *name = std::get<1>(i);
+        int ln = std::get<2>(i);
+        Unity.TestFile = std::get<3>(i);
+        test_wrapper_fnc = std::bind(&TestBase::test, fnc);
+        bool st = std::get<4>(i);
         if(st) {
-            setup_fnc= std::bind(&TestBase::setUp, fnc);
-            teardown_fnc= std::bind(&TestBase::tearDown, fnc);
-        }else{
-            setup_fnc= nullptr;
-            teardown_fnc= nullptr;
+            setup_fnc = std::bind(&TestBase::setUp, fnc);
+            teardown_fnc = std::bind(&TestBase::tearDown, fnc);
+        } else {
+            setup_fnc = nullptr;
+            teardown_fnc = nullptr;
         }
 
         UnityDefaultTestRun(test_wrapper, name, ln);
@@ -82,43 +85,7 @@ static int run_tests(int argc, char *argv[])
 }
 
 void configureSPIFI();
-void start_rtos();
 
-int main() //int argc, char *argv[])
-{
-    //HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
-    NVIC_SetPriorityGrouping( 0 );
-
-    configureSPIFI(); // full speed ahead
-
-    // int ret = boardctl(BOARDIOC_INIT, 0);
-    // if(OK != ret) {
-    //     printf("ERROR: BOARDIOC_INIT falied\n");
-    // }
-
-    // task_create("tests", SCHED_PRIORITY_DEFAULT,
-    //             30000,
-    //             (main_t)run_tests,
-    //             (FAR char * const *)NULL);
-    // return 1;
-
-    // Read clock settings and update SystemCoreClock variable
-    SystemCoreClockUpdate();
-
-    // Set up and initialize all required blocks and
-    // functions related to the board hardware
-    Board_Init();
-    // Set the LED to the state of "On"
-    Board_LED_Set(0, true);
-
-    printf("MCU clock rate= %lu Hz", SystemCoreClock);
-
-    run_tests(0, nullptr); // argc, argv);
-    struct mallinfo mi = mallinfo();
-    printf("free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize()-mi.fordblks, xPortGetFreeHeapSize());
-
-    start_rtos();
-}
 
 #if 0
 void safe_sleep(uint32_t ms)
@@ -129,7 +96,7 @@ void safe_sleep(uint32_t ms)
 
         if(ms > 10) {
             ms -= 10;
-        }else{
+        } else {
             break;
         }
     }
@@ -141,15 +108,9 @@ void print_to_all_consoles(const char *str)
 }
 #endif
 
-
-// FreeRTOS stuff needs to be moved
-#include "FreeRTOS.h"
-#include "task.h"
-#include "timers.h"
-#include "semphr.h"
-
 /* LED1 toggle thread */
-extern "C" void vLEDTask1(void *pvParameters) {
+extern "C" void vLEDTask1(void *pvParameters)
+{
     bool LedState = false;
 
     while (1) {
@@ -158,19 +119,15 @@ extern "C" void vLEDTask1(void *pvParameters) {
 
         /* About a 3Hz on/off toggle rate */
         vTaskDelay(configTICK_RATE_HZ / 6);
+
     }
 }
 
-void start_rtos()
+extern "C" void vRunTestsTask(void *pvParameters)
 {
-    /* LED1 toggle thread */
-    xTaskCreate(vLEDTask1, "vTaskLed1", configMINIMAL_STACK_SIZE,
-            NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
-
-    /* Start the scheduler */
-    vTaskStartScheduler();
+    run_tests(0, nullptr); // argc, argv);
+    vTaskDelete( NULL );
 }
-
 
 extern "C" void vApplicationTickHook( void )
 {
@@ -221,4 +178,50 @@ extern "C" void vApplicationMallocFailedHook( void )
     taskDISABLE_INTERRUPTS();
     __asm("bkpt #0");
     for( ;; );
+}
+
+int main()   //int argc, char *argv[])
+{
+    //HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
+    NVIC_SetPriorityGrouping( 0 );
+
+    configureSPIFI(); // full speed ahead
+
+    // int ret = boardctl(BOARDIOC_INIT, 0);
+    // if(OK != ret) {
+    //     printf("ERROR: BOARDIOC_INIT falied\n");
+    // }
+
+    // task_create("tests", SCHED_PRIORITY_DEFAULT,
+    //             30000,
+    //             (main_t)run_tests,
+    //             (FAR char * const *)NULL);
+    // return 1;
+
+    // Read clock settings and update SystemCoreClock variable
+    SystemCoreClockUpdate();
+
+    // Set up and initialize all required blocks and
+    // functions related to the board hardware
+    Board_Init();
+    // Set the LED to the state of "On"
+    Board_LED_Set(0, true);
+
+    printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
+
+    /* LED1 toggle thread */
+    xTaskCreate(vLEDTask1, "vTaskLed1", configMINIMAL_STACK_SIZE,
+                NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
+
+    xTaskCreate(vRunTestsTask, "vTestsTask", 4096,
+                NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
+
+    struct mallinfo mi = mallinfo();
+    printf("free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
+
+    /* Start the scheduler */
+    vTaskStartScheduler();
+
+    // should never reach here
+    __asm("bkpt #0");
 }
