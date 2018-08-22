@@ -210,6 +210,39 @@ REGISTER_TEST(SDCardTest, write_read)
     fclose(fp);
 }
 
+REGISTER_TEST(SDCardTest, seek)
+{
+    const char *fn = "/sd/test_file.tst";
+    FILE *fp= fopen(fn, "r");
+    TEST_ASSERT_NOT_NULL(fp);
+    int ret= fseek(fp, 5, SEEK_SET);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    char buf[1];
+    int n= fread(buf, 1, 1, fp);
+    TEST_ASSERT_EQUAL_INT(1, n);
+    TEST_ASSERT_EQUAL_INT('1', buf[0]);
+
+    ret= fseek(fp, 6, SEEK_CUR);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    n= fread(buf, 1, 1, fp);
+    TEST_ASSERT_EQUAL_INT(1, n);
+    TEST_ASSERT_EQUAL_INT('2', buf[0]);
+
+    ret= fseek(fp, -2, SEEK_END);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    n= fread(buf, 1, 1, fp);
+    TEST_ASSERT_EQUAL_INT(1, n);
+    TEST_ASSERT_EQUAL_INT('0', buf[0]);
+
+    fclose(fp);
+}
+
+REGISTER_TEST(SDCardTest, stat)
+{
+    // TODO test fstat and stat
+    TEST_IGNORE();
+}
+
 REGISTER_TEST(SDCardTest, errors)
 {
     FILE *fp = fopen("no_such_file.xyz", "r");
