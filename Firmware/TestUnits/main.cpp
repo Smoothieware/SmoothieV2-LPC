@@ -187,17 +187,6 @@ int main()   //int argc, char *argv[])
 
     configureSPIFI(); // full speed ahead
 
-    // int ret = boardctl(BOARDIOC_INIT, 0);
-    // if(OK != ret) {
-    //     printf("ERROR: BOARDIOC_INIT falied\n");
-    // }
-
-    // task_create("tests", SCHED_PRIORITY_DEFAULT,
-    //             30000,
-    //             (main_t)run_tests,
-    //             (FAR char * const *)NULL);
-    // return 1;
-
     // Read clock settings and update SystemCoreClock variable
     SystemCoreClockUpdate();
 
