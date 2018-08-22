@@ -129,6 +129,13 @@ extern "C" void vRunTestsTask(void *pvParameters)
     vTaskDelete( NULL );
 }
 
+extern "C" int setup_cdc(void);
+extern "C" void vComTask(void *pvParameters)
+{
+    setup_cdc();
+}
+
+
 extern "C" void vApplicationTickHook( void )
 {
     /* This function will be called by each tick interrupt if
@@ -214,6 +221,9 @@ int main()   //int argc, char *argv[])
                 NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
 
     xTaskCreate(vRunTestsTask, "vTestsTask", 4096,
+                NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
+
+    xTaskCreate(vComTask, "vComTask", 4096,
                 NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
 
     struct mallinfo mi = mallinfo();

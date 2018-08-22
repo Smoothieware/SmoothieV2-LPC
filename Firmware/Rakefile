@@ -154,7 +154,8 @@ SRCS.each do |s|
 end
 
 include_dirs = ["./Hal/lpc_board_bambino/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx",
-                "./RTOS/include",  "./Hal/sdmmc/inc", "./Hal/sdmmc/fatfs"] +
+                "./Hal/lpc_chip_43xx/inc/usbd_rom",
+                "./RTOS/include",  "./Hal/sdmmc/inc", "./Hal/sdmmc/fatfs", "./Hal/usb_cdc/inc"] +
                [Dir.glob(['./src/**/'])].flatten # ,'./staging/**/'
 sys_include_dirs = []
 
