@@ -215,6 +215,11 @@ task :clean do
   FileUtils.rm_rf(OBJDIR)
 end
 
+task :cleansrc do
+  FileUtils.rm_rf("#{OBJDIR}/src")
+  FileUtils.rm_rf("#{OBJDIR}/TestUnits")
+end
+
 task :default => [:build] #, :size]
 
 task :build => ["#{OBJDIR}/#{PROG}.bin"]

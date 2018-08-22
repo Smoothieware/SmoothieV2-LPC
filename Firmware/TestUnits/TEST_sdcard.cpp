@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 /* Start of support routines for sdmmc, need sto go into a support file of some sort */
 #include "board.h"
@@ -239,8 +240,13 @@ REGISTER_TEST(SDCardTest, seek)
 
 REGISTER_TEST(SDCardTest, stat)
 {
-    // TODO test fstat and stat
-    TEST_IGNORE();
+    // test stat
+    struct stat buf;
+    int res= stat("/sd/test_file.tst", &buf);
+    TEST_ASSERT_EQUAL_INT(0, res);
+    TEST_ASSERT_EQUAL_INT(71, buf.st_size);
+    TEST_ASSERT_FALSE(S_ISDIR(buf.st_mode));
+    TEST_ASSERT_TRUE(S_ISREG(buf.st_mode));
 }
 
 REGISTER_TEST(SDCardTest, errors)

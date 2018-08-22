@@ -199,7 +199,7 @@ int _fstat(int file, struct stat *st)
     }
 
     st->st_size= f_size(fh);
-    st->st_mode= S_IFBLK|S_IFREG;
+    st->st_mode= S_IFREG;
 
     return 0;
 }
@@ -214,10 +214,10 @@ int _stat(char *file, struct stat *st)
     }
 
     if(fno.fattrib & AM_DIR) {
-        st->st_mode= S_IFBLK|S_IFDIR;
+        st->st_mode= S_IFDIR;
     }else{
         st->st_size= fno.fsize;
-        st->st_mode= S_IFBLK|S_IFREG;
+        st->st_mode= S_IFREG;
     }
 
     return 0;
