@@ -3,7 +3,7 @@
 #include <set>
 #include <tuple>
 
-//#include "OutputStream.h"
+#include "OutputStream.h"
 #include "prettyprint.hpp"
 #include "../Unity/src/unity.h"
 
@@ -50,11 +50,10 @@ REGISTER_TEST(StreamsTest, cout)
 	}
 }
 
-#if 0
 REGISTER_TEST(StreamsTest, OutputStream_null)
 {
 	OutputStream os;
-	os.printf("hello");
+	os.printf("hello null stream");
 }
 
 REGISTER_TEST(StreamsTest, OutputStream_sstream)
@@ -99,4 +98,4 @@ REGISTER_TEST(StreamsTest, OutputStream_long_line)
 	TEST_ASSERT_EQUAL_INT(135, n);
 	TEST_ASSERT_EQUAL_STRING("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012...", oss.str().c_str());
 }
-#endif
+

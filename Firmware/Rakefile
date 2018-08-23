@@ -15,7 +15,10 @@ else
   TARGET = ENV['target']
 end
 
+puts "Target is #{TARGET}"
+
 DEBUG = ENV['debug'] == '1'
+DEBUGLIB = ENV['debuglib'] == '1'
 
 $using_cpp= false
 
@@ -154,7 +157,8 @@ SRCS.each do |s|
 end
 
 include_dirs = ["./Hal/lpc_board_bambino/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx",
-                "./RTOS/include",  "./Hal/sdmmc/inc", "./Hal/sdmmc/fatfs"] +
+                "./Hal/lpc_chip_43xx/inc/usbd_rom",
+                "./RTOS/include",  "./Hal/sdmmc/inc", "./Hal/sdmmc/fatfs", "./Hal/usb_cdc/inc"] +
                [Dir.glob(['./src/**/'])].flatten # ,'./staging/**/'
 sys_include_dirs = []
 
@@ -234,17 +238,17 @@ end
 
 
 file "#{OBJDIR}/#{PROG}.bin" => ["#{OBJDIR}/#{PROG}.elf"] do |t|
-  puts "Creating #{t.name} for #{TARGET}"
+  puts "Creating #{t.name}"
   sh "#{OBJCOPY} -O binary #{OBJDIR}/#{PROG}.elf #{OBJDIR}/#{PROG}.bin"
 end
 
 file "#{OBJDIR}/#{PROG}.elf" => OBJ + ["#{OBJDIR}/libhal.a"] do |t|
-  puts "Linking #{t.name} for #{TARGET}"
+  puts "Linking #{t.name}"
   sh "#{$using_cpp ? LDCPP : LD} #{OBJ} -L#{OBJDIR} -lhal #{LDFLAGS} -o #{t.name}"
 end
 
 file "#{OBJDIR}/libhal.a" => HAL_OBJ do |t|
-  puts "Creating #{t.name} for #{TARGET}"
+  puts "Creating #{t.name}"
   sh "#{AR} #{ARFLAGS} #{t.name} #{HAL_OBJ}"
 end
 
@@ -252,16 +256,16 @@ end
 #arm-none-eabi-objdump -d -f -M reg-names-std --demangle ../LPC1768/main.elf >../LPC1768/main.disasm
 
 rule '.o' => lambda{ |objfile| obj2src(objfile, 'cpp') } do |t|
-  puts "Compiling #{t.source} for #{TARGET}"
+  puts "Compiling #{t.source}"
   sh "#{CCPP} #{CPPFLAGS} #{INCLUDE} #{DEFINES} -c -o #{t.name} #{t.source}"
 end
 
 rule '.o' => lambda{ |objfile| obj2src(objfile, 'c') } do |t|
-  puts "Compiling #{t.source} for #{TARGET}"
+  puts "Compiling #{t.source}"
   sh "#{CC} #{CFLAGS} #{CSTD} #{INCLUDE} #{DEFINES} -c -o #{t.name} #{t.source}"
 end
 
 rule '.o' => lambda{ |objfile| obj2src(objfile, 's') } do |t|
-  puts "Assembling #{t.source} for #{TARGET}"
+  puts "Assembling #{t.source}"
   sh "#{CC} -c -mthumb -mcpu=cortex-m4 -mthumb-interwork -mlittle-endian -mfloat-abi=hard -mfpu=fpv4-sp-d16 -g -Wa,--no-warn -x assembler-with-cpp #{INCLUDE} -o #{t.name} #{t.source}"
 end

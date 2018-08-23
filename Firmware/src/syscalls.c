@@ -223,6 +223,17 @@ int _stat(char *file, struct stat *st)
     return 0;
 }
 
+int rename(const char *old, const char *new)
+{
+    FRESULT res= f_rename(old, new);
+    if(res != FR_OK) {
+        errno= fatfs_to_errno(res);
+        return -1;
+    }
+
+    return 0;
+}
+
 int _isatty(int file)
 {
 	return (file >= 0 || file <=2) ? 1 : 0;

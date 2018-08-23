@@ -14,6 +14,8 @@
 #include "rtc.h"
 #include "ff.h"
 
+#include "FreeRTOS.h"
+
 /* SDMMC card info structure */
 mci_card_struct sdcardinfo;
 
@@ -114,6 +116,8 @@ REGISTER_TEST(SDCardTest, mount)
     //rtc_initialize();
 
     NVIC_DisableIRQ(SDIO_IRQn);
+
+    NVIC_SetPriority(SDIO_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     /* Enable SD/MMC Interrupt */
     NVIC_EnableIRQ(SDIO_IRQn);
 
@@ -247,6 +251,20 @@ REGISTER_TEST(SDCardTest, stat)
     TEST_ASSERT_EQUAL_INT(71, buf.st_size);
     TEST_ASSERT_FALSE(S_ISDIR(buf.st_mode));
     TEST_ASSERT_TRUE(S_ISREG(buf.st_mode));
+}
+
+REGISTER_TEST(SDCardTest, rename)
+{
+    // delete new if it was there
+    unlink("/sd/test_file_2.tst");
+
+    int res= rename("/sd/test_file.tst", "/sd/test_file_2.tst");
+    TEST_ASSERT_EQUAL_INT(0, res);
+    struct stat buf;
+    res= stat("/sd/test_file.tst", &buf);
+    TEST_ASSERT_EQUAL_INT(-1, res);
+    res= stat("/sd/test_file_2.tst", &buf);
+    TEST_ASSERT_EQUAL_INT(0, res);
 }
 
 REGISTER_TEST(SDCardTest, errors)

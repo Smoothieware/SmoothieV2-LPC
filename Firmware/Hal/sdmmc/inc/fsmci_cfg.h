@@ -119,7 +119,7 @@ typedef mci_card_struct CARD_HANDLE_T;
  * @def		FSMCI_InitRealTimeClock()
  * @brief	Initialize the real time clock
  */
-#define FSMCI_InitRealTimeClock()       rtc_initialize()
+#define FSMCI_InitRealTimeClock()       // rtc_initialize()
 
 #if (!defined(BOARD_NGX_XPLORER_4330) && !defined(BOARD_NGX_XPLORER_1830))
 #define FSMCI_CardInsertWait(hc)        while (Chip_SDIF_CardNDetect(LPC_SDMMC)) {}

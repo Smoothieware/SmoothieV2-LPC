@@ -1,58 +1,73 @@
 {
+	"build_systems":
+	[
+		{
+			"cmd":
+			[
+				"rake",
+				"target=Bambino",
+				"-m"
+			],
+			"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+			"name": "Project Local rake",
+			"variants":
+			[
+				{
+					"cmd":
+					[
+						"rake",
+						"target=Bambino",
+						"upload"
+					],
+					"name": "Run"
+				},
+				{
+					"cmd":
+					[
+						"rake",
+						"target=Bambino",
+						"debug=1"
+					],
+					"name": "Firmware DEBUG"
+				},
+				{
+					"cmd":
+					[
+						"rake",
+						"target=Bambino",
+						"testing=1",
+						"debug=1"
+					],
+					"name": "Test Units"
+				},
+				{
+					"cmd":
+					[
+						"rake",
+						"target=Bambino",
+						"clean"
+					],
+					"name": "Clean"
+				},
+				{
+					"cmd":
+					[
+						"rake",
+						"target=Bambino"
+					],
+					"name": "Firmware optimized"
+				}
+			],
+			"working_dir": "${file_path}"
+		}
+	],
 	"folders":
 	[
 		{
 			"path": "."
+		},
+		{
+			"path": "/home/morris/work/reprap/nuttx-smoothie2/smoothie-v2/Firmware"
 		}
-	],
-
-    "build_systems":
-    [
-        {
-            "cmd": [ "rake", "target=Bambino", "-m"],
-            "file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
-            "name": "Project Local rake",
-
-            "variants":
-            [
-                    {
-                            "cmd":
-                            [
-                                    "rake", "target=Bambino", "upload"
-                            ],
-                            "name": "Run"
-                    },
-                    {
-                            "cmd":
-                            [
-                                    "rake", "target=Bambino", "debug=1"
-                            ],
-                            "name": "Firmware DEBUG"
-                    },
-                    {
-                            "cmd":
-                            [
-                                    "rake", "target=Bambino",     "testing=1", "debug=1"
-                            ],
-                            "name": "Test Units"
-                    },
-                    {
-                            "cmd":
-                            [
-                                    "rake", "target=Bambino",     "clean"
-                            ],
-                            "name": "Clean"
-                    },
-                    {
-                            "cmd":
-                            [
-                                    "rake", "target=Bambino",
-                            ],
-                            "name": "Firmware optimized"
-                    }
-            ],
-            "working_dir": "${file_path}"
-        }
-    ]
-
+	]
 }

@@ -119,15 +119,26 @@ extern "C" void vLEDTask1(void *pvParameters)
 
         /* About a 3Hz on/off toggle rate */
         vTaskDelay(configTICK_RATE_HZ / 6);
-
     }
 }
 
 extern "C" void vRunTestsTask(void *pvParameters)
 {
     run_tests(0, nullptr); // argc, argv);
+
+    //vTaskGetTaskState();
+    UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+    printf("High water mark= %lu\n", uxHighWaterMark);
     vTaskDelete( NULL );
 }
+
+extern "C" int setup_cdc(void);
+extern "C" void vComTask(void *pvParameters)
+{
+    setup_cdc();
+    // does not return
+}
+
 
 extern "C" void vApplicationTickHook( void )
 {
@@ -147,6 +158,7 @@ extern "C" void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTask
     configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
     function is called if a stack overflow is detected. */
     taskDISABLE_INTERRUPTS();
+    __asm("bkpt #0");
     for( ;; );
 }
 
@@ -202,8 +214,11 @@ int main()   //int argc, char *argv[])
     xTaskCreate(vLEDTask1, "vTaskLed1", configMINIMAL_STACK_SIZE,
                 NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
 
-    xTaskCreate(vRunTestsTask, "vTestsTask", 4096,
-                NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
+    xTaskCreate(vRunTestsTask, "vTestsTask", 512, /* *4 as 32bit words */
+                NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
+
+    xTaskCreate(vComTask, "vComTask", 128,
+                NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
 
     struct mallinfo mi = mallinfo();
     printf("free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
