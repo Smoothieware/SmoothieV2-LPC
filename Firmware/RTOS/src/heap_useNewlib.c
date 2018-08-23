@@ -72,19 +72,20 @@
     static int totalBytesProvidedBySBRK = 0;
 #endif
 extern char __HeapBase;  // make sure to define these symbols in linker command file
-static int heapBytesRemaining = -1;
 extern void _vStackTop(void);
+static int heapBytesRemaining = -1;
 //! sbrk/_sbrk version supporting reentrant newlib (depends upon above symbols defined by linker control file).
 char * sbrk(int incr) {
     static char *currentHeapEnd = &__HeapBase;
+    static char *stackBase= (char *)&_vStackTop - 2048; // (char *)__get_MSP(); // current stack
+
     vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started
 
-    char *stack=  (char *)&_vStackTop - 2048; // (char *)__get_MSP(); // current stack
     if(heapBytesRemaining < 0) {
-        heapBytesRemaining = stack - currentHeapEnd;
+        heapBytesRemaining = stackBase - currentHeapEnd;
     }
     char *previousHeapEnd = currentHeapEnd;
-    if (currentHeapEnd + incr >= stack) {
+    if (currentHeapEnd + incr >= stackBase) {
         #if( configUSE_MALLOC_FAILED_HOOK == 1 )
         {
             extern void vApplicationMallocFailedHook( void );
