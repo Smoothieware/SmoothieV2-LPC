@@ -37,11 +37,15 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "stream_buffer.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
 static xTaskHandle xTaskToNotify = NULL;
+StreamBufferHandle_t CDCStreamBuffer;
+extern xTaskHandle CDCDTaskh;
+
 
 static USBD_HANDLE_T g_hUsb;
 static uint8_t g_rxBuff[256];
@@ -139,7 +143,7 @@ int setup_cdc(void)
 	USBD_API_INIT_PARAM_T usb_param;
 	USB_CORE_DESCS_T desc;
 	ErrorCode_t ret = LPC_OK;
-	uint32_t prompt = 0, rdCnt = 0;
+	uint32_t rdCnt = 0;
 	USB_CORE_CTRL_T *pCtrl;
 
 	/* Store the handle of the calling task. */
@@ -202,10 +206,17 @@ int setup_cdc(void)
 
 	}
 
+	CDCStreamBuffer = xStreamBufferCreate( 256, 1 );
+    if( CDCStreamBuffer == NULL ) {
+		printf("ERROR: could not create CDC Strem Buffer\n");
+    }
+	const TickType_t xsendwaitms = pdMS_TO_TICKS( 50 );
 	bool first= true;
 	uint32_t timeouts= 0;
-	char line[132];
-	int cnt= 0;
+
+	printf("telling CDC Task to start\n");
+	xTaskNotifyGive( CDCDTaskh ); // notify CDC task to start
+
 	while (1) {
 		/* Wait to be notified that the transmission is complete.  Note the first
 		parameter is pdTRUE, which has the effect of clearing the task's notification
@@ -232,30 +243,33 @@ int setup_cdc(void)
 			// 	vcom_write(&g_rxBuff[0], rdCnt);
 			// }
 		// }
-		if(prompt == 0) {
+		if(first) {
 			// wait for first character
 			rdCnt = vcom_bread(&g_rxBuff[0], 256);
 			if(rdCnt > 0) {
 				for (int i = 0; i < rdCnt; ++i) {
 					if(g_rxBuff[i] == '\n') {
-						prompt= 1;
+						first= false;
 					}
 				}
+				if(!first) {
+					vcom_write((uint8_t *)"Welcome to Smoothev2\r\n", 22);
+				}
 			}
+
 		}else{
-			if(first) {
-				vcom_write((uint8_t *)"Welcome to Smoothev2\r\n", 22);
-				first= false;
-			}
+			// we read as much as we can and stream it to the waiting stream
 			rdCnt = vcom_bread(&g_rxBuff[0], 256);
-			if(rdCnt > 0) {
-				for (int i = 0; i < rdCnt; ++i) {
-					line[cnt++]= g_rxBuff[i];
-					if(g_rxBuff[i] == '\n' || cnt >= sizeof(line)) {
-						vcom_write((uint8_t *)line, cnt);
-						cnt= 0;
-					}
-				}
+			uint32_t sentCnt= 0;
+			while(sentCnt < rdCnt) {
+				// if we can't send it all we keep trying
+				// TODO we need for the upstream USB to stall, which it currently will not, it'll just overwrite the buffer
+				// also wait indefinitely for it to send it, otherwise we lose stuff
+				size_t xBytesSent = xStreamBufferSend( CDCStreamBuffer,
+                                   ( void * ) &g_rxBuff[sentCnt],
+                                   rdCnt-sentCnt,
+                                   xsendwaitms );
+				sentCnt += xBytesSent;
 			}
 		}
 	}

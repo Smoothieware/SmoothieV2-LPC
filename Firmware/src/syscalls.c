@@ -128,12 +128,10 @@ int _close(int file)
 int _write(int file, char *buffer, int length)
 {
     if(file < 3) {
-#if defined(DEBUG_ENABLE)
         unsigned int i;
         for (i = 0; i < length; i++) {
                 Board_UARTPutChar(buffer[i]);
         }
-#endif
         return length;
     }
 
@@ -153,21 +151,14 @@ int _write(int file, char *buffer, int length)
     return n;
 }
 
-/* Called by bottom level of scanf routine within RedLib C library to read
-   a character. With the default semihosting stub, this would read the character
-   from the debugger console window (which acts as stdin). But this version reads
-   the character from the LPC1768/RDB1768 UART. */
 int _read(int file, char *buffer, int length)
 {
     if(file < 3) {
-#if defined(DEBUG_ENABLE)
         for (int i = 0; i < length; ++i) {
+            // TODO should probably do a non blocking version
             buffer[i] = Board_UARTGetChar();
         }
         return length;
-#else
-        return (int) -1;
-#endif
     }
 
     FIL *fh= get_fh(file);

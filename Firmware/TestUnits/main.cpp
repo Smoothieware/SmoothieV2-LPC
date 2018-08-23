@@ -139,6 +139,71 @@ extern "C" void vComTask(void *pvParameters)
     // does not return
 }
 
+// example to read the incoming CDC data using stream buffers
+#include "stream_buffer.h"
+extern "C" StreamBufferHandle_t CDCStreamBuffer;
+xTaskHandle CDCDTaskh;
+
+extern "C" void readCDCTask(void *pvParameters)
+{
+    // wait for vComTask to setup the CDC
+    ulTaskNotifyTake( pdTRUE, portMAX_DELAY ); /* Block indefinitely. */
+    printf("readCDCTask started\n");
+
+    char buf[256];
+    char line[132];
+    bool discard = false;
+    size_t cnt= 0;
+    const TickType_t waitms = pdMS_TO_TICKS( 100 );
+    while(1) {
+        // now read lines and dispatch them
+        size_t xReceivedBytes = xStreamBufferReceive( CDCStreamBuffer,
+                                           ( void * ) buf,
+                                           sizeof( buf ),
+                                           waitms );
+
+        if(xReceivedBytes == 0) continue;
+
+        //printf("Got %d bytes\n", xReceivedBytes);
+        for (size_t i = 0; i < xReceivedBytes; ++i) {
+            line[cnt]= buf[i];
+
+            if(line[cnt] == 24) { // ^X
+                printf("ALARM: Abort during cycle\n");
+                discard = false;
+                cnt = 0;
+
+            } else if(line[cnt] == '?') {
+                printf("query\n");
+
+            } else if(discard) {
+                // we discard long lines until we get the newline
+                if(line[cnt] == '\n') discard = false;
+
+            } else if(cnt >= sizeof(line) - 1) {
+                // discard long lines
+                discard = true;
+                cnt = 0;
+                printf("error:Discarding long line\n");
+
+            } else if(line[cnt] == '\n') {
+                line[cnt] = '\0'; // remove the \n and nul terminate
+                printf("got line: %s\n", line);
+                cnt = 0;
+
+            } else if(line[cnt] == '\r') {
+                // ignore CR
+                continue;
+
+            } else if(line[cnt] == 8 || line[cnt] == 127) { // BS or DEL
+                if(cnt > 0) --cnt;
+
+            } else {
+                ++cnt;
+            }
+       }
+    }
+}
 
 extern "C" void vApplicationTickHook( void )
 {
@@ -217,8 +282,11 @@ int main()   //int argc, char *argv[])
     xTaskCreate(vRunTestsTask, "vTestsTask", 512, /* *4 as 32bit words */
                 NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
 
-    xTaskCreate(vComTask, "vComTask", 128,
+    xTaskCreate(vComTask, "vComTask", 256,
                 NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+
+    xTaskCreate(readCDCTask, "readcdctask", 512,
+                NULL, (tskIDLE_PRIORITY + 3UL), &CDCDTaskh);
 
     struct mallinfo mi = mallinfo();
     printf("free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
