@@ -35,9 +35,13 @@
 #include "app_usbd_cfg.h"
 #include "cdc_vcom.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
+static xSemaphoreHandle xCDCEventSemaphore;
 
 static USBD_HANDLE_T g_hUsb;
 static uint8_t g_rxBuff[256];
@@ -90,7 +94,11 @@ ErrorCode_t EP0_patch(USBD_HANDLE_T hUsb, void *data, uint32_t event)
  */
 void USB_IRQHandler(void)
 {
+	static BaseType_t xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
 	USBD_API->hw->ISR(g_hUsb);
+	xSemaphoreGiveFromISR( xCDCEventSemaphore, &xHigherPriorityTaskWoken );
+	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 /* Find the address of interface descriptor for given class type. */
@@ -132,6 +140,8 @@ int setup_cdc(void)
 	ErrorCode_t ret = LPC_OK;
 	uint32_t prompt = 0, rdCnt = 0;
 	USB_CORE_CTRL_T *pCtrl;
+
+	xCDCEventSemaphore= xSemaphoreCreateBinary();
 
 	/* enable clocks and pinmux */
 	USB_init_pin_clk();
@@ -182,6 +192,7 @@ int setup_cdc(void)
 		ret = vcom_init(g_hUsb, &desc, &usb_param);
 		if (ret == LPC_OK) {
 			/*  enable USB interrupts */
+			NVIC_SetPriority(LPC_USB_IRQ, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
 			NVIC_EnableIRQ(LPC_USB_IRQ);
 			/* now connect */
 			USBD_API->hw->Connect(g_hUsb, 1);
@@ -192,9 +203,11 @@ int setup_cdc(void)
 	DEBUGSTR("USB CDC class based virtual Comm port setup\r\n");
 
 	while (1) {
+		xSemaphoreTake( xCDCEventSemaphore, 300/portTICK_RATE_MS );
+
 		/* Check if host has connected and opened the VCOM port */
 		if ((vcom_connected() != 0) && (prompt == 0)) {
-			vcom_write("Hello World!!\r\n", 15);
+			vcom_write((uint8_t *)"Welcome to Smoothev2\r\n", 22);
 			prompt = 1;
 		}
 		/* If VCOM port is opened echo whatever we receive back to host. */
@@ -204,8 +217,6 @@ int setup_cdc(void)
 				vcom_write(&g_rxBuff[0], rdCnt);
 			}
 		}
-		/* Sleep until next IRQ happens */
-		__WFI();
 	}
 }
 

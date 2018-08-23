@@ -111,6 +111,24 @@ static ErrorCode_t VCOM_SetLineCode(USBD_HANDLE_T hCDC, CDC_LINE_CODING *line_co
 	return LPC_OK;
 }
 
+// JM++ added this to aid in detecting the host connecting
+static uint8_t host_connected_cnt;
+static bool host_connected;
+static ErrorCode_t VCOM_SetCtrlLineState(USBD_HANDLE_T hCDC, uint16_t state)
+{
+    // get this on connect and disconnect no way to distinguish
+    // also get it on intial setup and cable connect disconnect
+    host_connected_cnt++;
+    host_connected= (host_connected_cnt&1) == 0;
+    //if(host_connected) dispatch("\030connected", 10);
+	// VCOM_DATA_T *pVcom = &g_vCOM;
+	// if(host_connected){
+	// 	pVcom->tx_flags = VCOM_TX_CONNECTED;
+	// }
+	return LPC_OK;
+}
+
+
 /* CDC EP0_patch part of WORKAROUND for artf42016. */
 static ErrorCode_t CDC_ep0_override_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 {
@@ -170,6 +188,7 @@ ErrorCode_t vcom_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
 	ErrorCode_t ret = LPC_OK;
 	uint32_t ep_indx;
 	USB_CORE_CTRL_T *pCtrl = (USB_CORE_CTRL_T *) hUsb;
+	memset(&g_vCOM, 0, sizeof(VCOM_DATA_T));
 
 	g_vCOM.hUsb = hUsb;
 	memset((void *) &cdc_param, 0, sizeof(USBD_CDC_INIT_PARAM_T));
@@ -178,6 +197,9 @@ ErrorCode_t vcom_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
 	cdc_param.cif_intf_desc = (uint8_t *) find_IntfDesc(pDesc->high_speed_desc, CDC_COMMUNICATION_INTERFACE_CLASS);
 	cdc_param.dif_intf_desc = (uint8_t *) find_IntfDesc(pDesc->high_speed_desc, CDC_DATA_INTERFACE_CLASS);
 	cdc_param.SetLineCode = VCOM_SetLineCode;
+	cdc_param.SetCtrlLineState = VCOM_SetCtrlLineState;
+	host_connected_cnt= 0;
+	host_connected= false;
 
 	ret = USBD_API->cdc->init(hUsb, &cdc_param, &g_vCOM.hCdc);
 	if (ret != LPC_OK) {

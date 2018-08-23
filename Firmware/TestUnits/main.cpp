@@ -133,6 +133,7 @@ extern "C" int setup_cdc(void);
 extern "C" void vComTask(void *pvParameters)
 {
     setup_cdc();
+    // does not return
 }
 
 

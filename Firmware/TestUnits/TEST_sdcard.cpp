@@ -14,6 +14,8 @@
 #include "rtc.h"
 #include "ff.h"
 
+#include "FreeRTOS.h"
+
 /* SDMMC card info structure */
 mci_card_struct sdcardinfo;
 
@@ -114,6 +116,8 @@ REGISTER_TEST(SDCardTest, mount)
     //rtc_initialize();
 
     NVIC_DisableIRQ(SDIO_IRQn);
+
+    NVIC_SetPriority(SDIO_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     /* Enable SD/MMC Interrupt */
     NVIC_EnableIRQ(SDIO_IRQn);
 
