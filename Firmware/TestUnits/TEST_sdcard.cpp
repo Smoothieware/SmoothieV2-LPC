@@ -253,6 +253,20 @@ REGISTER_TEST(SDCardTest, stat)
     TEST_ASSERT_TRUE(S_ISREG(buf.st_mode));
 }
 
+REGISTER_TEST(SDCardTest, rename)
+{
+    // delete new if it was there
+    unlink("/sd/test_file_2.tst");
+
+    int res= rename("/sd/test_file.tst", "/sd/test_file_2.tst");
+    TEST_ASSERT_EQUAL_INT(0, res);
+    struct stat buf;
+    res= stat("/sd/test_file.tst", &buf);
+    TEST_ASSERT_EQUAL_INT(-1, res);
+    res= stat("/sd/test_file_2.tst", &buf);
+    TEST_ASSERT_EQUAL_INT(0, res);
+}
+
 REGISTER_TEST(SDCardTest, errors)
 {
     FILE *fp = fopen("no_such_file.xyz", "r");

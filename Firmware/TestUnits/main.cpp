@@ -221,11 +221,11 @@ int main()   //int argc, char *argv[])
     xTaskCreate(vLEDTask1, "vTaskLed1", configMINIMAL_STACK_SIZE,
                 NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
 
-    xTaskCreate(vRunTestsTask, "vTestsTask", 4096,
-                NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
+    xTaskCreate(vRunTestsTask, "vTestsTask", 1024,
+                NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
 
-    xTaskCreate(vComTask, "vComTask", 4096,
-                NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
+    xTaskCreate(vComTask, "vComTask", 1024,
+                NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
 
     struct mallinfo mi = mallinfo();
     printf("free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
