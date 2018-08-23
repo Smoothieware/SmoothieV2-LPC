@@ -36,12 +36,12 @@
 #include "cdc_vcom.h"
 
 #include "FreeRTOS.h"
-#include "semphr.h"
+#include "task.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
-static xSemaphoreHandle xCDCEventSemaphore;
+static xTaskHandle xTaskToNotify = NULL;
 
 static USBD_HANDLE_T g_hUsb;
 static uint8_t g_rxBuff[256];
@@ -64,22 +64,21 @@ const USBD_API_T *g_pUsbApi;
 ErrorCode_t EP0_patch(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 {
 	switch (event) {
-	case USB_EVT_OUT_NAK:
-		if (g_ep0RxBusy) {
-			/* we already queued the buffer so ignore this NAK event. */
-			return LPC_OK;
-		}
-		else {
-			/* Mark EP0_RX buffer as busy and allow base handler to queue the buffer. */
-			g_ep0RxBusy = 1;
-		}
-		break;
+		case USB_EVT_OUT_NAK:
+			if (g_ep0RxBusy) {
+				/* we already queued the buffer so ignore this NAK event. */
+				return LPC_OK;
+			} else {
+				/* Mark EP0_RX buffer as busy and allow base handler to queue the buffer. */
+				g_ep0RxBusy = 1;
+			}
+			break;
 
-	case USB_EVT_SETUP:	/* reset the flag when new setup sequence starts */
-	case USB_EVT_OUT:
-		/* we received the packet so clear the flag. */
-		g_ep0RxBusy = 0;
-		break;
+		case USB_EVT_SETUP:	/* reset the flag when new setup sequence starts */
+		case USB_EVT_OUT:
+			/* we received the packet so clear the flag. */
+			g_ep0RxBusy = 0;
+			break;
 	}
 	return g_Ep0BaseHdlr(hUsb, data, event);
 }
@@ -97,7 +96,9 @@ void USB_IRQHandler(void)
 	static BaseType_t xHigherPriorityTaskWoken;
 	xHigherPriorityTaskWoken = pdFALSE;
 	USBD_API->hw->ISR(g_hUsb);
-	xSemaphoreGiveFromISR( xCDCEventSemaphore, &xHigherPriorityTaskWoken );
+
+	/* Notify the task that the transmission is complete. */
+	vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
@@ -141,7 +142,8 @@ int setup_cdc(void)
 	uint32_t prompt = 0, rdCnt = 0;
 	USB_CORE_CTRL_T *pCtrl;
 
-	xCDCEventSemaphore= xSemaphoreCreateBinary();
+	/* Store the handle of the calling task. */
+	xTaskToNotify = xTaskGetCurrentTaskHandle();
 
 	/* enable clocks and pinmux */
 	USB_init_pin_clk();
@@ -200,21 +202,60 @@ int setup_cdc(void)
 
 	}
 
-	DEBUGSTR("USB CDC class based virtual Comm port setup\r\n");
-
+	bool first= true;
+	uint32_t timeouts= 0;
+	char line[132];
+	int cnt= 0;
 	while (1) {
-		xSemaphoreTake( xCDCEventSemaphore, 300/portTICK_RATE_MS );
+		/* Wait to be notified that the transmission is complete.  Note the first
+		parameter is pdTRUE, which has the effect of clearing the task's notification
+		value back to 0, making the notification value act like a binary (rather than
+		a counting) semaphore.  */
+		uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( 300 ) );
+
+		if( ulNotificationValue == 1 ) {
+			/* The transmission ended as expected. */
+		} else {
+			/* The call to ulTaskNotifyTake() timed out. */
+			timeouts++;
+		}
 
 		/* Check if host has connected and opened the VCOM port */
-		if ((vcom_connected() != 0) && (prompt == 0)) {
-			vcom_write((uint8_t *)"Welcome to Smoothev2\r\n", 22);
-			prompt = 1;
-		}
+		// if ((vcom_connected() != 0) && (prompt == 0)) {
+		// 	vcom_write((uint8_t *)"Welcome to Smoothev2\r\n", 22);
+		// 	prompt = 1;
+		// }
 		/* If VCOM port is opened echo whatever we receive back to host. */
-		if (prompt) {
+		// if (prompt) {
+			// rdCnt = vcom_bread(&g_rxBuff[0], 256);
+			// if (rdCnt) {
+			// 	vcom_write(&g_rxBuff[0], rdCnt);
+			// }
+		// }
+		if(prompt == 0) {
+			// wait for first character
 			rdCnt = vcom_bread(&g_rxBuff[0], 256);
-			if (rdCnt) {
-				vcom_write(&g_rxBuff[0], rdCnt);
+			if(rdCnt > 0) {
+				for (int i = 0; i < rdCnt; ++i) {
+					if(g_rxBuff[i] == '\n') {
+						prompt= 1;
+					}
+				}
+			}
+		}else{
+			if(first) {
+				vcom_write((uint8_t *)"Welcome to Smoothev2\r\n", 22);
+				first= false;
+			}
+			rdCnt = vcom_bread(&g_rxBuff[0], 256);
+			if(rdCnt > 0) {
+				for (int i = 0; i < rdCnt; ++i) {
+					line[cnt++]= g_rxBuff[i];
+					if(g_rxBuff[i] == '\n' || cnt >= sizeof(line)) {
+						vcom_write((uint8_t *)line, cnt);
+						cnt= 0;
+					}
+				}
 			}
 		}
 	}
