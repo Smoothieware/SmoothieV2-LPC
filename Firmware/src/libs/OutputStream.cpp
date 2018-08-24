@@ -4,10 +4,10 @@
 #include <cstring>
 #include <stdio.h>
 
-OutputStream::OutputStream(int fd) : append_nl(false), prepend_ok(false), deleteos(true)
+OutputStream::OutputStream(wrfnc f) : append_nl(false), prepend_ok(false), deleteos(true)
 {
-	// create an output stream using the given fd
-	fdbuf = new FdBuf(fd);
+	// create an output stream using the given write fnc
+	fdbuf = new FdBuf(f);
 	os = new std::ostream(fdbuf);
 	*os << std::unitbuf; // auto flush on every write
 }
@@ -75,21 +75,36 @@ int OutputStream::FdBuf::sync()
 {
 	// USB CDC can't write more than 64 bytes at a time so limit it here
 	if(!this->str().empty()) {
-		int len= this->str().size();
-		if(len < 64) {
-			// FIXME write may return less than len need to address that case
-			::write(fd, this->str().c_str(), len);
+		size_t len = this->str().size();
+		if(len <= 64) {
+			// write fnc may return less than len need to address that case
+			size_t sent_cnt = 0;
+			while(sent_cnt < len) {
+				int n = fnc(this->str().substr(sent_cnt, len).c_str(), len-sent_cnt);
+				if(n >= 0) {
+					sent_cnt += n;
+				} else {
+					::printf("error: write fnc failed\n");
+					break;
+				}
+			}
+
 			//::printf("write: %d\n", s);
 
 		} else {
 			// FIXME: hack before we fix the cdc driver
-			int n = len;
+			size_t n = len;
 			int off = 0;
 			while(n > 0) {
-				int s = std::min(63, n);
-				s = ::write(fd, this->str().substr(off, s).c_str(), s);
-				off += s;
-				n -= s;
+				int s = std::min((size_t)64, n);
+				s = fnc(this->str().substr(off, s).c_str(), s);
+				if( s >= 0) {
+					off += s;
+					n -= s;
+				} else {
+					::printf("error: write fnc failed\n");
+					break;
+				}
 			}
 		}
 		this->str("");

@@ -2,6 +2,7 @@
 #include <sstream>
 #include <set>
 #include <tuple>
+#include <vector>
 
 #include "OutputStream.h"
 #include "prettyprint.hpp"
@@ -64,16 +65,68 @@ REGISTER_TEST(StreamsTest, OutputStream_sstream)
 	printf("oss = %s\n", oss.str().c_str());
 	std::cout << oss.str() << "\n";
 	TEST_ASSERT_EQUAL_STRING("hello world", oss.str().c_str());
-}
-
-REGISTER_TEST(StreamsTest, OutputStream_fdstream)
-{
-	OutputStream os(1); // stdout
-	os.printf("hello world on fd stdout OutputStream\n");
-
 	// also test cout
 	OutputStream os2(&std::cout);
 	os2.printf("hello world from cout OutputStream\n");
+}
+
+static int stdout_write_fnc(const char *buf, size_t len)
+{
+	return write(1, buf, len);
+}
+static std::ostringstream toss;
+static int partial_write_fnc(const char *buf, size_t len)
+{
+	size_t n= std::min(4U, len);
+	toss.write(buf, n);
+	return n;
+}
+static std::vector<int> chunks;
+static std::vector<char> chunk_data;
+static int chunk_write_fnc(const char *buf, size_t len)
+{
+	chunks.push_back(len);
+	for (size_t i = 0; i < len; ++i) {
+		chunk_data.push_back(buf[i]);
+	}
+	return len;
+}
+
+REGISTER_TEST(StreamsTest, OutputStream_fncstream)
+{
+	OutputStream::wrfnc fnc(stdout_write_fnc);
+	OutputStream os(fnc); // stdout
+	os.printf("hello world on fd stdout OutputStream\n");
+
+	// test that writes returning < len work
+	TEST_ASSERT_TRUE(toss.str().empty());
+	OutputStream::wrfnc fnc2(partial_write_fnc);
+	OutputStream os2(fnc2);
+	int n= os2.puts("1234567890");
+	TEST_ASSERT_EQUAL_INT(10, n);
+	TEST_ASSERT_EQUAL_STRING("1234567890", toss.str().c_str());
+	toss.str("");
+
+	// test that writes > 64 get broken up into 64 byte writes
+	char buf[200];
+	for (int i = 0; i < 200; ++i) {
+	    buf[i]= i;
+	}
+	OutputStream::wrfnc fnc3(chunk_write_fnc);
+	OutputStream os3(fnc3);
+	n= os3.write(buf, 200);
+	TEST_ASSERT_EQUAL_INT(200, n);
+	TEST_ASSERT_EQUAL_INT(4, chunks.size());
+	TEST_ASSERT_EQUAL_INT(64, chunks[0]);
+	TEST_ASSERT_EQUAL_INT(64, chunks[1]);
+	TEST_ASSERT_EQUAL_INT(64, chunks[2]);
+	TEST_ASSERT_EQUAL_INT(8, chunks[3]);
+
+	TEST_ASSERT_EQUAL_INT(200, chunk_data.size());
+	for (int i = 0; i < 200; ++i) {
+	    TEST_ASSERT_EQUAL_INT(i, chunk_data[i]);
+	}
+
 }
 
 REGISTER_TEST(StreamsTest, OutputStream_prependok)

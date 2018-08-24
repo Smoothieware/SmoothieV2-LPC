@@ -4,6 +4,7 @@
 #include <ostream>
 #include <sstream>
 #include <unistd.h>
+#include <functional>
 
 /**
 	Handles an output stream from gcode/mcode handlers
@@ -12,12 +13,13 @@
 class OutputStream
 {
 public:
+	using wrfnc = std::function<int(const char *buffer, size_t size)>;
 	// create a null output stream
 	OutputStream() : os(nullptr), fdbuf(nullptr), append_nl(false), prepend_ok(false), deleteos(false) {};
 	// create from an existing ostream
 	OutputStream(std::ostream *o) : os(o), fdbuf(nullptr), append_nl(false), prepend_ok(false), deleteos(false) {};
-	// create from an open file descriptor
-	OutputStream(int fd);
+	// create using a supplied write fnc
+	OutputStream(wrfnc f);
 
 	virtual ~OutputStream();
 
@@ -32,14 +34,14 @@ public:
 	int flush_prepend();
 
 private:
-	// Hack to allow us to create a ostream writing to the USBCDC fd we have open
+	// Hack to allow us to create a ostream writing to a supplied write function (used for the USBCDC)
 	class FdBuf : public std::stringbuf
 	{
 	public:
-		FdBuf(int f) : fd(f) {};
+		FdBuf(wrfnc f) : fnc(f) {};
 		virtual int sync();
 	private:
-		int fd;
+		wrfnc fnc;
 	};
 
 	std::ostream *os;
