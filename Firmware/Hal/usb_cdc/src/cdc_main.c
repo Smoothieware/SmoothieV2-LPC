@@ -37,18 +37,18 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "stream_buffer.h"
+#include "queue.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
 static xTaskHandle xTaskToNotify = NULL;
-StreamBufferHandle_t CDCStreamBuffer;
-extern xTaskHandle CDCDTaskh;
-
+extern QueueHandle_t dispatch_queue;
 
 static USBD_HANDLE_T g_hUsb;
 static uint8_t g_rxBuff[256];
+static char linebuf[128];
+static size_t linecnt;
 
 /* Endpoint 0 patch that prevents nested NAK event processing */
 static uint32_t g_ep0RxBusy = 0;/* flag indicating whether EP0 OUT/RX buffer is busy. */
@@ -134,17 +134,36 @@ USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass
 	return pIntfDesc;
 }
 
-/**
- * @brief	main routine for blinky example
- * @return	Function should not exit.
- */
-int setup_cdc(void)
+int write_cdc(const char *buf, size_t len)
+{
+	return vcom_write((uint8_t *)buf, len);
+}
+
+struct dispatch_message_t {
+    char line[132];
+    void *os;
+};
+
+static void *theos;
+static void sendqueue(const char *buf)
+{
+	struct dispatch_message_t xMessage;
+	strcpy(xMessage.line, buf);
+	xMessage.os= theos;
+	xQueueSend( dispatch_queue, ( void * )&xMessage, portMAX_DELAY);
+}
+
+// Setup CDC, then process the incoming buffers
+int setup_cdc(void *os)
 {
 	USBD_API_INIT_PARAM_T usb_param;
 	USB_CORE_DESCS_T desc;
 	ErrorCode_t ret = LPC_OK;
 	uint32_t rdCnt = 0;
 	USB_CORE_CTRL_T *pCtrl;
+
+	// pointer to the outpout stream for this io
+	theos= os;
 
 	/* Store the handle of the calling task. */
 	xTaskToNotify = xTaskGetCurrentTaskHandle();
@@ -206,43 +225,21 @@ int setup_cdc(void)
 
 	}
 
-	CDCStreamBuffer = xStreamBufferCreate( 256, 1 );
-    if( CDCStreamBuffer == NULL ) {
-		printf("ERROR: could not create CDC Strem Buffer\n");
-    }
-	const TickType_t xsendwaitms = pdMS_TO_TICKS( 50 );
+	const TickType_t waitms = pdMS_TO_TICKS( 300 );
 	bool first= true;
 	uint32_t timeouts= 0;
 
-	printf("telling CDC Task to start\n");
-	xTaskNotifyGive( CDCDTaskh ); // notify CDC task to start
-
+	linecnt= 0;
+	bool discard= false;
 	while (1) {
-		/* Wait to be notified that the transmission is complete.  Note the first
-		parameter is pdTRUE, which has the effect of clearing the task's notification
-		value back to 0, making the notification value act like a binary (rather than
-		a counting) semaphore.  */
-		uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( 300 ) );
+		// Wait to be notified that there has been a USB irq.
+		uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
 
-		if( ulNotificationValue == 1 ) {
-			/* The transmission ended as expected. */
-		} else {
+		if( ulNotificationValue != 1 ) {
 			/* The call to ulTaskNotifyTake() timed out. */
 			timeouts++;
 		}
 
-		/* Check if host has connected and opened the VCOM port */
-		// if ((vcom_connected() != 0) && (prompt == 0)) {
-		// 	vcom_write((uint8_t *)"Welcome to Smoothev2\r\n", 22);
-		// 	prompt = 1;
-		// }
-		/* If VCOM port is opened echo whatever we receive back to host. */
-		// if (prompt) {
-			// rdCnt = vcom_bread(&g_rxBuff[0], 256);
-			// if (rdCnt) {
-			// 	vcom_write(&g_rxBuff[0], rdCnt);
-			// }
-		// }
 		if(first) {
 			// wait for first character
 			rdCnt = vcom_bread(&g_rxBuff[0], 256);
@@ -253,25 +250,62 @@ int setup_cdc(void)
 					}
 				}
 				if(!first) {
-					vcom_write((uint8_t *)"Welcome to Smoothev2\r\n", 22);
+					write_cdc("Welcome to Smoothev2\r\n", 22);
 				}
 			}
 
 		}else{
-			// we read as much as we can and stream it to the waiting stream
+			// we read as much as we can, process it into lines and send it to the dispatch thread
+			// certain characters are sent immediately the rest wait for end of line
 			rdCnt = vcom_bread(&g_rxBuff[0], 256);
-			uint32_t sentCnt= 0;
-			while(sentCnt < rdCnt) {
-				// if we can't send it all we keep trying
-				// TODO we need for the upstream USB to stall, which it currently will not, it'll just overwrite the buffer
-				// also wait indefinitely for it to send it, otherwise we lose stuff
-				size_t xBytesSent = xStreamBufferSend( CDCStreamBuffer,
-                                   ( void * ) &g_rxBuff[sentCnt],
-                                   rdCnt-sentCnt,
-                                   xsendwaitms );
-				sentCnt += xBytesSent;
-			}
-		}
+	        for (size_t i = 0; i < rdCnt; ++i) {
+	            linebuf[linecnt]= g_rxBuff[i];
+
+	            // the following are single character commands that are dispatched immediately
+	            if(linebuf[linecnt] == 24) { // ^X
+	            	// discard all recieved data
+	            	linebuf[linecnt+1]= '\0'; // null terminate
+	            	sendqueue(&linebuf[linecnt]);
+	            	linecnt= 0;
+	            	discard= false;
+	            	break;
+	            } else if(linebuf[linecnt] == '?') {
+	            	linebuf[linecnt+1]= '\0'; // null terminate
+	                sendqueue(&linebuf[linecnt]);
+	            } else if(linebuf[linecnt] == '!') {
+	            	linebuf[linecnt+1]= '\0'; // null terminate
+	                sendqueue(&linebuf[linecnt]);
+	            } else if(linebuf[linecnt] == '~') {
+	            	linebuf[linecnt+1]= '\0'; // null terminate
+	                sendqueue(&linebuf[linecnt]);
+	            // end of immediate commands
+
+	            } else if(discard) {
+	                // we discard long lines until we get the newline
+	                if(linebuf[linecnt] == '\n') discard = false;
+
+	            } else if(linecnt >= sizeof(linebuf) - 1) {
+	                // discard long lines
+	                discard = true;
+	                linecnt = 0;
+
+	            } else if(linebuf[linecnt] == '\n') {
+	                linebuf[linecnt] = '\0'; // remove the \n and nul terminate
+	                sendqueue(linebuf);
+	                linecnt= 0;
+
+	            } else if(linebuf[linecnt] == '\r') {
+	                // ignore CR
+	                continue;
+
+	            } else if(linebuf[linecnt] == 8 || linebuf[linecnt] == 127) { // BS or DEL
+	                if(linecnt > 0) --linecnt;
+
+	            } else {
+	                ++linecnt;
+	            }
+	       }
+	   }
 	}
 }
 

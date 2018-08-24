@@ -5,6 +5,7 @@
 #include <functional>
 
 #include <malloc.h>
+#include <string.h>
 
 #include "../Unity/src/unity.h"
 #include "TestRegistry.h"
@@ -14,7 +15,7 @@
 #include "timers.h"
 #include "semphr.h"
 
-// #include "OutputStream.h"
+#include "OutputStream.h"
 
 // // place holder
 // bool dispatch_line(OutputStream& os, const char *line)
@@ -132,76 +133,50 @@ extern "C" void vRunTestsTask(void *pvParameters)
     vTaskDelete( NULL );
 }
 
-extern "C" int setup_cdc(void);
+extern "C" int write_cdc(const char *buf, size_t len);
+extern "C" int setup_cdc(void *os);
 extern "C" void vComTask(void *pvParameters)
 {
-    setup_cdc();
+    static OutputStream os([](const char *buf, size_t len){ return write_cdc(buf, len); });
+    setup_cdc(&os);
     // does not return
 }
 
-// example to read the incoming CDC data using stream buffers
-#include "stream_buffer.h"
-extern "C" StreamBufferHandle_t CDCStreamBuffer;
-xTaskHandle CDCDTaskh;
+QueueHandle_t dispatch_queue;
 
-extern "C" void readCDCTask(void *pvParameters)
-{
-    // wait for vComTask to setup the CDC
-    ulTaskNotifyTake( pdTRUE, portMAX_DELAY ); /* Block indefinitely. */
-    printf("readCDCTask started\n");
-
-    char buf[256];
+using dispatch_message_t = struct {
     char line[132];
-    bool discard = false;
-    size_t cnt= 0;
+    OutputStream *os;
+};
+
+extern "C" void dispatch(void *pvParameters)
+{
     const TickType_t waitms = pdMS_TO_TICKS( 100 );
+    dispatch_message_t xRxedMessage;
+
+    // TODO create Output Stream
+
     while(1) {
         // now read lines and dispatch them
-        size_t xReceivedBytes = xStreamBufferReceive( CDCStreamBuffer,
-                                           ( void * ) buf,
-                                           sizeof( buf ),
-                                           waitms );
-
-        if(xReceivedBytes == 0) continue;
-
-        //printf("Got %d bytes\n", xReceivedBytes);
-        for (size_t i = 0; i < xReceivedBytes; ++i) {
-            line[cnt]= buf[i];
-
-            if(line[cnt] == 24) { // ^X
-                printf("ALARM: Abort during cycle\n");
-                discard = false;
-                cnt = 0;
-
-            } else if(line[cnt] == '?') {
-                printf("query\n");
-
-            } else if(discard) {
-                // we discard long lines until we get the newline
-                if(line[cnt] == '\n') discard = false;
-
-            } else if(cnt >= sizeof(line) - 1) {
-                // discard long lines
-                discard = true;
-                cnt = 0;
-                printf("error:Discarding long line\n");
-
-            } else if(line[cnt] == '\n') {
-                line[cnt] = '\0'; // remove the \n and nul terminate
-                printf("got line: %s\n", line);
-                cnt = 0;
-
-            } else if(line[cnt] == '\r') {
-                // ignore CR
-                continue;
-
-            } else if(line[cnt] == 8 || line[cnt] == 127) { // BS or DEL
-                if(cnt > 0) --cnt;
-
-            } else {
-                ++cnt;
+        if( xQueueReceive( dispatch_queue, &xRxedMessage, waitms) ) {
+            // got line
+            if(strlen(xRxedMessage.line) == 1) {
+                switch(xRxedMessage.line[0]) {
+                    case 24: printf("Got KILL\n"); break;
+                    case '?': printf("Got Query\n"); break;
+                    case '!': printf("Got Hold\n"); break;
+                    case '~': printf("Got Release\n"); break;
+                    default: printf("Got 1 char line: %s\n", xRxedMessage.line);
+                }
+            }else{
+                printf("Got line: %s\n", xRxedMessage.line);
+                xRxedMessage.os->puts("ok\n");
             }
-       }
+        }  else {
+            // timed out, flash idle led
+            Board_LED_Toggle(1);
+            continue;
+        }
     }
 }
 
@@ -282,11 +257,18 @@ int main()   //int argc, char *argv[])
     xTaskCreate(vRunTestsTask, "vTestsTask", 512, /* *4 as 32bit words */
                 NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
 
+    // create queue for dispatch of lines, can be sent to by several tasks
+    dispatch_queue = xQueueCreate( 10, sizeof( dispatch_message_t ) );
+    if( dispatch_queue == 0 ) {
+        // Failed to create the queue.
+        printf("ERROR: failed to create dispatch queue\n");
+        __asm("bkpt #0");
+    }
+
     xTaskCreate(vComTask, "vComTask", 256,
                 NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
 
-    xTaskCreate(readCDCTask, "readcdctask", 512,
-                NULL, (tskIDLE_PRIORITY + 3UL), &CDCDTaskh);
+    xTaskCreate(dispatch, "dispatch", 512, NULL, (tskIDLE_PRIORITY + 3UL), NULL);
 
     struct mallinfo mi = mallinfo();
     printf("free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
