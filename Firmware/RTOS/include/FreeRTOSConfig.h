@@ -71,6 +71,8 @@
 #define configUSE_NEWLIB_REENTRANT      1
 #define configSTACK_DEPTH_TYPE 			uint32_t
 
+#define configUSE_STATS_FORMATTING_FUNCTIONS 1
+
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 		0
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )

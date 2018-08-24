@@ -149,28 +149,42 @@ using dispatch_message_t = struct {
     OutputStream *os;
 };
 
+// this would be the command thread in the firmware
 extern "C" void dispatch(void *pvParameters)
 {
     const TickType_t waitms = pdMS_TO_TICKS( 100 );
-    dispatch_message_t xRxedMessage;
-
-    // TODO create Output Stream
+    dispatch_message_t message;
 
     while(1) {
         // now read lines and dispatch them
-        if( xQueueReceive( dispatch_queue, &xRxedMessage, waitms) ) {
+        if( xQueueReceive( dispatch_queue, &message, waitms) ) {
             // got line
-            if(strlen(xRxedMessage.line) == 1) {
-                switch(xRxedMessage.line[0]) {
-                    case 24: printf("Got KILL\n"); break;
-                    case '?': printf("Got Query\n"); break;
-                    case '!': printf("Got Hold\n"); break;
-                    case '~': printf("Got Release\n"); break;
-                    default: printf("Got 1 char line: %s\n", xRxedMessage.line);
+            if(strlen(message.line) == 1) {
+                switch(message.line[0]) {
+                    case 24: message.os->printf("Got KILL\n"); break;
+                    case '?': message.os->printf("Got Query\n"); break;
+                    case '!': message.os->printf("Got Hold\n"); break;
+                    case '~': message.os->printf("Got Release\n"); break;
+                    default: message.os->printf("Got 1 char line: %s\n", message.line);
                 }
+
             }else{
-                printf("Got line: %s\n", xRxedMessage.line);
-                xRxedMessage.os->puts("ok\n");
+
+                if(strcmp(message.line, "mem") == 0) {
+                    char pcWriteBuffer[500];
+                    vTaskList( pcWriteBuffer );
+                    message.os->puts(pcWriteBuffer);
+                    // message.os->puts("\n\n");
+                    // vTaskGetRunTimeStats(pcWriteBuffer);
+                    // message.os->puts(pcWriteBuffer);
+
+                    struct mallinfo mi = mallinfo();
+                    message.os->printf("\n\nfree malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
+                }else{
+                    message.os->printf("Got line: %s\n", message.line);
+                }
+
+                message.os->puts("ok\n");
             }
         }  else {
             // timed out, flash idle led
