@@ -39,6 +39,9 @@
 #include "task.h"
 #include "queue.h"
 
+#include "MessageQueue.h"
+
+
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -47,7 +50,7 @@ extern QueueHandle_t dispatch_queue;
 
 static USBD_HANDLE_T g_hUsb;
 static uint8_t g_rxBuff[256];
-static char linebuf[128];
+static char linebuf[MAX_LINE_LENGTH];
 static size_t linecnt;
 
 /* Endpoint 0 patch that prevents nested NAK event processing */
@@ -139,31 +142,14 @@ int write_cdc(const char *buf, size_t len)
 	return vcom_write((uint8_t *)buf, len);
 }
 
-struct dispatch_message_t {
-    char line[132];
-    void *os;
-};
-
-static void *theos;
-static void sendqueue(const char *buf)
-{
-	struct dispatch_message_t xMessage;
-	strcpy(xMessage.line, buf);
-	xMessage.os= theos;
-	xQueueSend( dispatch_queue, ( void * )&xMessage, portMAX_DELAY);
-}
-
 // Setup CDC, then process the incoming buffers
-int setup_cdc(void *os)
+int setup_cdc(void *theos)
 {
 	USBD_API_INIT_PARAM_T usb_param;
 	USB_CORE_DESCS_T desc;
 	ErrorCode_t ret = LPC_OK;
 	uint32_t rdCnt = 0;
 	USB_CORE_CTRL_T *pCtrl;
-
-	// pointer to the outpout stream for this io
-	theos= os;
 
 	/* Store the handle of the calling task. */
 	xTaskToNotify = xTaskGetCurrentTaskHandle();
@@ -265,19 +251,19 @@ int setup_cdc(void *os)
 	            if(linebuf[linecnt] == 24) { // ^X
 	            	// discard all recieved data
 	            	linebuf[linecnt+1]= '\0'; // null terminate
-	            	sendqueue(&linebuf[linecnt]);
+	            	send_message_queue(&linebuf[linecnt], theos);
 	            	linecnt= 0;
 	            	discard= false;
 	            	break;
 	            } else if(linebuf[linecnt] == '?') {
 	            	linebuf[linecnt+1]= '\0'; // null terminate
-	                sendqueue(&linebuf[linecnt]);
+	                send_message_queue(&linebuf[linecnt], theos);
 	            } else if(linebuf[linecnt] == '!') {
 	            	linebuf[linecnt+1]= '\0'; // null terminate
-	                sendqueue(&linebuf[linecnt]);
+	                send_message_queue(&linebuf[linecnt], theos);
 	            } else if(linebuf[linecnt] == '~') {
 	            	linebuf[linecnt+1]= '\0'; // null terminate
-	                sendqueue(&linebuf[linecnt]);
+	                send_message_queue(&linebuf[linecnt], theos);
 	            // end of immediate commands
 
 	            } else if(discard) {
@@ -291,7 +277,7 @@ int setup_cdc(void *os)
 
 	            } else if(linebuf[linecnt] == '\n') {
 	                linebuf[linecnt] = '\0'; // remove the \n and nul terminate
-	                sendqueue(linebuf);
+	                send_message_queue(linebuf, theos);
 	                linecnt= 0;
 
 	            } else if(linebuf[linecnt] == '\r') {

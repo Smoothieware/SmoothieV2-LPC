@@ -16,6 +16,7 @@
 #include "semphr.h"
 
 #include "OutputStream.h"
+#include "MessageQueue.h"
 
 // // place holder
 // bool dispatch_line(OutputStream& os, const char *line)
@@ -142,49 +143,42 @@ extern "C" void vComTask(void *pvParameters)
     // does not return
 }
 
-QueueHandle_t dispatch_queue;
-
-using dispatch_message_t = struct {
-    char line[132];
-    OutputStream *os;
-};
-
 // this would be the command thread in the firmware
 extern "C" void dispatch(void *pvParameters)
 {
-    const TickType_t waitms = pdMS_TO_TICKS( 100 );
-    dispatch_message_t message;
+    char *line;
+    OutputStream *os;
 
     while(1) {
         // now read lines and dispatch them
-        if( xQueueReceive( dispatch_queue, &message, waitms) ) {
+        if( receive_message_queue(&line, &os) ) {
             // got line
-            if(strlen(message.line) == 1) {
-                switch(message.line[0]) {
-                    case 24: message.os->printf("Got KILL\n"); break;
-                    case '?': message.os->printf("Got Query\n"); break;
-                    case '!': message.os->printf("Got Hold\n"); break;
-                    case '~': message.os->printf("Got Release\n"); break;
-                    default: message.os->printf("Got 1 char line: %s\n", message.line);
+            if(strlen(line) == 1) {
+                switch(line[0]) {
+                    case 24: os->printf("Got KILL\n"); break;
+                    case '?': os->printf("Got Query\n"); break;
+                    case '!': os->printf("Got Hold\n"); break;
+                    case '~': os->printf("Got Release\n"); break;
+                    default: os->printf("Got 1 char line: %s\n", line);
                 }
 
             }else{
 
-                if(strcmp(message.line, "mem") == 0) {
+                if(strcmp(line, "mem") == 0) {
                     char pcWriteBuffer[500];
                     vTaskList( pcWriteBuffer );
-                    message.os->puts(pcWriteBuffer);
-                    // message.os->puts("\n\n");
+                    os->puts(pcWriteBuffer);
+                    // os->puts("\n\n");
                     // vTaskGetRunTimeStats(pcWriteBuffer);
-                    // message.os->puts(pcWriteBuffer);
+                    // os->puts(pcWriteBuffer);
 
                     struct mallinfo mi = mallinfo();
-                    message.os->printf("\n\nfree malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
+                    os->printf("\n\nfree malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
                 }else{
-                    message.os->printf("Got line: %s\n", message.line);
+                    os->printf("Got line: %s\n", line);
                 }
 
-                message.os->puts("ok\n");
+                os->puts("ok\n");
             }
         }  else {
             // timed out, flash idle led
@@ -272,8 +266,7 @@ int main()   //int argc, char *argv[])
                 NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
 
     // create queue for dispatch of lines, can be sent to by several tasks
-    dispatch_queue = xQueueCreate( 10, sizeof( dispatch_message_t ) );
-    if( dispatch_queue == 0 ) {
+    if(!create_message_queue()) {
         // Failed to create the queue.
         printf("ERROR: failed to create dispatch queue\n");
         __asm("bkpt #0");
