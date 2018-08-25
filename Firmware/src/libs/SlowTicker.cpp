@@ -8,6 +8,7 @@ SlowTicker *SlowTicker::instance;
 
 // This module uses a Timer to periodically call registered callbacks
 // Modules register with a function ( callback ) and a frequency, and we then call that function at the given frequency.
+// NOTE we could use TMR1 instead of s/w timer
 
 SlowTicker::SlowTicker()
 {
