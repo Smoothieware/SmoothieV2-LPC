@@ -19,10 +19,10 @@
 #include "MessageQueue.h"
 
 // // place holder
-// bool dispatch_line(OutputStream& os, const char *line)
-// {
-//     return true;
-// }
+bool dispatch_line(OutputStream& os, const char *line)
+{
+    return true;
+}
 
 static std::function<void(void)> setup_fnc;
 void setUp(void)
@@ -88,14 +88,12 @@ static int run_tests(int argc, char *argv[])
 
 void configureSPIFI();
 
-
-#if 0
 void safe_sleep(uint32_t ms)
 {
     // here we need to sleep (and yield) for 10ms then check if we need to handle the query command
+    TickType_t delayms= pdMS_TO_TICKS(10); // 10 ms sleep
     while(ms > 0) {
-        usleep(10000); // 10 ms sleep (minimum anyway due to thread slice time)
-
+        vTaskDelay(delayms);
         if(ms > 10) {
             ms -= 10;
         } else {
@@ -108,7 +106,6 @@ void print_to_all_consoles(const char *str)
 {
     printf("%s", str);
 }
-#endif
 
 /* LED1 toggle thread */
 extern "C" void vLEDTask1(void *pvParameters)

@@ -59,7 +59,7 @@ private:
 
     Block *current_block{nullptr};
 
-    uint32_t frequency{1000000}; // KHz
+    uint32_t frequency{100000}; // 100KHz
     uint32_t delay{1}; //microseconds
 
     uint32_t current_tick{0};

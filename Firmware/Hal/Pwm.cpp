@@ -7,12 +7,7 @@
 #include <vector>
 #include <cmath>
 
-#include "lpc_types.h"
-#include "chip-defs.h"
-#include "sct_18xx_43xx.h"
-#include "sct_pwm_18xx_43xx.h"
-#include "scu_18xx_43xx.h"
-
+#include "board.h"
 
 
 /* 43xx Pinmap for PWM to CTOUT and function

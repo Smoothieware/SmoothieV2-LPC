@@ -98,6 +98,7 @@ load 'rakefile.defaults' if File.exists?('rakefile.defaults')
 
 # add lpcopen HAL files
 hal_src = FileList['Hal/**/*.{c,cpp,s}']
+hal_src.exclude(/Adc/) # TODO
 
 # RTOS
 rtos_src = FileList['RTOS/**/*.{c,cpp,s}']
@@ -106,6 +107,7 @@ if TESTING
   # Unity tests
   src = FileList['Unity/src/*.c', 'src/**/*.{c,cpp,s}']
   src.exclude(/(src\/main.cpp)/) # we don't want the Firmware main.cpp
+  src.exclude(/(src\/modules)/) # TODO these are not ready yet
   if ENV['test'].nil?
     # all tests
     src += FileList['TestUnits/TEST_*.cpp']

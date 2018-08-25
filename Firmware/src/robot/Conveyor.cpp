@@ -2,7 +2,6 @@
 
 #include "AxisDefns.h"
 #include "GCode.h"
-//#include "Kernel.h"
 #include "Block.h"
 #include "Planner.h"
 #include "ConfigReader.h"
@@ -11,6 +10,9 @@
 #include "StepperMotor.h"
 #include "PlannerQueue.h"
 #include "main.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
 
 #include <functional>
 #include <vector>
@@ -104,24 +106,24 @@ void Conveyor::wait_for_room()
     }
 }
 
+#define TICKS2MS( xTicks ) ( (uint32_t) ( (xTicks * 1000) / configTICK_RATE_HZ ) )
 // should be called when idle, it is called when the command loop runs
 void Conveyor::check_queue(bool force)
 {
-    static systime_t last_time_check = clock_systimer();
-
+    static TickType_t last_time_check = xTaskGetTickCount();
     // don't check if we are not running
     if(!force && !running) return;
 
     if(PQUEUE->empty()) {
         allow_fetch = false;
-        last_time_check = clock_systimer(); // reset timeout
+        last_time_check = xTaskGetTickCount(); // reset timeout
         return;
     }
 
     // if we have been waiting for more than the required waiting time and the queue is not empty, or the queue is full, then allow stepticker to get the tail
     // we do this to allow an idle system to pre load the queue a bit so the first few blocks run smoothly.
-    if(force || PQUEUE->full() || (TICK2USEC(clock_systimer() - last_time_check) >= (queue_delay_time_ms * 1000)) ) {
-        last_time_check = clock_systimer(); // reset timeout
+    if(force || PQUEUE->full() || (TICKS2MS(xTaskGetTickCount() - last_time_check) >= queue_delay_time_ms) ) {
+        last_time_check = xTaskGetTickCount(); // reset timeout
         if(!flush) allow_fetch = true;
         return;
     }

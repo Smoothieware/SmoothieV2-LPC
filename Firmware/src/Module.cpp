@@ -100,7 +100,9 @@ void Module::broadcast_halt(bool flg)
         // if we interrupted a move we need to resync the coordinates systems with the actuator position
         // TODO we may need to wait a bit to allow everything to stop
         // TODO we may need to only do this if we were not idle when we halted
-        Robot::getInstance()->reset_position_from_current_actuator_position();
+        if(Robot::getInstance() != nullptr) { // so we can test it without loading robot
+            Robot::getInstance()->reset_position_from_current_actuator_position();
+        }
     }
 }
 

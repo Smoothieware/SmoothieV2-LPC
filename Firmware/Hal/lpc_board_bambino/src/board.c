@@ -146,7 +146,7 @@ void Board_Buttons_Init(void)	// FIXME not functional ATM
 uint32_t Buttons_GetStatus(void)
 {
 	uint8_t ret = NO_BUTTON_PRESSED;
-	if (Chip_GPIO_GetPinState(LPC_GPIO_PORT, BUTTONS_BnUTTON1_GPIO_PORT_NUM, BUTTONS_BUTTON1_GPIO_BIT_NUM) == 0) {
+	if (Chip_GPIO_GetPinState(LPC_GPIO_PORT, BUTTONS_BUTTON1_GPIO_PORT_NUM, BUTTONS_BUTTON1_GPIO_BIT_NUM) == 0) {
 		ret |= BUTTONS_BUTTON1;
 	}
 	return ret;

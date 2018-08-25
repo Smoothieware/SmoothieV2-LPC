@@ -604,7 +604,7 @@ bool Pin::config_pin(uint32_t pinconf)
             break;
     }
 
-    Chip_SCU_PinMuxSet(port, pin, regval)
+    Chip_SCU_PinMuxSet(port, pin, regval);
 
     return true;
 }

@@ -5,12 +5,10 @@
 #include "Block.h"
 #include "Conveyor.h"
 #include "Module.h"
+#include "Timers.h"
 
-#include <nuttx/config.h>
-#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <nuttx/timers/timer.h>
 
 #include <math.h>
 
@@ -49,16 +47,12 @@ _ramfunc_ void StepTicker::unstep_timer_handler(void)
     StepTicker::getInstance()->unstep_tick();
 }
 
-// these are defined in HAL/lpc43_highpri.c
-extern "C" int highpri_tmr0_setup(uint32_t frequency, uint32_t delay, void *mr0handler, void *mr1handler);
-extern "C" void highpri_tmr0_mr1_start();
-
 bool StepTicker::start()
 {
     if(!started) {
 
         // setup the step tick timer, which handles step ticks and one off unstep interrupts
-        int permod = highpri_tmr0_setup(frequency, delay, (void *)step_timer_handler, (void *)unstep_timer_handler);
+        int permod = tmr0_setup(frequency, delay, (void *)step_timer_handler, (void *)unstep_timer_handler);
         if(permod <  0) {
             printf("ERROR: tmr0 setup failed\n");
             return false;
@@ -100,7 +94,7 @@ void StepTicker::set_unstep_time( float microseconds )
     uint32_t d= roundf(microseconds);
     uint32_t period= floorf(1000000.0F/frequency);
     if(d > period-1) { // within 1us of the period
-        printf("ERROR: cannot set stepticker unstep delay greater than or equal to step ticker period: %d, %d\n", delay, period);
+        printf("ERROR: cannot set stepticker unstep delay greater than or equal to step ticker period: %lu, %lu\n", delay, period);
         return;
     }
 
@@ -112,7 +106,7 @@ _ramfunc_  bool StepTicker::start_unstep_ticker()
     // enable the MR1 match register interrupt
     // this works as we are in MR0 match which reset counter so we will get an interrupt 2us after this is enabled
     // which we will use to unstep the step pin.
-    highpri_tmr0_mr1_start();
+    tmr0_mr1_start();
     return true;
 }
 
