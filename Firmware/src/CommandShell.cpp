@@ -834,7 +834,7 @@ bool CommandShell::upload_cmd(std::string& params, OutputStream& os)
     int cnt = 0;
     set_capture([&uploading, fd, &cnt](char c){if( c == 4 || c == 26) uploading = false; else { fputc(c, fd); ++cnt; } });
     while(uploading) {
-        usleep(10000);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
     set_capture(nullptr);
     fclose(fd);
@@ -847,7 +847,7 @@ bool CommandShell::reset_cmd(std::string& params, OutputStream& os)
 {
     HELP("reset board");
     os.printf("Reset will occur in 5 seconds, make sure to disconnect before that\n");
-    usleep(5000000);
+    vTaskDelay(pdMS_TO_TICKS(5000));
     *(volatile int*)0x40053100 = 1; // reset core
     return true;
 }

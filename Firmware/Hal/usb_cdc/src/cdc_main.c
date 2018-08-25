@@ -129,6 +129,7 @@ USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass
 	return pIntfDesc;
 }
 
+// called externally to read/write to the USB CDC channel
 size_t write_cdc(const char *buf, size_t len)
 {
 	return vcom_write((uint8_t *)buf, len);
@@ -204,9 +205,12 @@ int setup_cdc(xTaskHandle h)
 			/* now connect */
 			USBD_API->hw->Connect(g_hUsb, 1);
 		}
+
+	}else{
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 

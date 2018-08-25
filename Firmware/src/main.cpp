@@ -8,6 +8,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <iostream>
+#include <malloc.h>
+
+#include "FreeRTOS.h"
+#include "task.h"
 
 #include "Module.h"
 #include "OutputStream.h"
@@ -33,7 +37,7 @@ static GCodeProcessor gp;
 bool dispatch_line(OutputStream& os, const char *cl)
 {
     // Don't like this, but we need a writable copy of the input line
-    char line[strlen(cl)+1];
+    char line[strlen(cl) + 1];
     strcpy(line, cl);
 
     // map some special M codes to commands as they violate the gcode spec and pass a string parameter
@@ -45,11 +49,11 @@ bool dispatch_line(OutputStream& os, const char *cl)
 
     // handle save to file M codes:- M28 filename, and M29
     if(strncmp(line, "M28 ", 4) == 0) {
-        char *upload_filename= &line[4];
+        char *upload_filename = &line[4];
         if(strncmp(upload_filename, "/sd/", 4) != 0) {
             // prepend /sd/ luckily we have exactly 4 characters before the filename
             memcpy(line, "/sd/", 4);
-            upload_filename= line;
+            upload_filename = line;
         }
         upload_fp = fopen(upload_filename, "w");
         if(upload_fp != nullptr) {
@@ -155,193 +159,149 @@ bool dispatch_line(OutputStream& os, const char *cl)
 static std::function<void(char)> capture_fnc;
 void set_capture(std::function<void(char)> cf)
 {
-    capture_fnc= cf;
+    capture_fnc = cf;
 }
 
 #include <vector>
 static std::vector<OutputStream*> output_streams;
 
-static void usb_comms()
+// this is here so we do not need duplicate this logic for USB and UART
+static void process_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, size_t& cnt, bool& discard)
+{
+    for (size_t i = 0; i < n; ++i) {
+        line[cnt] = rxBuf[i];
+        if(capture_fnc) {
+            capture_fnc(line[cnt]);
+            continue;
+        }
+
+        if(line[cnt] == 24) { // ^X
+            if(!Module::is_halted()) {
+                Module::broadcast_halt(true);
+                os->puts("ALARM: Abort during cycle\n");
+            }
+            discard = false;
+            cnt = 0;
+
+        } else if(line[cnt] == '?') {
+            query_os = os; // we need to let it know where to send response back to TODO maybe a race condition if both USB and uart send ?
+            do_query = true;
+
+        } else if(discard) {
+            // we discard long lines until we get the newline
+            if(line[cnt] == '\n') discard = false;
+
+        } else if(cnt >= MAX_LINE_LENGTH - 1) {
+            // discard long lines
+            discard = true;
+            cnt = 0;
+            os->puts("error:Discarding long line\n");
+
+        } else if(line[cnt] == '\n') {
+            line[cnt] = '\0'; // remove the \n and nul terminate
+            send_message_queue(line, os);
+            cnt = 0;
+
+        } else if(line[cnt] == '\r') {
+            // ignore CR
+            continue;
+
+        } else if(line[cnt] == 8 || line[cnt] == 127) { // BS or DEL
+            if(cnt > 0) --cnt;
+
+        } else {
+            ++cnt;
+        }
+    }
+}
+
+extern "C" size_t write_cdc(const char *buf, size_t len);
+extern "C" size_t read_cdc(char *buf, size_t len);
+extern "C" int setup_cdc(void *taskhandle);
+
+static void usb_comms(void *)
 {
     printf("USB Comms thread running\n");
-    int rfd, wfd;
 
-    if(!setup_CDC(rfd, wfd)) {
+    if(!setup_cdc(xTaskGetCurrentTaskHandle())) {
         printf("CDC setup failed\n");
         return;
     }
 
     // on first connect we send a welcome message
     static const char *welcome_message = "Welcome to Smoothie\nok\n";
+    const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
     size_t n;
-    char line[132];
-    n = read(rfd, line, 1);
-    if(n == 1) {
-        n = write(wfd, welcome_message, strlen(welcome_message));
-        if(n < 0) {
-            printf("ttyACM0: Error writing welcome: %d\n", errno);
-            close(rfd);
-            close(wfd);
-            return;
-        }
+    char rxBuf[256];
+    bool done = false;
 
-    } else {
-        printf("ttyACM0: Error reading: %d\n", errno);
-        close(rfd);
-        close(wfd);
-        return;
+    // first we wait for an initial '\n' sent from host
+    while (!done) {
+        // Wait to be notified that there has been a USB irq.
+        ulTaskNotifyTake( pdTRUE, waitms );
+        n = read_cdc(rxBuf, sizeof(rxBuf));
+        if(n > 0) {
+            for (size_t i = 0; i < n; ++i) {
+                if(rxBuf[i] == '\n') {
+                    write_cdc(welcome_message, strlen(welcome_message));
+                    done = true;
+                    break;
+                }
+            }
+        }
     }
 
-    // get the message queue
-    mqd_t mqfd = get_message_queue(false);
-
-    // create an output stream that writes to the already open fd
-    OutputStream os(wfd);
+    // create an output stream that writes to the cdc
+    static OutputStream os([](const char *buf, size_t len) { return write_cdc(buf, len); });
     output_streams.push_back(&os);
 
     // now read lines and dispatch them
+    char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
     bool discard = false;
-    for(;;) {
-        n = read(rfd, &line[cnt], 1);
-        if(n == 1) {
-            if(capture_fnc) {
-                capture_fnc(line[cnt]);
-                continue;
-            }
+    while(1) {
+        // Wait to be notified that there has been a USB irq.
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
 
-            if(line[cnt] == 24) { // ^X
-                if(!Module::is_halted()) {
-                    Module::broadcast_halt(true);
-                    os.puts("ALARM: Abort during cycle\n");
-                }
-                discard = false;
-                cnt = 0;
+        if( ulNotificationValue != 1 ) {
+            /* The call to ulTaskNotifyTake() timed out. check anyway */
+        }
 
-            } else if(line[cnt] == '?') {
-                query_os = &os; // we need to let it know where to send response back to TODO maybe a race condition if both USB and uart send ?
-                do_query = true;
-
-            } else if(discard) {
-                // we discard long lines until we get the newline
-                if(line[cnt] == '\n') discard = false;
-
-            } else if(cnt >= sizeof(line) - 1) {
-                // discard long lines
-                discard = true;
-                cnt = 0;
-                os.puts("error:Discarding long line\n");
-
-            } else if(line[cnt] == '\n') {
-                line[cnt] = '\0'; // remove the \n and nul terminate
-                // TODO line needs to be in a circular queue of lines as big or bigger than the mesage queue size
-                // so it does not get re used before the command thread has dealt with it
-                // We do not want to malloc/free all the time
-                char *l = strdup(line);
-                send_message_queue(mqfd, l, &os);
-                cnt = 0;
-
-            } else if(line[cnt] == '\r') {
-                // ignore CR
-                continue;
-
-            } else if(line[cnt] == 8 || line[cnt] == 127) { // BS or DEL
-                if(cnt > 0) --cnt;
-
-            } else {
-                ++cnt;
-            }
-        } else {
-            printf("ttyACM0: read error: %d\n", errno);
-            break;
+        n = read_cdc(rxBuf, sizeof(rxBuf));
+        if(n > 0) {
+            process_buffer(n, rxBuf, &os, line, cnt, discard);
         }
     }
-
-    printf("Comms thread exiting\n");
 }
 
-static void uart_comms()
+#if 0
+static void uart_comms(void *)
 {
     printf("UART Comms thread running\n");
 
-    // get the message queue
-    mqd_t mqfd = get_message_queue(false);
-
-    // create an output stream that writes to stdout which is the uart
-    OutputStream os(1); // use stdout fd, not this which is buffered (&std::cout);
+    // create an output stream that writes to the uart
+    static OutputStream os([](const char *buf, size_t len) { return write_uart(buf, len); });
     output_streams.push_back(&os);
 
-    // now read lines and dispatch them
-    char line[132];
+    char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
-    size_t n;
     bool discard = false;
-    for(;;) {
-        n = read(0, &line[cnt], 1);
+    while(1) {
+        // Wait to be notified that there has been a UART irq.
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
 
-        if(n == 1) {
-            if(capture_fnc) {
-                capture_fnc(line[cnt]);
-                continue;
-            }
+        if( ulNotificationValue != 1 ) {
+            /* The call to ulTaskNotifyTake() timed out. check anyway */
+        }
 
-            if(line[cnt] == 24) { // ^X
-                if(!Module::is_halted()) {
-                    Module::broadcast_halt(true);
-                    os.puts("ALARM: Abort during cycle\n");
-                }
-                discard = false;
-                cnt = 0;
-
-            } else if(line[cnt] == '?') {
-                query_os = &os; // we need to let it know where to send response back to TODO maybe a race condition if both USB and uart send ?
-                do_query = true;
-
-                // } else if(line[cnt] == '!') {
-                //     do_feed_hold(true);
-
-                // } else if(line[cnt] == '~') {
-                //     do_feed_hold(false);
-
-            } else if(discard) {
-                // we discard long lines until we get the newline
-                if(line[cnt] == '\n') discard = false;
-
-            } else if(cnt >= sizeof(line) - 1) {
-                // discard long lines
-                discard = true;
-                cnt = 0;
-                os.puts("error:Discarding long line\n");
-
-            } else if(line[cnt] == '\n') {
-                line[cnt] = '\0'; // remove the \n and nul terminate
-                // TODO line needs to be in a circular queue of lines as big or bigger than the message queue size
-                // so it does not get re used before the command thread has dealt with it
-                // We do not want to malloc/free all the time
-                char *l = strdup(line);
-                send_message_queue(mqfd, l, &os);
-                cnt = 0;
-
-            } else if(line[cnt] == '\r') {
-                // ignore CR
-                continue;
-
-            } else if(line[cnt] == 8 || line[cnt] == 127) { // BS or DEL
-                if(cnt > 0) --cnt;
-
-            } else {
-                ++cnt;
-            }
-
-        } else {
-            printf("UART: read error: %d\n", errno);
-            break;
+        size_t n = read_uart(rxBuf, sizeof(rxBuf));
+        if(n > 0) {
+           process_buffer(n, rxBuf, line, cnt, discard);
         }
     }
-
-    printf("UART Comms thread exiting\n");
 }
+#endif
 
 
 // this prints the string to all consoles that are connected and active
@@ -367,7 +327,7 @@ static Pin *idle_led = nullptr;
  * 2. we could call a on_main_loop to all registed modules.
  * Not fond of 2 and 1 requires somw form of locking so interrupts can access the queue too.
  */
-static void *commandthrd(void *)
+static void commandthrd(void *)
 {
     printf("Command thread running\n");
     // {
@@ -378,22 +338,19 @@ static void *commandthrd(void *)
     //     cv.notify_one();
     // }
 
-    // get the message queue
-    mqd_t mqfd = get_message_queue(true);
-
     for(;;) {
-        const char *line;
+        char *line;
         OutputStream *os;
-        bool idle= false;
+        bool idle = false;
 
         // This will timeout after 200 ms
-        if(receive_message_queue(mqfd, &line, &os)) {
+        if(receive_message_queue(&line, &os)) {
             //printf("DEBUG: got line: %s\n", line);
             dispatch_line(*os, line);
-            free((void *)line); // was strdup'd, FIXME we don't want to have do this
+
         } else {
             // timed out or other error
-            idle= true;
+            idle = true;
             if(idle_led != nullptr) {
                 // toggle led to show we are alive, but idle
                 idle_led->set(!idle_led->get());
@@ -402,7 +359,7 @@ static void *commandthrd(void *)
 
         // set in comms thread, and executed here to avoid thread clashes
         // the trouble with this is that ? does not reply if a long command is blocking above call to dispatch_line
-        // test comamnds for instance or a long line when the queue is full or G4 etc
+        // test commands for instance or a long line when the queue is full or G4 etc
         // so long as safe_sleep() is called then this will still be handled
         if(do_query) {
             std::string r;
@@ -426,8 +383,9 @@ static void *commandthrd(void *)
 void safe_sleep(uint32_t ms)
 {
     // here we need to sleep (and yield) for 10ms then check if we need to handle the query command
+    TickType_t delayms = pdMS_TO_TICKS(10); // 10 ms sleep
     while(ms > 0) {
-        usleep(10000); // 10 ms sleep (minimum anyway due to thread slice time)
+        vTaskDelay(delayms);
         if(do_query) {
             std::string r;
             Robot::getInstance()->get_query_string(r);
@@ -465,9 +423,9 @@ void safe_sleep(uint32_t ms)
 #include <fstream>
 
 void configureSPIFI();
-float get_pll1_clk();
+//float get_pll1_clk();
 
-#define SD_CONFIG
+//#define SD_CONFIG
 
 #ifndef SD_CONFIG
 #include STRING_CONFIG_H
@@ -475,14 +433,10 @@ static std::string str(string_config);
 static std::stringstream ss(str);
 #endif
 
-static int smoothie_startup(int, char **)
+static void smoothie_startup()
 {
-    // do C++ initialization for static constructors first
-    // FIXME this is really NOT where this should be done
-    up_cxxinitialize();
-
-    printf("Smoothie V2.0alpha Build for %s - starting up\n", BUILD_TARGET);
-    get_pll1_clk();
+    printf("Smoothie V2.alpha Build for %s - starting up\n", BUILD_TARGET);
+    //get_pll1_clk();
 
     // create the SlowTicker here as it is used by some modules
     SlowTicker *slow_ticker = new SlowTicker();
@@ -505,6 +459,7 @@ static int smoothie_startup(int, char **)
     // open the config file
     do {
 #ifdef SD_CONFIG
+        // TODO need to change this for lpcopen
         int ret = mount("/dev/mmcsd0", "/sd", "vfat", 0, nullptr);
         if(0 != ret) {
             std::cout << "Error mounting: " << "/dev/mmcsd0: " << ret << "\n";
@@ -702,93 +657,105 @@ static int smoothie_startup(int, char **)
         }
     }
 
+    // create queue for incoming buffers from the I/O ports
+    if(!create_message_queue()) {
+        // Failed to create the queue.
+        printf("Error: failed to create comms i/o queue\n");
+    }
+
+
     // launch the command thread that executes all incoming commands
-    // We have to do this the long way as we want to set the stack size and priority
-    pthread_t command_thread;
-    void *result;
-    pthread_attr_t attr;
-    struct sched_param sparam;
-    int status;
+    // 10000 Bytes stack
+    xTaskCreate(commandthrd, "CommandThread", 10000/4, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
 
-    // int prio_min = sched_get_priority_min(SCHED_RR);
-    // int prio_max = sched_get_priority_max(SCHED_RR);
-    // int prio_mid = (prio_min + prio_max) / 2;
-
-    status = pthread_attr_init(&attr);
-    if (status != 0) {
-        printf("main: pthread_attr_init failed, status=%d\n", status);
-    }
-
-    status = pthread_attr_setstacksize(&attr, 10000);
-    if (status != 0) {
-        printf("main: pthread_attr_setstacksize failed, status=%d\n", status);
-    }
-
-    status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
-    if (status != OK) {
-        printf("main: pthread_attr_setschedpolicy failed, status=%d\n", status);
-    } else {
-        printf("main: Set command thread policy to SCHED_RR\n");
-    }
-
-    sparam.sched_priority = 90; // set lower than comms threads... 150; // (prio_min + prio_mid) / 2;
-    status = pthread_attr_setschedparam(&attr, &sparam);
-    if (status != OK) {
-        printf("main: pthread_attr_setschedparam failed, status=%d\n", status);
-    } else {
-        printf("main: Set command thread priority to %d\n", sparam.sched_priority);
-    }
-
-    status = pthread_create(&command_thread, &attr, commandthrd, NULL);
-    if (status != 0) {
-        printf("main: pthread_create failed, status=%d\n", status);
-    }
+    // Start comms threads Higher priority than the command thread
+    // fixed stack size of 4k Bytes each
+    xTaskCreate(usb_comms, "USBCommsThread", 4096/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+    //xTaskCreate(uart_comms, "UARTCommsThread", 4096/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
 
     // wait for command thread to start
     // std::unique_lock<std::mutex> lk(m);
     // cv.wait(lk);
     // printf("Command thread started\n");
 
-    // Start comms threads
-    // fixed stack size of 4k each
-    std::thread usb_comms_thread(usb_comms);
-    std::thread uart_comms_thread(uart_comms);
+    struct mallinfo mi = mallinfo();
+    printf("Initial: free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
 
-    sched_param sch_params;
-    // sch_params.sched_priority = 10;
-    // if(pthread_setschedparam(usb_comms_thread.native_handle(), SCHED_RR, &sch_params)) {
-    //     printf("Failed to set Thread scheduling : %s\n", std::strerror(errno));
-    // }
+    /* Start the scheduler */
+    vTaskStartScheduler();
 
-    int policy;
-    status = pthread_getschedparam(usb_comms_thread.native_handle(), &policy, &sch_params);
-    printf("usb_comms thread - pthread get params: status= %d, policy= %d, priority= %d\n", status, policy, sch_params.sched_priority);
+}
 
-    // Join the comms thread with the main thread
-    usb_comms_thread.join();
-    uart_comms_thread.join();
-    pthread_join(command_thread, &result);
+int main(int argc, char *argv[])
+{
+    //HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
+    NVIC_SetPriorityGrouping( 0 );
 
-    printf("Exiting startup thread\n");
+    configureSPIFI(); // setup the winbond SPIFI to max speed
 
+    // Read clock settings and update SystemCoreClock variable
+    SystemCoreClockUpdate();
+
+    // Set up and initialize all required blocks and
+    // functions related to the board hardware
+    Board_Init();
+    // Set the LED to the state of "On"
+    Board_LED_Set(0, true);
+
+    printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
+    smoothie_startup();
     return 1;
 }
 
-extern "C" int smoothie_main(int argc, char *argv[])
+// hooks from freeRTOS
+extern "C" void vApplicationTickHook( void )
 {
-    configureSPIFI(); // setup the winbond SPIFI to max speed
+    /* This function will be called by each tick interrupt if
+    configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h.  User code can be
+    added here, but the tick hook is called from an interrupt context, so
+    code must not attempt to block, and only the interrupt safe FreeRTOS API
+    functions can be used (those that end in FromISR()). */
+}
 
-    int ret = boardctl(BOARDIOC_INIT, 0);
-    if(OK != ret) {
-        printf("ERROR: BOARDIOC_INIT falied\n");
-    }
+extern "C" void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
+{
+    ( void ) pcTaskName;
+    ( void ) pxTask;
 
-    // We need to do this as the cxxinitialize takes more stack than the default task has,
-    // this causes corruption and random crashes
-    task_create("smoothie_task", SCHED_PRIORITY_DEFAULT,
-                20000, // stack size may need to increase
-                (main_t)smoothie_startup,
-                (FAR char * const *)NULL);
+    /* Run time stack overflow checking is performed if
+    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
+    function is called if a stack overflow is detected. */
+    taskDISABLE_INTERRUPTS();
+    __asm("bkpt #0");
+    for( ;; );
+}
 
-    return 1;
+extern "C" void vApplicationIdleHook( void )
+{
+    /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
+    to 1 in FreeRTOSConfig.h.  It will be called on each iteration of the idle
+    task.  It is essential that code added to this hook function never attempts
+    to block in any way (for example, call xQueueReceive() with a block time
+    specified, or call vTaskDelay()).  If the application makes use of the
+    vTaskDelete() API function (as this demo application does) then it is also
+    important that vApplicationIdleHook() is permitted to return to its calling
+    function, because it is the responsibility of the idle task to clean up
+    memory allocated by the kernel to any task that has since been deleted. */
+}
+
+extern "C" void vApplicationMallocFailedHook( void )
+{
+    /* vApplicationMallocFailedHook() will only be called if
+    configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h.  It is a hook
+    function that will get called if a call to pvPortMalloc() fails.
+    pvPortMalloc() is called internally by the kernel whenever a task, queue,
+    timer or semaphore is created.  It is also called by various parts of the
+    demo application.  If heap_1.c or heap_2.c are used, then the size of the
+    heap available to pvPortMalloc() is defined by configTOTAL_HEAP_SIZE in
+    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
+    to query the size of free heap space that remains (although it does not
+    provide information on how the remaining heap might be fragmented). */
+    taskDISABLE_INTERRUPTS();
+    __asm("bkpt #0");
+    for( ;; );
 }

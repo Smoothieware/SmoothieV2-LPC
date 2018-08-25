@@ -10,6 +10,7 @@
 #include "PID_Autotuner.h"
 
 #include <math.h>
+#include <string.h>
 
 // Temp sensor implementations:
 #include "Thermistor.h"

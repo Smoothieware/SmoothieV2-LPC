@@ -58,7 +58,7 @@
 					"name": "Firmware optimized"
 				}
 			],
-			"working_dir": "${file_path}"
+			"working_dir": "/home/morris/work/reprap/lpcopen-smoothie2/Firmware"
 		}
 	],
 	"folders":

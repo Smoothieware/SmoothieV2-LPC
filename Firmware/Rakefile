@@ -132,6 +132,7 @@ if TESTING
 else
   src = FileList['src/**/*.{c,cpp,s}'] #, 'staging/**/*.cpp' ]
   #src.exclude(/\/arm_solutions\/*/) # we don't want to look at these yet
+  src.exclude(/(src\/modules)|max31855/) # TODO these are not ready yet
   puts "Building Firmware debug: #{DEBUG}"
 end
 

@@ -28,6 +28,7 @@ _ramfunc_ static bool timer_handler(uint32_t *next_interval_us)
 bool SlowTicker::start()
 {
     int ret;
+    #pragma message "slowticker needs to be implemented using RTOS timers"
     #if 0
     if(!started) {
         struct timer_sethandler_s handler;

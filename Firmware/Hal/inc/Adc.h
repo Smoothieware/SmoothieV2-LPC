@@ -43,7 +43,7 @@ private:
 
 #ifdef OVERSAMPLE
     // we need 4^n sample to oversample and we get double that to filter out spikes
-    static const int num_samples= powf(4, OVERSAMPLE)*2;
+    static const int num_samples= 32; // powf(4, OVERSAMPLE)*2; // TODO FIXME
 #else
     static const int num_samples= 8;
 #endif

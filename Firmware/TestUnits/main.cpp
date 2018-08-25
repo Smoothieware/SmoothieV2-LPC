@@ -142,15 +142,15 @@ extern "C" void usbComTask(void *pvParameters)
     static size_t linecnt;
     static char rxBuff[256];
 
-    // setup the USB CDC and give it the handle of our teask to wake up when we get an interrupt
+    // setup the USB CDC and give it the handle of our task to wake up when we get an interrupt
     setup_cdc(xTaskGetCurrentTaskHandle());
 
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
     bool first= true;
     uint32_t timeouts= 0;
-
     linecnt= 0;
     bool discard= false;
+
     while (1) {
         // Wait to be notified that there has been a USB irq.
         uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
