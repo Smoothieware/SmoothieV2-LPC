@@ -98,7 +98,6 @@ load 'rakefile.defaults' if File.exists?('rakefile.defaults')
 
 # add lpcopen HAL files
 hal_src = FileList['Hal/**/*.{c,cpp,s}']
-hal_src.exclude(/Adc|Pin/) # not done yet
 
 # RTOS
 rtos_src = FileList['RTOS/**/*.{c,cpp,s}']
@@ -157,7 +156,7 @@ SRCS.each do |s|
 end
 
 include_dirs = ["./Hal/lpc_board_bambino/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx",
-                "./Hal/lpc_chip_43xx/inc/usbd_rom",
+                "./Hal/lpc_chip_43xx/inc/usbd_rom", "./Hal/inc",
                 "./RTOS/include",  "./Hal/sdmmc/inc", "./Hal/sdmmc/fatfs", "./Hal/usb_cdc/inc"] +
                [Dir.glob(['./src/**/'])].flatten # ,'./staging/**/'
 sys_include_dirs = []
@@ -186,7 +185,7 @@ DEPFLAGS = '-MMD '
 CSTD = '-std=c99'
 FFLAGS = ' -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fsingle-precision-constant '
 CFLAGS = FFLAGS + DEPFLAGS + " -Wall -Wshadow -Wundef  -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16  " + (DEBUG ? "-O0 -g3 " : "-O2 -g")
-CPPFLAGS = CFLAGS + ' -fno-exceptions -fno-rtti -fno-common -std=gnu++11'
+CPPFLAGS = CFLAGS + ' -Wno-psabi -fno-exceptions -fno-rtti -fno-common -std=gnu++11'
 
 # Linker script to be used.
 LSCRIPT = TARGET == 'LPC4337' ? "./v2pro4337.ld"  : "./test_cpp_Debug.ld" # "./spificonfig.ld"

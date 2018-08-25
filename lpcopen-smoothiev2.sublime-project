@@ -65,9 +65,6 @@
 	[
 		{
 			"path": "."
-		},
-		{
-			"path": "/home/morris/work/reprap/nuttx-smoothie2/smoothie-v2/Firmware"
 		}
 	]
 }
