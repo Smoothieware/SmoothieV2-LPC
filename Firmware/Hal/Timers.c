@@ -33,8 +33,6 @@ _ramfunc_ void TIMER0_IRQHandler(void)
 // frequency in HZ, delay in microseconds
 int tmr0_setup(uint32_t frequency, uint32_t delay, void *mr0handler, void *mr1handler)
 {
-    int prescaler;
-
     /* Enable timer 0 clock and reset it */
     Chip_TIMER_Init(LPC_TIMER0);
     Chip_RGU_TriggerReset(RGU_TIMER0_RST);

@@ -131,13 +131,102 @@ extern "C" void vRunTestsTask(void *pvParameters)
     vTaskDelete( NULL );
 }
 
-extern "C" int write_cdc(const char *buf, size_t len);
-extern "C" int setup_cdc(void *os);
-extern "C" void vComTask(void *pvParameters)
+extern "C" size_t write_cdc(const char *buf, size_t len);
+extern "C" size_t read_cdc(char *buf, size_t len);
+extern "C" int setup_cdc(void *taskhandle);
+
+extern "C" void usbComTask(void *pvParameters)
 {
-    static OutputStream os([](const char *buf, size_t len){ return write_cdc(buf, len); });
-    setup_cdc(&os);
-    // does not return
+    static OutputStream theos([](const char *buf, size_t len){ return write_cdc(buf, len); });
+    static char linebuf[MAX_LINE_LENGTH];
+    static size_t linecnt;
+    static char rxBuff[256];
+
+    // setup the USB CDC and give it the handle of our teask to wake up when we get an interrupt
+    setup_cdc(xTaskGetCurrentTaskHandle());
+
+    const TickType_t waitms = pdMS_TO_TICKS( 300 );
+    bool first= true;
+    uint32_t timeouts= 0;
+
+    linecnt= 0;
+    bool discard= false;
+    while (1) {
+        // Wait to be notified that there has been a USB irq.
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
+
+        if( ulNotificationValue != 1 ) {
+            /* The call to ulTaskNotifyTake() timed out. */
+            timeouts++;
+        }
+
+        if(first) {
+            // wait for first character
+            int rdCnt = read_cdc(rxBuff, sizeof(rxBuff));
+            if(rdCnt > 0) {
+                for (int i = 0; i < rdCnt; ++i) {
+                    if(rxBuff[i] == '\n') {
+                        first= false;
+                    }
+                }
+                if(!first) {
+                    write_cdc("Welcome to Smoothev2\r\n", 22);
+                }
+            }
+
+        }else{
+            // we read as much as we can, process it into lines and send it to the dispatch thread
+            // certain characters are sent immediately the rest wait for end of line
+            size_t rdCnt = read_cdc(rxBuff, sizeof(rxBuff));
+            for (size_t i = 0; i < rdCnt; ++i) {
+                linebuf[linecnt]= rxBuff[i];
+
+                // the following are single character commands that are dispatched immediately
+                if(linebuf[linecnt] == 24) { // ^X
+                    // discard all recieved data
+                    linebuf[linecnt+1]= '\0'; // null terminate
+                    send_message_queue(&linebuf[linecnt], &theos);
+                    linecnt= 0;
+                    discard= false;
+                    break;
+                } else if(linebuf[linecnt] == '?') {
+                    linebuf[linecnt+1]= '\0'; // null terminate
+                    send_message_queue(&linebuf[linecnt], &theos);
+                } else if(linebuf[linecnt] == '!') {
+                    linebuf[linecnt+1]= '\0'; // null terminate
+                    send_message_queue(&linebuf[linecnt], &theos);
+                } else if(linebuf[linecnt] == '~') {
+                    linebuf[linecnt+1]= '\0'; // null terminate
+                    send_message_queue(&linebuf[linecnt], &theos);
+                // end of immediate commands
+
+                } else if(discard) {
+                    // we discard long lines until we get the newline
+                    if(linebuf[linecnt] == '\n') discard = false;
+
+                } else if(linecnt >= sizeof(linebuf) - 1) {
+                    // discard long lines
+                    discard = true;
+                    linecnt = 0;
+
+                } else if(linebuf[linecnt] == '\n') {
+                    linebuf[linecnt] = '\0'; // remove the \n and nul terminate
+                    send_message_queue(linebuf, &theos);
+                    linecnt= 0;
+
+                } else if(linebuf[linecnt] == '\r') {
+                    // ignore CR
+                    continue;
+
+                } else if(linebuf[linecnt] == 8 || linebuf[linecnt] == 127) { // BS or DEL
+                    if(linecnt > 0) --linecnt;
+
+                } else {
+                    ++linecnt;
+                }
+           }
+       }
+   }
 }
 
 // this would be the command thread in the firmware
@@ -269,9 +358,7 @@ int main()   //int argc, char *argv[])
         __asm("bkpt #0");
     }
 
-    xTaskCreate(vComTask, "vComTask", 256,
-                NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
-
+    xTaskCreate(usbComTask, "usbComTask", 256, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
     xTaskCreate(dispatch, "dispatch", 512, NULL, (tskIDLE_PRIORITY + 3UL), NULL);
 
     struct mallinfo mi = mallinfo();
