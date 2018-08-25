@@ -39,7 +39,7 @@ private:
     static const int num_channels= 8;
     static Adc* instances[num_channels];
     static int ninstances;
-    static int sample_isr(int irq, void *context, FAR void *arg);
+    static int sample_isr(int irq, void *context, void *arg);
 
 #ifdef OVERSAMPLE
     // we need 4^n sample to oversample and we get double that to filter out spikes
