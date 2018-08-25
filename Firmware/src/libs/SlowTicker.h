@@ -4,6 +4,9 @@
 #include <tuple>
 #include <functional>
 
+#include "FreeRTOS.h"
+#include "timers.h"
+
 class SlowTicker
 {
     public:
@@ -27,7 +30,6 @@ class SlowTicker
         std::vector<callback_t> callbacks;
         uint32_t max_frequency{0};
         uint32_t interval{0};
-
-        int fd{-1}; // timer device
+        TimerHandle_t timer_handle;
         bool started{false};
 };

@@ -446,8 +446,6 @@ void ResetISR(void) {
     }
 }
 
-#define __debugbreak()  { __asm volatile ("bkpt #0"); }
-
 //*****************************************************************************
 // Default exception handlers. Override the ones here by defining your own
 // handler routines in your application code.
@@ -459,7 +457,6 @@ void NMI_Handler(void) {
 }
 __attribute__ ((section(".after_vectors")))
 void HardFault_Handler(void) {
-    __debugbreak();
     while (1) {
     }
 }

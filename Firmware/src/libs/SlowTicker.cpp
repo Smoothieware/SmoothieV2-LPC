@@ -1,14 +1,10 @@
 #include "SlowTicker.h"
 
-#include <fcntl.h>
-#include <errno.h>
 
-// timers are specified in microseconds
-#define BASE_FREQUENCY 1000000L
-#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
+// timers are specified in milliseconds
+#define BASE_FREQUENCY 1000
 
 SlowTicker *SlowTicker::instance;
-
 
 // This module uses a Timer to periodically call registered callbacks
 // Modules register with a function ( callback ) and a frequency, and we then call that function at the given frequency.
@@ -18,84 +14,41 @@ SlowTicker::SlowTicker()
     instance= this;
 }
 
-_ramfunc_ static bool timer_handler(uint32_t *next_interval_us)
+static void timer_handler(TimerHandle_t xTimer)
 {
     SlowTicker::getInstance()->tick();
-    return true;
 }
 
-#define TIMER_DEVNAME "/dev/timer2"
 bool SlowTicker::start()
 {
-    int ret;
-    #pragma message "slowticker needs to be implemented using RTOS timers"
-    #if 0
     if(!started) {
-        struct timer_sethandler_s handler;
-
-        if(fd != -1) {
-            printf("ERROR: Slow ticker already started\n");
-            return false;
-        }
 
         if(interval == 0) {
-            interval = BASE_FREQUENCY / 1; // default to 1HZ
+            interval = 1; // default to 1HZ
             max_frequency= 1;
         }
 
-        /* Open the timer device */
-        fd = open(TIMER_DEVNAME, O_RDONLY);
-        if (fd < 0) {
-            printf("ERROR: Failed to open %s: %d\n", TIMER_DEVNAME, errno);
-            return false;
-        }
-
-        ret = ioctl(fd, TCIOC_SETTIMEOUT, interval);
-        if (ret < 0) {
-            printf("ERROR: Failed to set the slow ticker interval to %d: %d\n", interval, errno);
-            close(fd);
-            fd= -1;
-            return false;
-        }
-
-        // Attach the timer handler
-        handler.newhandler = timer_handler;
-        handler.oldhandler = NULL;
-
-        ret = ioctl(fd, TCIOC_SETHANDLER, (unsigned long)((uintptr_t)&handler));
-        if (ret < 0) {
-            printf("ERROR: Failed to set the timer handler: %d\n", errno);
-            close(fd);
-            fd= -1;
-            return false;
-        }
+        timer_handle= xTimerCreate("SlowTickerTimer", pdMS_TO_TICKS(BASE_FREQUENCY/interval), pdTRUE, nullptr, timer_handler);
     }
 
     // Start the timer
-    ret = ioctl(fd, TCIOC_START, 0);
-    if (ret < 0) {
-        printf("ERROR: Failed to start the timer: %d\n", errno);
-        close(fd);
-        fd= -1;
+    if( xTimerStart( timer_handle, 0 ) != pdPASS ) {
+        // The timer could not be set into the Active state
+        printf("ERROR: Failed to start the timer\n");
         return false;
     }
     started= true;
-    #endif
     return true;
 }
 
 bool SlowTicker::stop()
 {
-    #if 0
-    int ret = ioctl(fd, TCIOC_STOP, 0);
-    if (ret < 0) {
-        printf("ERROR: Failed to stop the timer: %d\n", errno);
+    if( xTimerStop(timer_handle, 0) != pdPASS) {
+        printf("ERROR: Failed to stop the timer\n");
+        return false;
     }
 
-    return ret >= 0;
-    #endif
-
-    return false;
+    return true;
 }
 
 int SlowTicker::attach(uint32_t frequency, std::function<void(void)> cb)
@@ -106,14 +59,12 @@ int SlowTicker::attach(uint32_t frequency, std::function<void(void)> cb)
     if( frequency > max_frequency ) {
         // reset frequency to a higher value
         if(!set_frequency(frequency)) {
-            printf("WARNING: SlowTicker cannot be set to > 100Hz\n");
+            printf("WARNING: SlowTicker cannot be set to > %dHz\n", BASE_FREQUENCY);
             return -1;
         }
         max_frequency = frequency;
     }
 
-    // TODO need to make this thread safe
-    // for now we just stop the timer
     if(started) stop();
     callbacks.push_back(std::make_tuple(period, countdown, cb));
     if(started) start();
@@ -130,27 +81,25 @@ void SlowTicker::detach(int n)
 }
 
 // Set the base frequency we use for all sub-frequencies
-// NOTE this is a slow ticker so ticks faster than 100Hz are not allowed as this uses NUTTX timers running in slow SPIFI
+// NOTE this is a slow ticker so ticks faster than 1000Hz are not allowed
 bool SlowTicker::set_frequency( int frequency )
 {
-    if(frequency > 100) return false;
-    this->interval = BASE_FREQUENCY / frequency; // Timer increments in a second
+    if(frequency > BASE_FREQUENCY) return false;
+    this->interval = BASE_FREQUENCY / frequency; // millisecond period
     if(started) {
         stop(); // must stop timer first
         // change frequency of timer callback
-        #if 0
-        int ret = ioctl(fd, TCIOC_SETTIMEOUT, interval);
-        if (ret < 0) {
-            printf("ERROR: Failed to reset the slow ticker interval to %d: %d\n", interval, errno);
+        if( xTimerChangePeriod( timer_handle, pdMS_TO_TICKS(BASE_FREQUENCY/interval), 1000 ) != pdPASS ) {
+            printf("ERROR: Failed to change timer period\n");
+            return false;
         }
-        #endif
         start(); // the restart it
     }
     return true;
 }
 
-// This is an ISR
-_ramfunc_ void SlowTicker::tick()
+// This is an ISR (or not actually, but must not block)
+void SlowTicker::tick()
 {
     // Call all callbacks that need to be called
     for(auto& i : callbacks) {
