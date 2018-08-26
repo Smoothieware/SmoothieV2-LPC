@@ -58,6 +58,8 @@ uint8_t Chip_IAP_Init(void)
 	return result[0];
 }
 
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+
 /* Prepare sector for write operation */
 uint8_t Chip_IAP_PreSectorForReadWrite(uint32_t strSector, uint32_t endSector, uint8_t flashBank)
 {

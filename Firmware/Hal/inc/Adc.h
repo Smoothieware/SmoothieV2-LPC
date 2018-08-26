@@ -35,11 +35,12 @@ public:
     static int get_max_value() { return 1024;}
 #endif
 
+    static void sample_isr();
+
 private:
     static const int num_channels= 8;
     static Adc* instances[num_channels];
     static int ninstances;
-    static int sample_isr(int irq, void *context, void *arg);
 
 #ifdef OVERSAMPLE
     // we need 4^n sample to oversample and we get double that to filter out spikes

@@ -37,7 +37,10 @@
 
 #ifdef __cplusplus
 extern "C" {
+#else
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 #endif
+
 
 /** @defgroup ROMAPI_18XX_43XX CHIP: LPC18xx_43xx ROM API declarations and functions
  * @ingroup CHIP_18XX_43XX_Drivers

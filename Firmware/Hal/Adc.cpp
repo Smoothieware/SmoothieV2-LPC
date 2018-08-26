@@ -4,11 +4,17 @@
 #include "SlowTicker.h"
 
 #include <string>
-#include <cstring>
 #include <cctype>
 #include <algorithm>
 
 #include "board.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
+
+#undef __GNU_VISIBLE
+#define __GNU_VISIBLE 1 // for strcasestr
+#include <string.h>
 
 #define _LPC_ADC_ID LPC_ADC0
 const ADC_CHANNEL_T CHANNEL_LUT[] = {
@@ -44,16 +50,17 @@ Adc::~Adc()
 {
     Chip_ADC_Int_SetChannelCmd(_LPC_ADC_ID, CHANNEL_LUT[channel], DISABLE);
     Chip_ADC_EnableChannel(_LPC_ADC_ID, CHANNEL_LUT[channel], DISABLE);
+
     channel = -1;
     enabled = false;
     // remove from instances array
-    irqstate_t flags = enter_critical_section();
+    taskENTER_CRITICAL();
     instances[instance_idx] = nullptr;
     for (int i = instance_idx; i < ninstances - 1; ++i) {
         instances[i] = instances[i + 1];
     }
     --ninstances;
-    leave_critical_section(flags);
+    taskEXIT_CRITICAL();
 }
 
 bool Adc::setup()
@@ -80,23 +87,20 @@ bool Adc::setup()
     return true;
 }
 
-// As nuttx broke ADC interrupts we need to work around it
-#define NO_ADC_INTERRUPTS
+//#define NO_ADC_INTERRUPTS
 bool Adc::start()
 {
 #ifndef NO_ADC_INTERRUPTS
-    // setup to interrupt, FIXME
-    int ret = irq_attach(LPC43M4_IRQ_ADC0, Adc::sample_isr, NULL);
-    if (ret == OK) {
-        up_enable_irq(LPC43M4_IRQ_ADC0);
-        // kick start it
-        Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
-        running= true;
-        // start conversion every 10ms
-        SlowTicker::getInstance()->attach(100, Adc::on_tick);
-    } else {
-        return false;
-    }
+    // setup to interrupt
+
+    NVIC_SetPriority(ADC0_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_EnableIRQ(ADC0_IRQn);
+    NVIC_ClearPendingIRQ(ADC0_IRQn);
+    // kick start it
+    Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
+    running= true;
+    // start conversion every 10ms
+    SlowTicker::getInstance()->attach(100, Adc::on_tick);
 #else
     // No need to start it as we are in BURST mode
     //Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
@@ -110,7 +114,6 @@ bool Adc::start()
 void Adc::on_tick()
 {
 #ifndef NO_ADC_INTERRUPTS
-    // FIXME
     if(running){
         Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
     }
@@ -128,8 +131,7 @@ bool Adc::stop()
 {
     running= false;
     #ifndef NO_ADC_INTERRUPTS
-    up_disable_irq(LPC43M4_IRQ_ADC0);
-    irq_attach(LPC43M4_IRQ_ADC0, nullptr, nullptr);
+    NVIC_DisableIRQ(ADC0_IRQn);
     #endif
     Chip_ADC_SetBurstCmd(_LPC_ADC_ID, DISABLE);
     Chip_ADC_DeInit(_LPC_ADC_ID);
@@ -202,7 +204,12 @@ Adc* Adc::from_string(const char *name)
 }
 
 //  isr call
-_ramfunc_ int Adc::sample_isr(int irq, void *context, FAR void *arg)
+extern "C" _ramfunc_ void ADC0_IRQHandler(void)
+{
+    Adc::sample_isr();
+}
+
+_ramfunc_ void Adc::sample_isr()
 {
     for (int i = 0; i < ninstances; ++i) {
         Adc *adc = Adc::getInstance(i);
@@ -217,8 +224,6 @@ _ramfunc_ int Adc::sample_isr(int irq, void *context, FAR void *arg)
             adc->not_ready_error++;
         }
     }
-
-    return OK;
 }
 
 // Keeps the last 32 values for each channel
@@ -237,9 +242,9 @@ uint32_t Adc::read()
     uint16_t median_buffer[num_samples];
 
     // needs atomic access TODO maybe be able to use std::atomic here or some lockless mutex
-    irqstate_t flags = enter_critical_section();
+    taskENTER_CRITICAL();
     memcpy(median_buffer, sample_buffer, sizeof(median_buffer));
-    leave_critical_section(flags);
+    taskEXIT_CRITICAL();
 
 #ifdef USE_MEDIAN_FILTER
     // returns the median value of the last 8 samples

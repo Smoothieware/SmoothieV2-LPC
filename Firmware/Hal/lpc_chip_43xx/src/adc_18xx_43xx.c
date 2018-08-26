@@ -234,7 +234,7 @@ void Chip_ADC_EnableChannel(LPC_ADC_T *pADC, ADC_CHANNEL_T channel, FunctionalSt
 void Chip_ADC_SetBurstCmd(LPC_ADC_T *pADC, FunctionalState NewState)
 {
 	setStartMode(pADC, ADC_NO_START);
-	
+
     if (NewState == DISABLE) {
 		pADC->CR &= ~ADC_CR_BURST;
 	}
@@ -246,7 +246,7 @@ void Chip_ADC_SetBurstCmd(LPC_ADC_T *pADC, FunctionalState NewState)
 /* Read the ADC value and convert it to 8bits value */
 Status Chip_ADC_ReadByte(LPC_ADC_T *pADC, ADC_CHANNEL_T channel, uint8_t *data)
 {
-	uint16_t temp;
+	uint16_t temp= 0;
 	Status rt;
 
 	rt = readAdcVal(pADC, channel, &temp);

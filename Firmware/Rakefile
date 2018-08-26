@@ -98,7 +98,7 @@ load 'rakefile.defaults' if File.exists?('rakefile.defaults')
 
 # add lpcopen HAL files
 hal_src = FileList['Hal/**/*.{c,cpp,s}']
-hal_src.exclude(/Adc/) # TODO
+#hal_src.exclude(/Adc/) # TODO
 
 # RTOS
 rtos_src = FileList['RTOS/**/*.{c,cpp,s}']
