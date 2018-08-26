@@ -12,6 +12,7 @@
 #include "ZProbeStrategy.h"
 #include "StepTicker.h"
 #include "Dispatcher.h"
+#include "OutputStream.h"
 
 // strategies we know about
 #include "ThreePointStrategy.h"

@@ -225,11 +225,11 @@ static void usb_comms(void *)
     printf("USB Comms thread running\n");
 
     if(!setup_cdc(xTaskGetCurrentTaskHandle())) {
-        printf("CDC setup failed\n");
+        printf("FATAL: CDC setup failed\n");
         return;
     }
 
-    // on first connect we send a welcome message
+    // on first connect we send a welcome message after getting a '\n'
     static const char *welcome_message = "Welcome to Smoothie\nok\n";
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
 

@@ -49,7 +49,7 @@ private:
 
     // our internal second counter
     uint16_t second_counter;
-    systime_t last_time;
+    uint32_t last_time;
 
     // we are delaying for this many seconds
     uint16_t current_delay;

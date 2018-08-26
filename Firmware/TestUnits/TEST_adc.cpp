@@ -9,11 +9,19 @@
 // #include "Adc.h"
 // #include "SlowTicker.h"
 
+using systime_t= uint32_t;
+#define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
+#define TICK2USEC(x) ((systime_t)(((uint64_t)(x)*1000000)/timerFreq))
+
+
 #define _ADC_CHANNEL ADC_CH1
 #define _LPC_ADC_ID LPC_ADC0
 
 REGISTER_TEST(ADCTest, polling)
 {
+    /* Get RIT timer peripheral clock rate */
+    uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
+
     ADC_CLOCK_SETUP_T ADCSetup;
 
     Chip_ADC_Init(_LPC_ADC_ID, &ADCSetup);
@@ -29,7 +37,7 @@ REGISTER_TEST(ADCTest, polling)
 
     float acc= 0;
     uint32_t n= 0;
-//    systime_t st = clock_systimer();
+    systime_t st = clock_systimer();
     for (int i = 0; i < 10000; ++i) {
         /* Start A/D conversion if not using burst mode */
         //    Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
@@ -45,10 +53,10 @@ REGISTER_TEST(ADCTest, polling)
             printf("Failed to read adc\n");
         }
     }
-    // systime_t en = clock_systimer();
+    systime_t en = clock_systimer();
 
     printf("average adc= %04X, v= %10.4f\n", (int)(acc/n), 3.3F * (acc/n)/1024.0F);
-    // printf("elapsed time: %dus, %10.2f us/sample\n", TICK2USEC(en-st), (float)TICK2USEC(en-st)/n);
+    printf("elapsed time: %lu us, %10.2f us/sample\n", TICK2USEC(en-st), (float)TICK2USEC(en-st)/n);
 
     Chip_ADC_SetBurstCmd(_LPC_ADC_ID, DISABLE);
     Chip_ADC_EnableChannel(_LPC_ADC_ID, _ADC_CHANNEL, DISABLE);

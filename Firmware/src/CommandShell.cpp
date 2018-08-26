@@ -13,6 +13,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "ff.h"
 
 #include <functional>
 #include <set>
@@ -138,6 +139,46 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
     } else {
         os.printf("Could not open directory %s\n", path.c_str());
     }
+#else
+    // newlib does not support dirent so use ff lib directly
+    DIR dir;
+    FILINFO finfo;
+    FATFS *fs;
+    FRESULT res = f_opendir(&dir, path.c_str());
+    if(FR_OK != res) {
+        os.printf("Could not open directory %s\n", path.c_str());
+        return true;
+    }
+
+    DWORD p1, s1, s2;
+    p1 = s1 = s2 = 0;
+    for(;;) {
+        if(Module::is_halted()) {f_closedir(&dir); return true; }
+        res = f_readdir(&dir, &finfo);
+        if ((res != FR_OK) || !finfo.fname[0]) break;
+        if (finfo.fattrib & AM_DIR) {
+            s2++;
+        } else {
+            s1++; p1 += finfo.fsize;
+        }
+        os.printf("%c%c%c%c%c %u/%02u/%02u %02u:%02u %9lu  %s\n",
+                (finfo.fattrib & AM_DIR) ? 'D' : '-',
+                (finfo.fattrib & AM_RDO) ? 'R' : '-',
+                (finfo.fattrib & AM_HID) ? 'H' : '-',
+                (finfo.fattrib & AM_SYS) ? 'S' : '-',
+                (finfo.fattrib & AM_ARC) ? 'A' : '-',
+                (finfo.fdate >> 9) + 1980, (finfo.fdate >> 5) & 15, finfo.fdate & 31,
+                (finfo.ftime >> 11), (finfo.ftime >> 5) & 63,
+                (DWORD)finfo.fsize, finfo.fname);
+    }
+    os.printf("%4lu File(s),%10lu bytes total\n%4lu Dir(s)", s1, p1, s2);
+    res = f_getfree("/sd", (DWORD*)&p1, &fs);
+    if(FR_OK == res) {
+        os.printf(", %10lu bytes free\n", p1 * fs->csize * 512);
+    }else{
+        os.printf("\n");
+    }
+    f_closedir(&dir);
 #endif
     return true;
 }
@@ -163,7 +204,7 @@ bool CommandShell::mv_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
 {
-    HELP("show memory allocation");
+    HELP("show memory allocation and tasks");
     char pcWriteBuffer[500];
     vTaskList( pcWriteBuffer );
     os.puts(pcWriteBuffer);
@@ -804,8 +845,7 @@ bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
 }
 
 // Special hack that switches the input comms to send everything here until we finish.
-// unfortunately due to bugs in nuttx we cannot use this as it drops characters on USB serial
-// due to lack of flow control, considered a "feature" in nuttx what BS! (SmoothieV1 had USB serial flow control done properly)
+// unfortunately due to incorrect USB flow control we cannot use this as it drops characters on USB serial
 bool CommandShell::upload_cmd(std::string& params, OutputStream& os)
 {
     HELP("upload filename - upload a file and save to sd");

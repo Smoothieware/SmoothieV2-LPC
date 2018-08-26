@@ -205,6 +205,7 @@ REGISTER_TEST(SDCardTest, directory)
     res = f_getfree("/sd", (DWORD*)&p1, &fs);
     TEST_ASSERT_EQUAL_INT(FR_OK, res);
     printf(", %10lu bytes free\n", p1 * fs->csize * 512);
+    TEST_ASSERT_EQUAL_INT(FR_OK, f_closedir(&dir));
 
 #else
     DIR *dirp;

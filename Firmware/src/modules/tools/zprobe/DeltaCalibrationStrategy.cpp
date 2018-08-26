@@ -9,6 +9,7 @@
 #include "Dispatcher.h"
 #include "StepperMotor.h"
 #include "BaseSolution.h"
+#include "OutputStream.h"
 
 #include <cmath>
 #include <tuple>

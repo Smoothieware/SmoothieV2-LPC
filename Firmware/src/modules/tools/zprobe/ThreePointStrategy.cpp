@@ -60,6 +60,7 @@
 #include "ZProbe.h"
 #include "Plane3D.h"
 #include "Dispatcher.h"
+#include "OutputStream.h"
 
 #include <string>
 #include <algorithm>

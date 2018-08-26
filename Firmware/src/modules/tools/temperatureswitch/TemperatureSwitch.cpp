@@ -12,6 +12,10 @@ Author: Michael Hackney, mhackney@eclecticangler.com
 #include "Dispatcher.h"
 #include "OutputStream.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+#define TICK2MS( xTicks ) ( (uint32_t) ( (xTicks * 1000) / configTICK_RATE_HZ ) )
+
 #define hotend_key "hotend"
 #define threshold_temp_key "threshold_temp"
 #define type_key "type"
@@ -25,7 +29,7 @@ Author: Michael Hackney, mhackney@eclecticangler.com
 
 TemperatureSwitch::TemperatureSwitch(const char *name) : Module("temperature switch", name)
 {
-    last_time = clock_systimer();
+    last_time = xTaskGetTickCount();
 }
 
 TemperatureSwitch::~TemperatureSwitch()
@@ -131,9 +135,9 @@ bool TemperatureSwitch::handle_arm(GCode& gcode, OutputStream& os)
 // Called in command context quite regularly, but we only need to service on the cooldown and heatup poll intervals
 void TemperatureSwitch::in_command_ctx()
 {
-    systime_t now = clock_systimer();
-    systime_t usec= TICK2USEC(now-last_time);
-    if(usec >= 1000000) {
+    uint32_t now = xTaskGetTickCount();
+    uint32_t msec= TICK2MS(now-last_time);
+    if(msec >= 1000) {
         second_counter++;
         last_time= now;
 

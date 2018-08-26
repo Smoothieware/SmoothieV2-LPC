@@ -16,6 +16,7 @@
 
 #include <ctype.h>
 #include <algorithm>
+#include <math.h>
 
 // global config settings
 #define corexy_homing_key "corexy_homing"

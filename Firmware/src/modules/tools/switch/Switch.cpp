@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <math.h>
+#include <string.h>
 
 #define startup_state_key       "startup_state"
 #define startup_value_key       "startup_value"
@@ -139,7 +140,7 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
         this->digital_pin = nullptr;
         this->output_type = NONE;
         if(output_pin != "nc") {
-            printf("WARNING: switch config: output pin has no known type: %s\n", type);
+            printf("WARNING: switch config: output pin has no known type: %s\n", type.c_str());
         }
     }
 

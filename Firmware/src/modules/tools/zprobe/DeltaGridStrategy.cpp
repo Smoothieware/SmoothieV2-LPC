@@ -73,6 +73,7 @@
 #include "StepperMotor.h"
 #include "BaseSolution.h"
 #include "StringUtils.h"
+#include "OutputStream.h"
 
 #include <string>
 #include <algorithm>

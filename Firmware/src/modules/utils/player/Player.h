@@ -30,7 +30,7 @@ class Player : public Module {
         bool resume_command( std::string& parameters, OutputStream& os );
         std::string extract_options(std::string& args);
         void suspend_part2();
-        static void* play_thread(void *);
+        static void play_thread(void *);
         void player_thread();
         static OutputStream nullos;
         static Player *instance;
@@ -40,7 +40,7 @@ class Player : public Module {
         std::string on_boot_gcode;
         OutputStream *current_os;
         OutputStream *reply_os;
-        pthread_t play_thread_p;
+        void *play_thread_p;
 
         FILE* current_file_handler;
         long file_size;
