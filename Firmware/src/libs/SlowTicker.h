@@ -12,7 +12,7 @@ class SlowTicker
     public:
         static SlowTicker *getInstance() { return instance; }
         SlowTicker();
-        ~SlowTicker() {};
+        virtual ~SlowTicker();
 
         bool start();
         bool stop();
@@ -30,6 +30,6 @@ class SlowTicker
         std::vector<callback_t> callbacks;
         uint32_t max_frequency{0};
         uint32_t interval{0};
-        TimerHandle_t timer_handle;
+        TimerHandle_t timer_handle{0};
         bool started{false};
 };
