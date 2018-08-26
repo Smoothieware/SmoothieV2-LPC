@@ -12,6 +12,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "ff.h"
 
 #include "Module.h"
 #include "OutputStream.h"
@@ -431,6 +432,8 @@ void configureSPIFI();
 #include STRING_CONFIG_H
 static std::string str(string_config);
 static std::stringstream ss(str);
+#else
+extern "C" bool setup_sdmmc();
 #endif
 
 static void smoothie_startup()
@@ -459,10 +462,15 @@ static void smoothie_startup()
     // open the config file
     do {
 #ifdef SD_CONFIG
-        // TODO need to change this for lpcopen
-        int ret = mount("/dev/mmcsd0", "/sd", "vfat", 0, nullptr);
-        if(0 != ret) {
-            std::cout << "Error mounting: " << "/dev/mmcsd0: " << ret << "\n";
+        static FATFS fatfs; /* File system object */
+        if(!setup_sdmmc()) {
+            std::cout << "Error setting up sdmmc\n";
+            break;
+        }
+        int ret =
+        f_mount(&fatfs, "sd", 1);
+        if(FR_OK != ret) {
+            std::cout << "Error mounting: " << "/sd: " << ret << "\n";
             break;
         }
 
@@ -471,7 +479,7 @@ static void smoothie_startup()
         if(!fs.is_open()) {
             std::cout << "Error opening file: " << "/sd/config.ini" << "\n";
             // unmount sdcard
-            umount("/sd");
+            f_unmount("sd");
             break;
         }
 
@@ -621,7 +629,7 @@ static void smoothie_startup()
         fs.close();
 
         // unmount sdcard
-        //umount("/sd");
+        //f_unmount("sd");
 #endif
 
         // initialize planner before conveyor this is when block queue is created

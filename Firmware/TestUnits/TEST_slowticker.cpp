@@ -19,8 +19,10 @@ REGISTER_TEST(SlowTicker, test_20_hz)
 
     TEST_ASSERT_TRUE(slt->start());
 
+    // 20 Hz
     int n= slt->attach(20, timer_callback);
 
+    // test for 5 seconds which should be around 100 callbacks
     for (int i = 0; i < 5; ++i) {
         vTaskDelay(pdMS_TO_TICKS(1000));;
         printf("time %d seconds, timer %d calls\n", i+1, timer_cnt);

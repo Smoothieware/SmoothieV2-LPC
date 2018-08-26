@@ -39,7 +39,7 @@ bool CommandShell::initialize()
 
     THEDISPATCHER->add_handler( "help", std::bind( &CommandShell::help_cmd, this, _1, _2) );
 
-    THEDISPATCHER->add_handler( "mount", std::bind( &CommandShell::mount_cmd, this, _1, _2) );
+    //THEDISPATCHER->add_handler( "mount", std::bind( &CommandShell::mount_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "ls", std::bind( &CommandShell::ls_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "rm", std::bind( &CommandShell::rm_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "mv", std::bind( &CommandShell::mv_cmd, this, _1, _2) );
@@ -178,40 +178,35 @@ bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
     return true;
 }
 
+#if 0
 bool CommandShell::mount_cmd(std::string& params, OutputStream& os)
 {
     HELP("mount sdcard on /sd (or unmount if already mounted)");
 
-    const char g_target[]         = "/sd";
-    const char g_filesystemtype[] = "vfat";
-    const char g_source[]         = "/dev/mmcsd0";
-#if 0
+    const char g_target[]= "sd";
     if(mounted) {
         os.printf("Already mounted, unmounting\n");
-        umount(g_target);
+        int ret = f_unmount("g_target");
+        if(ret != FR_OK) {
+            os.printf("Error unmounting: %d", ret);
+            return true;
+        }
         mounted = false;
         return true;
     }
 
-    int ret;
-    // ret = boardctl(BOARDIOC_INIT, 0);
-    // if(OK != ret) {
-    //     os.printf("Failed to INIT SDIO\n");
-    //     return true;
-    // }
-
-    ret = mount(g_source, g_target, g_filesystemtype, 0, nullptr);
-    if(0 == ret) {
+    int ret= f_mount(f_mount(&fatfs, g_target, 1);
+    if(FR_OK == ret) {
         mounted = true;
-        os.printf("Mounted %s on %s\n", g_source, g_target);
+        os.printf("Mounted /%s\n", g_target);
 
     } else {
-        os.printf("Failed to mount sdcard\n");
+        os.printf("Failed to mount sdcard: %d\n", ret);
     }
 
-#endif
     return true;
 }
+#endif
 
 bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
 {

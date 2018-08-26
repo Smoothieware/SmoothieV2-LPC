@@ -20,7 +20,7 @@ private:
     bool mv_cmd(std::string& params, OutputStream& os);
     bool config_set_cmd(std::string& params, OutputStream& os);
     bool mem_cmd(std::string& params, OutputStream& os);
-    bool mount_cmd(std::string& params, OutputStream& os);
+    //bool mount_cmd(std::string& params, OutputStream& os);
     bool cat_cmd(std::string& params, OutputStream& os);
     bool md5sum_cmd(std::string& params, OutputStream& os);
     bool switch_cmd(std::string& params, OutputStream& os);
