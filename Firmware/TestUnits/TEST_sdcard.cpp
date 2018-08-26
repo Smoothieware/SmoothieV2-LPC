@@ -11,6 +11,7 @@
 #include "ff.h"
 
 #include "FreeRTOS.h"
+#include "task.h"
 
 extern "C" bool setup_sdmmc();
 
@@ -229,18 +230,31 @@ REGISTER_TEST(SDCardTest, directory)
 #endif
 }
 
-#if 0
 REGISTER_TEST(SDCardTest, read_config_init)
 {
     TEST_IGNORE();
 }
 
+using systime_t= uint32_t;
+#define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
+#define TICK2USEC(x) ((systime_t)(((uint64_t)(x)*1000000)/timerFreq))
 
 REGISTER_TEST(SDCardTest, time_read_write)
 {
+    /* Get RIT timer peripheral clock rate */
+    uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
+    #if 0
+    printf("RITIMER clock rate= %lu\n", timerFreq);
+    {
+        systime_t st = clock_systimer();
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        systime_t en = clock_systimer();
+        printf("1 second delay= %lu us\n", TICK2USEC(en-st));
+    }
+    #endif
+
     char fn[64];
-    strcpy(fn, g_target);
-    strcat(fn, "/test_large_file.tst");
+    strcpy(fn, "/sd/test_large_file.tst");
 
     // delete it if it was there
     unlink(fn);
@@ -261,7 +275,7 @@ REGISTER_TEST(SDCardTest, time_read_write)
     }
 
     systime_t en = clock_systimer();
-    printf("elapsed time %d us for writing %d bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
+    printf("elapsed time %lu us for writing %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
 
@@ -279,11 +293,10 @@ REGISTER_TEST(SDCardTest, time_read_write)
         }
     }
     en = clock_systimer();
-    printf("elapsed time %d us for reading %d bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
+    printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
 }
-#endif
 
 REGISTER_TEST(SDCardTest, unmount)
 {
