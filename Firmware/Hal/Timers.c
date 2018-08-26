@@ -60,9 +60,9 @@ int tmr0_setup(uint32_t frequency, uint32_t delay, void *mr0handler, void *mr1ha
 
     printf("TMR0 MR0 period=%lu cycles; interrupt rate=%lu Hz\n", period1, timerFreq / period1);
 
-    // // calculate ideal perid for MR1 for unstep interrupt (can't use NUTTX for this)
-    // // we do not set it here as it will need to add the current TC when it is enabled
-    // // note that the MR1 match interrupt starts off disabled
+    // calculate ideal period for MR1 for unstep interrupt
+    // we do not set it here as it will need to add the current TC when it is enabled
+    // note that the MR1 match interrupt starts off disabled
     delay_period = floorf(delay / (1000000.0F / timerFreq)); // delay is in us
     printf("TMR0 MR1 period=%lu cycles; pulse width=%lu us\n", delay_period, (delay_period*1000000)/timerFreq);
 
@@ -78,6 +78,12 @@ int tmr0_setup(uint32_t frequency, uint32_t delay, void *mr0handler, void *mr1ha
 
     // return the inaccuracy of the frequency if it does not exactly divide the frequency
     return timerFreq % period1;
+}
+
+void tmr0_stop()
+{
+   Chip_TIMER_Disable(LPC_TIMER0);
+   NVIC_DisableIRQ(TIMER0_IRQn);
 }
 
 // called from within TMR0 ISR so must be in SRAM
