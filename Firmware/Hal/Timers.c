@@ -15,18 +15,28 @@ static uint32_t delay_period;
 
 _ramfunc_ void TIMER0_IRQHandler(void)
 {
+    bool m1= false;
+    bool m2= false;
+
+    if (Chip_TIMER_MatchPending(LPC_TIMER0, 0)) {
+        Chip_TIMER_ClearMatch(LPC_TIMER0, 0);
+        m1= true;
+    }
 
     if (Chip_TIMER_MatchPending(LPC_TIMER0, 1)) { // MR1 match interrupt
+        Chip_TIMER_ClearMatch(LPC_TIMER0, 1);
+        m2= true;
+    }
+
+    if(m2) { // MR1 match interrupt
         // disable the MR1 match interrupt as it is a one shot
         Chip_TIMER_MatchDisableInt(LPC_TIMER0, 1);
-        Chip_TIMER_ClearMatch(LPC_TIMER0, 1);
         // call upstream handler
         untick_handler();
     }
 
-    if (Chip_TIMER_MatchPending(LPC_TIMER0, 0)) {
-        Chip_TIMER_ClearMatch(LPC_TIMER0, 0);
-        tick_handler(); // MR0 match interrupt
+    if(m1) { // MR0 match interrupt
+        tick_handler();
     }
 }
 
@@ -51,12 +61,6 @@ int tmr0_setup(uint32_t frequency, uint32_t delay, void *mr0handler, void *mr1ha
     Chip_TIMER_SetMatch(LPC_TIMER0, 0, period1);
     Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 0);
     Chip_TIMER_Enable(LPC_TIMER0);
-
-
-    // uint32_t clk_frequency = 102000000; // 102Mhz
-    // prescaler = LPC43_TMR_SETCLOCK(dev, clk_frequency);
-    // printf("TIMER0 CLKIN=%d Hz, Frequency=%d Hz, prescaler=%d\n",
-    //        BOARD_FCLKOUT_FREQUENCY, clk_frequency, prescaler);
 
     printf("TMR0 MR0 period=%lu cycles; interrupt rate=%lu Hz\n", period1, timerFreq / period1);
 
