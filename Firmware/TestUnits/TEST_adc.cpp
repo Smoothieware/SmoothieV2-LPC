@@ -6,8 +6,8 @@
 
 #include "board.h"
 
-// #include "Adc.h"
-// #include "SlowTicker.h"
+#include "Adc.h"
+#include "SlowTicker.h"
 
 using systime_t= uint32_t;
 #define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
@@ -86,7 +86,7 @@ REGISTER_TEST(ADCTest, polling)
 //         Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
 
 //         // wait 10ms
-//         usleep(10000);
+//         vTaskDelay(pdMS_TO_TICKS(100));
 
 //          Waiting for A/D conversion complete
 //         TEST_ASSERT_TRUE(Chip_ADC_ReadStatus(_LPC_ADC_ID, _ADC_CHANNEL, ADC_DR_DONE_STAT) == SET);
@@ -113,9 +113,6 @@ REGISTER_TEST(ADCTest, polling)
 
 // }
 
-
-
-#if 0
 REGISTER_TEST(ADCTest, adc_class_interrupts)
 {
     // we need to setup and start the slow ticker for Adc
@@ -134,10 +131,10 @@ REGISTER_TEST(ADCTest, adc_class_interrupts)
     TEST_ASSERT_TRUE(Adc::start());
 
     const uint32_t max_adc_value = Adc::get_max_value();
-    printf("Max ADC= %d\n", max_adc_value);
+    printf("Max ADC= %lu\n", max_adc_value);
 
     // give it time to accumulate the 32 samples
-    usleep(500000);
+    vTaskDelay(pdMS_TO_TICKS(50));
     // fill up moving average buffer
     adc->read();
     adc->read();
@@ -149,7 +146,7 @@ REGISTER_TEST(ADCTest, adc_class_interrupts)
         float volts= 3.3F * (v / (float)max_adc_value);
 
         printf("adc= %04X, volts= %10.4f\n", v, volts);
-        usleep(50000);
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 
     delete adc;
@@ -172,10 +169,10 @@ REGISTER_TEST(ADCTest, two_adc_channels)
     TEST_ASSERT_TRUE(Adc::start());
 
     const uint32_t max_adc_value = Adc::get_max_value();
-    printf("Max ADC= %d\n", max_adc_value);
+    printf("Max ADC= %lu\n", max_adc_value);
 
     // give it time to accumulate the 32 samples
-    usleep(500000);
+    vTaskDelay(pdMS_TO_TICKS(50));
     // fill up moving average buffer
     for (int i = 0; i < 4; ++i) {
         adc1->read();
@@ -190,7 +187,7 @@ REGISTER_TEST(ADCTest, two_adc_channels)
         v= adc1->read();
         volts= 3.3F * (v / (float)max_adc_value);
         printf("adc1= %04X, volts= %10.4f\n", v, volts);
-        usleep(50000);
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 
     delete adc1;
@@ -198,4 +195,3 @@ REGISTER_TEST(ADCTest, two_adc_channels)
 
     TEST_ASSERT_TRUE(Adc::stop());
 }
-#endif
