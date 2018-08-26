@@ -17,9 +17,9 @@ _ramfunc_ void TIMER0_IRQHandler(void)
 {
 
     if (Chip_TIMER_MatchPending(LPC_TIMER0, 1)) { // MR1 match interrupt
-        Chip_TIMER_ClearMatch(LPC_TIMER0, 1);
         // disable the MR1 match interrupt as it is a one shot
         Chip_TIMER_MatchDisableInt(LPC_TIMER0, 1);
+        Chip_TIMER_ClearMatch(LPC_TIMER0, 1);
         // call upstream handler
         untick_handler();
     }
@@ -63,8 +63,8 @@ int tmr0_setup(uint32_t frequency, uint32_t delay, void *mr0handler, void *mr1ha
     // calculate ideal period for MR1 for unstep interrupt
     // we do not set it here as it will need to add the current TC when it is enabled
     // note that the MR1 match interrupt starts off disabled
-    delay_period = floorf(delay / (1000000.0F / timerFreq)); // delay is in us
-    printf("TMR0 MR1 period=%lu cycles; pulse width=%lu us\n", delay_period, (delay_period*1000000)/timerFreq);
+    delay_period = roundf(delay / (1000000.0F / timerFreq)); // delay is in us
+    printf("TMR0 MR1 period=%lu cycles; pulse width=%f us\n", delay_period, ((float)delay_period*1000000)/timerFreq);
 
     // setup the upstream handlers for each interrupt
     tick_handler = mr0handler;
@@ -95,7 +95,7 @@ _ramfunc_ void tmr0_mr1_start()
     // TODO we should really check this does not exceed the MR0 match otherwise unstep will not happen this step cycle
 
     uint32_t tc = Chip_TIMER_ReadCount(LPC_TIMER0);
-    LPC_TIMER0->TC = delay_period+tc;
+    Chip_TIMER_SetMatch(LPC_TIMER0, 1, delay_period+tc);
 
     // enable the MR1 match interrupt
     Chip_TIMER_MatchEnableInt(LPC_TIMER0, 1);
