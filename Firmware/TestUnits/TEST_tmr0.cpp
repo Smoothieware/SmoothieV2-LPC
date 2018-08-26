@@ -65,5 +65,4 @@ REGISTER_TEST(TMR0Test, test_10000_hz)
     TEST_ASSERT_TRUE(unstep_stop != 0);
     TEST_ASSERT_INT_WITHIN(1, 1000000/FREQUENCY, elapsed/timer_cnt); // 50us period
     TEST_ASSERT_INT_WITHIN(1, 5, unstep_time);
-
 }

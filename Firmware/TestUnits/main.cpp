@@ -331,8 +331,6 @@ int main()   //int argc, char *argv[])
     //HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
     NVIC_SetPriorityGrouping( 0 );
 
-    configureSPIFI(); // full speed ahead
-
     // Read clock settings and update SystemCoreClock variable
     SystemCoreClockUpdate();
 
@@ -341,6 +339,8 @@ int main()   //int argc, char *argv[])
     Board_Init();
     // Set the LED to the state of "On"
     Board_LED_Set(0, true);
+
+    configureSPIFI(); // full speed ahead
 
     printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
 
