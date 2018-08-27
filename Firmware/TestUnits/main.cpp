@@ -19,6 +19,10 @@
 #include "MessageQueue.h"
 #include "SlowTicker.h"
 
+#include "uart_comms.h"
+
+#define TESTCOMMS
+
 // // place holder
 bool dispatch_line(OutputStream& os, const char *line)
 {
@@ -79,7 +83,7 @@ static int test_runner(void)
     return (UnityEnd());
 }
 
-static int run_tests(int argc, char *argv[])
+static int run_tests()
 {
     printf("Starting tests...\n");
     int ret = test_runner();
@@ -108,30 +112,22 @@ void print_to_all_consoles(const char *str)
     printf("%s", str);
 }
 
-/* LED1 toggle thread */
-extern "C" void vLEDTask1(void *pvParameters)
-{
-    bool LedState = false;
-
-    while (1) {
-        Board_LED_Set(0, LedState);
-        LedState = (bool) !LedState;
-
-        /* About a 3Hz on/off toggle rate */
-        vTaskDelay(configTICK_RATE_HZ / 6);
-    }
-}
-
 extern "C" void vRunTestsTask(void *pvParameters)
 {
-    run_tests(0, nullptr); // argc, argv);
+    run_tests();
 
     //vTaskGetTaskState();
     UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
     printf("High water mark= %lu\n", uxHighWaterMark);
+
+    TickType_t delayms= pdMS_TO_TICKS(1000);
+    for(;;) {
+        vTaskDelay(delayms);
+    }
     vTaskDelete( NULL );
 }
 
+#ifdef TESTCOMMS
 extern "C" size_t write_cdc(const char *buf, size_t len);
 extern "C" size_t read_cdc(char *buf, size_t len);
 extern "C" int setup_cdc(void *taskhandle);
@@ -267,13 +263,10 @@ extern "C" void dispatch(void *pvParameters)
 
                 os->puts("ok\n");
             }
-        }  else {
-            // timed out, flash idle led
-            Board_LED_Toggle(1);
-            continue;
         }
     }
 }
+#endif
 
 extern "C" void vApplicationTickHook( void )
 {
@@ -338,8 +331,11 @@ int main()   //int argc, char *argv[])
     // Set up and initialize all required blocks and
     // functions related to the board hardware
     Board_Init();
-    // Set the LED to the state of "On"
-    Board_LED_Set(0, true);
+
+    if(setup_uart() < 0) {
+        printf("FATAL: UART setup failed\n");
+        __asm("bkpt #0");
+    }
 
     configureSPIFI(); // full speed ahead
 
@@ -351,13 +347,10 @@ int main()   //int argc, char *argv[])
         printf("WARNING: SlowTicker did not start\n");
     }
 
-    /* LED1 toggle thread */
-    xTaskCreate(vLEDTask1, "vTaskLed1", configMINIMAL_STACK_SIZE,
-                NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
-
     xTaskCreate(vRunTestsTask, "vTestsTask", 512, /* *4 as 32bit words */
                 NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
 
+#ifdef TESTCOMMS
     // create queue for dispatch of lines, can be sent to by several tasks
     if(!create_message_queue()) {
         // Failed to create the queue.
@@ -367,6 +360,7 @@ int main()   //int argc, char *argv[])
 
     xTaskCreate(usbComTask, "usbComTask", 256, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
     xTaskCreate(dispatch, "dispatch", 512, NULL, (tskIDLE_PRIORITY + 3UL), NULL);
+#endif
 
     struct mallinfo mi = mallinfo();
     printf("free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());

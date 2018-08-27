@@ -254,6 +254,8 @@ REGISTER_TEST(SDCardTest, time_read_write)
     }
     #endif
 
+    printf("Starting timing tests....\n");
+
     char fn[64];
     strcpy(fn, "/sd/test_large_file.tst");
 

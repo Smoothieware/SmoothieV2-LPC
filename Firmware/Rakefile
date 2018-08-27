@@ -174,7 +174,7 @@ if DEBUG
 end
 
 # Target specified #defines
-defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\""
+defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" -D#{TARGET}"
 if TARGET == 'Bambino'
 defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
 elsif TARGET == 'Minialpha'

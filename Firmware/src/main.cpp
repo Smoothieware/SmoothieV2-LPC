@@ -14,6 +14,8 @@
 #include "task.h"
 #include "ff.h"
 
+#include "uart_comms.h"
+
 #include "Module.h"
 #include "OutputStream.h"
 #include "MessageQueue.h"
@@ -276,20 +278,23 @@ static void usb_comms(void *)
     }
 }
 
-#if 0
 static void uart_comms(void *)
 {
     printf("UART Comms thread running\n");
+    set_notification_uart(xTaskGetCurrentTaskHandle());
 
     // create an output stream that writes to the uart
     static OutputStream os([](const char *buf, size_t len) { return write_uart(buf, len); });
     output_streams.push_back(&os);
 
+    const TickType_t waitms = pdMS_TO_TICKS( 300 );
+
+    char rxBuf[256];
     char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
     bool discard = false;
     while(1) {
-        // Wait to be notified that there has been a UART irq.
+        // Wait to be notified that there has been a UART irq. (it may have been rx or tx so may not be anything to read)
         uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
 
         if( ulNotificationValue != 1 ) {
@@ -298,11 +303,10 @@ static void uart_comms(void *)
 
         size_t n = read_uart(rxBuf, sizeof(rxBuf));
         if(n > 0) {
-           process_buffer(n, rxBuf, line, cnt, discard);
+           process_buffer(n, rxBuf, &os, line, cnt, discard);
         }
     }
 }
-#endif
 
 
 // this prints the string to all consoles that are connected and active
@@ -686,7 +690,7 @@ static void smoothie_startup()
     // Start comms threads Higher priority than the command thread
     // fixed stack size of 4k Bytes each
     xTaskCreate(usb_comms, "USBCommsThread", 4096/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
-    //xTaskCreate(uart_comms, "UARTCommsThread", 4096/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+    xTaskCreate(uart_comms, "UARTCommsThread", 4096/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
 
     // wait for command thread to start
     // std::unique_lock<std::mutex> lk(m);
@@ -712,8 +716,9 @@ int main(int argc, char *argv[])
     // Set up and initialize all required blocks and
     // functions related to the board hardware
     Board_Init();
-    // Set the LED to the state of "On"
-    Board_LED_Set(0, true);
+    if(setup_uart() < 0) {
+        printf("FATAL: UART setup failed\n");
+    }
 
     configureSPIFI(); // setup the winbond SPIFI to max speed
 

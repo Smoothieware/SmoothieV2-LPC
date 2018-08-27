@@ -11,6 +11,7 @@
 
 #include "board.h"
 #include "ff.h"
+#include "uart_comms.h"
 
 extern int fatfs_to_errno( FRESULT Result );
 
@@ -128,11 +129,8 @@ int _close(int file)
 int _write(int file, char *buffer, int length)
 {
     if(file < 3) {
-        unsigned int i;
-        for (i = 0; i < length; i++) {
-                Board_UARTPutChar(buffer[i]);
-        }
-        return length;
+        // Note this will block until all sent
+        return write_uart(buffer, length);
     }
 
     FIL *fh= get_fh(file);
@@ -154,11 +152,8 @@ int _write(int file, char *buffer, int length)
 int _read(int file, char *buffer, int length)
 {
     if(file < 3) {
-        for (int i = 0; i < length; ++i) {
-            // TODO should probably do a non blocking version
-            buffer[i] = Board_UARTGetChar();
-        }
-        return length;
+        // Note this can return less than request or even 0
+        return read_uart(buffer, length);
     }
 
     FIL *fh= get_fh(file);

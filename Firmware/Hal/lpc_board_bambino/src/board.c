@@ -51,6 +51,7 @@ void Board_UART_Init(LPC_USART_T *pUART)
 	}
 }
 
+#if 0
 /* Initialize debug output via UART for board */
 void Board_Debug_Init(void)
 {
@@ -159,6 +160,7 @@ uint8_t Joystick_GetStatus(void)
 {
 	return NO_BUTTON_PRESSED;
 }
+#endif
 
 /* Returns the MAC address assigned to this board */
 void Board_ENET_GetMacADDR(uint8_t *mcaddr)
@@ -178,15 +180,8 @@ void Board_Init(void)
 	/* Initializes GPIO */
 	Chip_GPIO_Init(LPC_GPIO_PORT);
 
-	/* Setup GPIOs for USB demos */
-//	Chip_SCU_PinMuxSet(0x2, 6, (SCU_MODE_PULLUP | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));			/* P2_6 USB1_PWR_EN, USB1 VBus function */
-//	Chip_SCU_PinMuxSet(0x2, 5, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));	/* P2_5 USB1_VBUS, MUST CONFIGURE THIS SIGNAL FOR USB1 NORMAL OPERATION */
-//	Chip_SCU_PinMuxSet(0x1, 7, (SCU_MODE_PULLUP | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));			/* P1_7 USB0_PWR_EN, USB0 VBus function Xplorer */
-//	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 6);							/* GPIO5[6] = USB1_PWR_EN */
-//	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 6, true);							/* GPIO5[6] output high */
-
 	/* Initialize LEDs */
-	Board_LED_Init();
+	//Board_LED_Init();
 #if defined(USE_RMII)
 	Chip_ENET_RMIIEnable(LPC_ETHERNET);
 #else

@@ -20,7 +20,7 @@ REGISTER_TEST(PinTest, flashleds)
 		Pin("P2_4") // Pin("GPIO5[4]")
 	};
 
-	Pin button("GPIO0_7!");
+	Pin button("GPIO0_7!^");
 	button.as_input();
 	if(!button.connected()) {
 		printf("Button was invalid\n");
@@ -42,7 +42,7 @@ REGISTER_TEST(PinTest, flashleds)
 
 	TickType_t delayms= pdMS_TO_TICKS(100);
 	cnt = 0;
-	while(button.get() == 0) {
+	while(button.get() == 0 && cnt < 100) {
 		uint8_t m = 1;
 		for(auto& p : myleds) {
 			p.set(cnt & m);
