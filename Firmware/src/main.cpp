@@ -357,6 +357,15 @@ static void commandthrd(void *)
                 // toggle led to show we are alive, but idle
                 idle_led->set(!idle_led->get());
             }
+            // handle play led
+            if(play_led != nullptr) {
+                if(Module::is_halted()) {
+                    play_led->set(!play_led->get());
+
+                }else{
+                    play_led->set(!Conveyor::getInstance()->is_idle());
+                }
+            }
         }
 
         // set in comms thread, and executed here to avoid thread clashes
@@ -735,19 +744,6 @@ extern "C" void vApplicationIdleHook( void )
     function, because it is the responsibility of the idle task to clean up
     memory allocated by the kernel to any task that has since been deleted. */
 
-    // handle play led
-    if(play_led->connected()) {
-        if(Module::is_halted()) {
-            static uint8_t cnt= 0;
-            if(++cnt >= 100) {
-                cnt= 0;
-                play_led->set(!play_led->get());
-            }
-
-        }else{
-            play_led->set(!Conveyor::getInstance()->is_idle());
-        }
-    }
 }
 
 extern "C" void vApplicationTickHook( void )

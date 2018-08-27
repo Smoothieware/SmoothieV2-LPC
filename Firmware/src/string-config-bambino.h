@@ -130,7 +130,7 @@ unkill_enable = true   # enable kill button hold for 2 seconds does unkill\n\
 \n\
 [system leds]\n\
 idle_led = P2_5         # flashes when running but idle\n\
-play_led = P6_11        # flashes when halted, on when playing\n\
+play_led = P6_11!       # flashes when halted, on when playing\n\
 \n\
 [pwm]\n\
 frequency=10000        # PWM frequency\n\

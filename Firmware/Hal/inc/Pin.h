@@ -33,7 +33,7 @@ public:
     inline bool get() const
     {
         if (!this->valid) return false;
-         return (LPC_GPIO_PORT->B[this->gpioport][this->gpiopin]) ^ this->inverting;
+        return (LPC_GPIO_PORT->B[this->gpioport][this->gpiopin]) ^ this->inverting;
     }
 
     // we need to do this inline without calling lpc43_gpio_write due to ISR being in SRAM not FLASH
