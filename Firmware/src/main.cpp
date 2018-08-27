@@ -357,15 +357,6 @@ static void commandthrd(void *)
                 // toggle led to show we are alive, but idle
                 idle_led->set(!idle_led->get());
             }
-            // handle play led
-            if(play_led != nullptr) {
-                if(Module::is_halted()) {
-                    play_led->set(!play_led->get());
-
-                }else{
-                    play_led->set(!Conveyor::getInstance()->is_idle());
-                }
-            }
         }
 
         // set in comms thread, and executed here to avoid thread clashes
@@ -731,6 +722,8 @@ int main(int argc, char *argv[])
     return 1;
 }
 
+#define TICKS2MS( xTicks ) ( (uint32_t) ( ((uint64_t)(xTicks) * 1000) / configTICK_RATE_HZ ) )
+
 // hooks from freeRTOS
 extern "C" void vApplicationIdleHook( void )
 {
@@ -743,6 +736,20 @@ extern "C" void vApplicationIdleHook( void )
     important that vApplicationIdleHook() is permitted to return to its calling
     function, because it is the responsibility of the idle task to clean up
     memory allocated by the kernel to any task that has since been deleted. */
+
+    // handle play led
+    if(play_led != nullptr) {
+        if(Module::is_halted()) {
+            static TickType_t last_time_check = xTaskGetTickCount();
+            if(TICKS2MS(xTaskGetTickCount() - last_time_check) >= 300) {
+                last_time_check = xTaskGetTickCount();
+                play_led->set(!play_led->get());
+            }
+
+        }else{
+            play_led->set(!Conveyor::getInstance()->is_idle());
+        }
+    }
 
 }
 
