@@ -87,7 +87,8 @@ bool Adc::setup()
     return true;
 }
 
-//#define NO_ADC_INTERRUPTS
+// interrupts seem to not work very well
+#define NO_ADC_INTERRUPTS
 bool Adc::start()
 {
 #ifndef NO_ADC_INTERRUPTS
@@ -120,7 +121,7 @@ void Adc::on_tick()
 #else
     // we need to run the sampling irq
     if(running) {
-        sample_isr(0, 0, 0);
+        sample_isr();
         // No need to start it as we are in burst mode so it should always be ready
         //Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
     }
@@ -206,7 +207,9 @@ Adc* Adc::from_string(const char *name)
 //  isr call
 extern "C" _ramfunc_ void ADC0_IRQHandler(void)
 {
+    NVIC_DisableIRQ(ADC0_IRQn);
     Adc::sample_isr();
+    NVIC_EnableIRQ(ADC0_IRQn);
 }
 
 _ramfunc_ void Adc::sample_isr()
