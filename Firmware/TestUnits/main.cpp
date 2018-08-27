@@ -17,6 +17,7 @@
 
 #include "OutputStream.h"
 #include "MessageQueue.h"
+#include "SlowTicker.h"
 
 // // place holder
 bool dispatch_line(OutputStream& os, const char *line)
@@ -343,6 +344,12 @@ int main()   //int argc, char *argv[])
     configureSPIFI(); // full speed ahead
 
     printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
+
+    // we need to setup and start the slow ticker for some of the tests
+    static SlowTicker *slowticker= new SlowTicker;
+    if(!slowticker->start()) {
+        printf("WARNING: SlowTicker did not start\n");
+    }
 
     /* LED1 toggle thread */
     xTaskCreate(vLEDTask1, "vTaskLed1", configMINIMAL_STACK_SIZE,

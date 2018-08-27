@@ -319,6 +319,7 @@ void print_to_all_consoles(const char *str)
 
 // Define the activity/idle indicator led
 static Pin *idle_led = nullptr;
+static Pin *play_led = nullptr;
 
 /*
  * All commands must be executed in the context of this thread. It is equivalent to the main_loop in v1.
@@ -446,7 +447,7 @@ static void smoothie_startup()
 
     // create the StepTicker, don't start it yet
     StepTicker *step_ticker = new StepTicker();
-#ifdef DEBUG
+#if 1//def DEBUG
     // when debug is enabled we cannot run stepticker at full speed
     step_ticker->set_frequency(10000); // 10KHz
 #else
@@ -617,6 +618,12 @@ static void smoothie_startup()
                     delete idle_led;
                     idle_led = nullptr;
                 }
+                p = cr.get_string(m, "play_led", "nc");
+                play_led = new Pin(p.c_str(), Pin::AS_OUTPUT);
+                if(!play_led->connected()) {
+                    delete play_led;
+                    play_led = nullptr;
+                }
             }
         }
 
@@ -699,8 +706,6 @@ int main(int argc, char *argv[])
     //HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
     NVIC_SetPriorityGrouping( 0 );
 
-    configureSPIFI(); // setup the winbond SPIFI to max speed
-
     // Read clock settings and update SystemCoreClock variable
     SystemCoreClockUpdate();
 
@@ -710,12 +715,41 @@ int main(int argc, char *argv[])
     // Set the LED to the state of "On"
     Board_LED_Set(0, true);
 
+    configureSPIFI(); // setup the winbond SPIFI to max speed
+
     printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
     smoothie_startup();
     return 1;
 }
 
 // hooks from freeRTOS
+extern "C" void vApplicationIdleHook( void )
+{
+    /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
+    to 1 in FreeRTOSConfig.h.  It will be called on each iteration of the idle
+    task.  It is essential that code added to this hook function never attempts
+    to block in any way (for example, call xQueueReceive() with a block time
+    specified, or call vTaskDelay()).  If the application makes use of the
+    vTaskDelete() API function (as this demo application does) then it is also
+    important that vApplicationIdleHook() is permitted to return to its calling
+    function, because it is the responsibility of the idle task to clean up
+    memory allocated by the kernel to any task that has since been deleted. */
+
+    // handle play led
+    if(play_led->connected()) {
+        if(Module::is_halted()) {
+            static uint8_t cnt= 0;
+            if(++cnt >= 100) {
+                cnt= 0;
+                play_led->set(!play_led->get());
+            }
+
+        }else{
+            play_led->set(!Conveyor::getInstance()->is_idle());
+        }
+    }
+}
+
 extern "C" void vApplicationTickHook( void )
 {
     /* This function will be called by each tick interrupt if
@@ -738,18 +772,6 @@ extern "C" void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTask
     for( ;; );
 }
 
-extern "C" void vApplicationIdleHook( void )
-{
-    /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
-    to 1 in FreeRTOSConfig.h.  It will be called on each iteration of the idle
-    task.  It is essential that code added to this hook function never attempts
-    to block in any way (for example, call xQueueReceive() with a block time
-    specified, or call vTaskDelay()).  If the application makes use of the
-    vTaskDelete() API function (as this demo application does) then it is also
-    important that vApplicationIdleHook() is permitted to return to its calling
-    function, because it is the responsibility of the idle task to clean up
-    memory allocated by the kernel to any task that has since been deleted. */
-}
 
 extern "C" void vApplicationMallocFailedHook( void )
 {

@@ -115,10 +115,6 @@ REGISTER_TEST(ADCTest, polling)
 
 REGISTER_TEST(ADCTest, adc_class_interrupts)
 {
-    // we need to setup and start the slow ticker for Adc
-    static SlowTicker *slowticker= new SlowTicker;
-    TEST_ASSERT_TRUE(slowticker->start());
-
     TEST_ASSERT_TRUE(Adc::setup());
 
     Adc *adc = new Adc;

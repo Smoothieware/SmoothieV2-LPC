@@ -57,7 +57,7 @@ private:
     int channel;
     int instance_idx{-1};
     uint32_t not_ready_error{0};
-
+    static int slowticker_n;
     // buffer storing the last num_samples readings for each channel instance
     uint16_t sample_buffer[num_samples];
     uint16_t ave_buf[4]{0};

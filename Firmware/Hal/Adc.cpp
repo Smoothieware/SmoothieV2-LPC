@@ -31,6 +31,7 @@ const ADC_CHANNEL_T CHANNEL_LUT[] = {
 Adc *Adc::instances[Adc::num_channels] = {nullptr};
 int Adc::ninstances = 0;
 bool Adc::running= false;
+int Adc::slowticker_n= -1;
 
 // TODO move ramfunc define to a utils.h
 #define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
@@ -48,6 +49,11 @@ Adc::Adc()
 
 Adc::~Adc()
 {
+    if(slowticker_n >= 0) {
+        SlowTicker::getInstance()->detach(slowticker_n);
+        slowticker_n= -1;
+    }
+
     Chip_ADC_Int_SetChannelCmd(_LPC_ADC_ID, CHANNEL_LUT[channel], DISABLE);
     Chip_ADC_EnableChannel(_LPC_ADC_ID, CHANNEL_LUT[channel], DISABLE);
 
@@ -101,13 +107,13 @@ bool Adc::start()
     Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
     running= true;
     // start conversion every 10ms
-    SlowTicker::getInstance()->attach(100, Adc::on_tick);
+    slowticker_n= SlowTicker::getInstance()->attach(100, Adc::on_tick);
 #else
     // No need to start it as we are in BURST mode
     //Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
     running= true;
     // read conversion every 10ms
-    SlowTicker::getInstance()->attach(100, Adc::on_tick);
+    slowticker_n= SlowTicker::getInstance()->attach(100, Adc::on_tick);
 #endif
     return true;
 }
@@ -234,6 +240,7 @@ _ramfunc_ void Adc::sample_isr()
 _ramfunc_ void Adc::new_sample(uint32_t value)
 {
     // Shuffle down and add new value to the end
+    // FIXME memmove appears to not be inline, so in an interrupt in SPIFI it is too slow
     memmove(&sample_buffer[0], &sample_buffer[1], sizeof(sample_buffer) - sizeof(sample_buffer[0]));
     sample_buffer[num_samples - 1] = value; // the 12 bit ADC reading
 }

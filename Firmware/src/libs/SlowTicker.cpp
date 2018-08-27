@@ -37,8 +37,8 @@ bool SlowTicker::start()
         }
 
         if(interval == 0) {
-            max_frequency= 1;
-            interval = BASE_FREQUENCY/max_frequency; // default to 1HZ
+            max_frequency= 1; // 1 Hz
+            interval = BASE_FREQUENCY/max_frequency; // default to 1HZ, 1000ms period
         }
 
         timer_handle= xTimerCreate("SlowTickerTimer", pdMS_TO_TICKS(interval), pdTRUE, nullptr, timer_handler);
@@ -79,7 +79,7 @@ int SlowTicker::attach(uint32_t frequency, std::function<void(void)> cb)
     }
 
     if(started) stop();
-    callbacks.push_back(std::make_tuple(period, countdown, cb));
+    callbacks.push_back(std::make_tuple(countdown, period, cb));
     if(started) start();
 
     // return the index it is in
