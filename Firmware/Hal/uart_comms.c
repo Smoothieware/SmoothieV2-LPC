@@ -23,8 +23,14 @@ static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
 #define UARTx_IRQn      USART0_IRQn
 #define UARTx_IRQHandler UART0_IRQHandler
 
+#elif Minialpha
+/* Use UART2 for mini alpha boards */
+#define LPC_UARTX       LPC_USART2
+#define UARTx_IRQn      USART2_IRQn
+#define UARTx_IRQHandler UART2_IRQHandler
+
 #else
-#error No Board defined (Bambino)
+#error No Board defined (Bambino|Minialpha)
 #endif
 
 

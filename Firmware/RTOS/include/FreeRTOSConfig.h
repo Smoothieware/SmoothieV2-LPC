@@ -77,10 +77,7 @@
 #define configUSE_CO_ROUTINES 		0
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )
 
-/* Software timer definitions.  This example uses I2C to write to the LEDs.  As
-this takes a finite time, and because a timer callback writes to an LED, the
-priority of the timer task is kept to a minimum to ensure it does not disrupt
-test tasks that check their own execution times. */
+
 #define configUSE_TIMERS				1
 #define configTIMER_TASK_PRIORITY		( 0 )
 #define configTIMER_QUEUE_LENGTH		5

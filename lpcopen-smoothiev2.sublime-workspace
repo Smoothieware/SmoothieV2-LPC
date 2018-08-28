@@ -4,6 +4,146 @@
 		"selected_items":
 		[
 			[
+				"slow",
+				"slowticker_n"
+			],
+			[
+				"sl",
+				"slowticker_n"
+			],
+			[
+				"timer",
+				"timer_cnt"
+			],
+			[
+				"time",
+				"timer_cnt"
+			],
+			[
+				"TES",
+				"TEST_ASSERT_INT_WITHIN"
+			],
+			[
+				"tim",
+				"timer_cnt"
+			],
+			[
+				"unst",
+				"unstep_stop"
+			],
+			[
+				"T",
+				"TICK2USEC"
+			],
+			[
+				"play_thre",
+				"play_thread_p"
+			],
+			[
+				"play",
+				"play_thread"
+			],
+			[
+				"pd",
+				"pdMS_TO_TICKS"
+			],
+			[
+				"c",
+				"c_str"
+			],
+			[
+				"ti",
+				"timerFreq"
+			],
+			[
+				"sys",
+				"systime_t"
+			],
+			[
+				"TEST",
+				"TEST_ASSERT_TRUE"
+			],
+			[
+				"comm",
+				"commandthrd"
+			],
+			[
+				"proces",
+				"process_buffer"
+			],
+			[
+				"uint",
+				"uint16_t"
+			],
+			[
+				"uin",
+				"uint16_t"
+			],
+			[
+				"gpio",
+				"gpiocfg"
+			],
+			[
+				"GPIO",
+				"GPIO_PORT_SHIFT"
+			],
+			[
+				"que",
+				"queue_handle"
+			],
+			[
+				"dis",
+				"dispatch_message_t"
+			],
+			[
+				"disp",
+				"dispatch_queue"
+			],
+			[
+				"send",
+				"sendqueue"
+			],
+			[
+				"chunk",
+				"chunk_data"
+			],
+			[
+				"par",
+				"partial_write_fnc"
+			],
+			[
+				"std",
+				"stdout_write_fnc"
+			],
+			[
+				"read",
+				"readCDCTask"
+			],
+			[
+				"r",
+				"readcdctask"
+			],
+			[
+				"x",
+				"xBytesSent"
+			],
+			[
+				"g",
+				"g_rxBuff"
+			],
+			[
+				"f",
+				"fori\tFor Loop"
+			],
+			[
+				"FR",
+				"FRESULT"
+			],
+			[
+				"VCOM_Set",
+				"VCOM_SetCtrlLineState"
+			],
+			[
 				"AR",
 				"ARFLAGS"
 			],
@@ -14,14 +154,6 @@
 			[
 				"for",
 				"fori\tFor Loop"
-			],
-			[
-				"FR",
-				"FR_OK"
-			],
-			[
-				"TEST",
-				"TEST_ASSERT_EQUAL_INT"
 			],
 			[
 				"i",
@@ -280,10 +412,6 @@
 				"GcodeViewerScreen"
 			],
 			[
-				"par",
-				"parse_gcode_file"
-			],
-			[
 				"size_hin",
 				"size_hint_y"
 			],
@@ -296,10 +424,6 @@
 				"MainWindow"
 			],
 			[
-				"tim",
-				"timedelta"
-			],
-			[
 				"asyn",
 				"async_main_loop"
 			],
@@ -310,10 +434,6 @@
 			[
 				"lin",
 				"linecnt"
-			],
-			[
-				"dis",
-				"disconnect"
 			],
 			[
 				"size_hint",
@@ -394,126 +514,6 @@
 			[
 				"incom",
 				"incoming_error"
-			],
-			[
-				"end",
-				"end_event"
-			],
-			[
-				"Comm",
-				"CommsApp"
-			],
-			[
-				"stre",
-				"stream_finished"
-			],
-			[
-				"stream",
-				"stream_file"
-			],
-			[
-				"st",
-				"start_event"
-			],
-			[
-				"do",
-				"do_exit"
-			],
-			[
-				"setpoin",
-				"setpoint_thickness"
-			],
-			[
-				"value",
-				"value_to_angle"
-			],
-			[
-				"setpoint",
-				"setpoint_length"
-			],
-			[
-				"tic",
-				"tic_length"
-			],
-			[
-				"setp",
-				"setpoint_value"
-			],
-			[
-				"draw_",
-				"draw_setpoint"
-			],
-			[
-				"draw",
-				"draw_setpoint"
-			],
-			[
-				"an",
-				"annular_canvas"
-			],
-			[
-				"annu",
-				"annular_thickness"
-			],
-			[
-				"log",
-				"log_window"
-			],
-			[
-				"data",
-				"data_buffer"
-			],
-			[
-				"async",
-				"asyncio"
-			],
-			[
-				"t",
-				"timer"
-			],
-			[
-				"_write",
-				"_write_hipri"
-			],
-			[
-				"hi",
-				"hipri_queue"
-			],
-			[
-				"h",
-				"hipri"
-			],
-			[
-				"K",
-				"KbdWidget"
-			],
-			[
-				"Ex",
-				"ExtruderWidget"
-			],
-			[
-				"__",
-				"__init__"
-			],
-			[
-				"in",
-				"__init__"
-			],
-			[
-				"bed_",
-				"bed_temp"
-			],
-			[
-				"hote",
-				"hotend_setpoint"
-			],
-			[
-				"bed",
-				"bed_setpoint"
-			],
-			[
-				"hand",
-				"handle_tempdisplay"
 			]
 		]
 	},
@@ -523,26 +523,25 @@
 			"file": "Firmware/Rakefile",
 			"settings":
 			{
-				"buffer_size": 7916,
+				"buffer_size": 8288,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "Firmware/TestUnits/TEST_sdcard.cpp",
+			"file": "Firmware/src/main.cpp",
 			"settings":
 			{
-				"buffer_size": 8917,
+				"buffer_size": 25408,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "Firmware/src/syscalls.c",
+			"file": "Firmware/Hal/lpc_board_bambino/src/board.c",
 			"settings":
 			{
-				"buffer_size": 4869,
-				"encoding": "UTF-8",
+				"buffer_size": 7401,
 				"line_ending": "Windows"
 			}
 		},
@@ -550,7 +549,25 @@
 			"file": "Firmware/TestUnits/main.cpp",
 			"settings":
 			{
-				"buffer_size": 6330,
+				"buffer_size": 11947,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "Firmware/Hal/uart_comms.c",
+			"settings":
+			{
+				"buffer_size": 2744,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "Firmware/Hal/inc/uart_comms.h",
+			"settings":
+			{
+				"buffer_size": 302,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -740,7 +757,7 @@
 			]
 		]
 	],
-	"build_varint": "",
+	"build_varint": "Test Units",
 	"command_palette":
 	{
 		"height": 32.0,
@@ -878,150 +895,157 @@
 		"/home/morris/work/reprap/lpcopen-smoothie2",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/inc",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/src",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/inc",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/src",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/inc",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/config_43xx",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src"
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs",
+		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen",
+		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen/periph_systick",
+		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen/periph_systick/src",
+		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen/periph_uart_rb",
+		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen/periph_uart_rb/src"
 	],
 	"file_history":
 	[
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/inc/fsmci_cfg.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src/port.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/FreeRTOSConfig.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/core_cm4.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/core_cm3.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs/OutputStream.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_pin.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/Timers.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_sdcard.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/syscalls.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/usb_cdc/src/cdc_main.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/uart_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/ring_buffer.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/uart_18xx_43xx.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/src/board.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/inc/uart_comms.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/ring_buffer.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/gpio_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/string-config-bambino.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/inc/board_api.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/inc/board.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_slowticker.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/task.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src/tasks.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/inc/Pin.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/robot/Robot.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/FreeRTOS.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/robot/Conveyor.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/alpha-config.ini",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_adc.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/inc/Adc.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/Adc.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs/SlowTicker.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/timers.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs/SlowTicker.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/main.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/projdefs.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src/timers.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/adc_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/cr_startup_lpc43xx.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/sysinit.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/sysinit_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/src/board_sysinit.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_tmr0.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/timer_18xx_43xx.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/inc/Timers.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/ritimer_18xx_43xx.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_mem.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_time-armsolution.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/temperaturecontrol/TemperatureControl.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/iap_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/romapi_18xx_43xx.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/lcd_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/sdio_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/spi_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen/lpc_chip_43xx/src/adc_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/temperatureswitch/TemperatureSwitch.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/temperatureswitch/TemperatureSwitch.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/switch/Switch.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/endstops/Endstops.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/zprobe/ThreePointStrategy.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/zprobe/DeltaCalibrationStrategy.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/utils/player/Player.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/utils/player/Player.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/zprobe/ZProbe.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/zprobe/DeltaGridStrategy.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/robot/Conveyor.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/CommandShell.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/main.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/CommandShell.h",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/ff.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/src/sdmmc_support.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/chip_clocks.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src/heap_useNewlib.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/src/fs_mci.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen-smoothiev2.sublime-project",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/Hal/inc/Adc.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs/Hal/inc/Adc.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs/MessageQueue.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs/MessageQueue.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/usb_cdc/src/cdc_vcom.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/Module.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/robot/StepTicker.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/robot/StepTicker.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen/periph_timers/src/timers.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/timer_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/clock_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/lpc_types.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/Pin.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/Pwm.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_pwm.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_gcode.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/GCodeProcessor.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_module.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/portmacro.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_streams.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/inc/Hal/inc/Adc.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/robot/Robot.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/GCodeProcessor.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/main.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs/StringUtils.h",
+		"/usr/arm-none-eabi/include/c++/7.3.1/bits/stl_vector.h",
 		"/usr/arm-none-eabi/include/sys/dirent.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/gpio_18xx_43xx.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/scu_18xx_43xx.h",
+		"/home/morris/work/reprap/nuttx-smoothie2/smoothie-v2/Firmware/tools/pindefs.rb",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/modules/tools/laser/Laser.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/test_cpp_Debug.ld",
+		"/home/morris/work/reprap/nuttx-smoothie2/smoothie-v2/Firmware/src/main.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/libs/OutputStream.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/RTOS/include/task.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/usb_cdc/inc/cdc_vcom.h",
+		"/home/morris/work/reprap/nuttx-smoothie2/smoothie-v2/Firmware/src/modules/utils/player/Player.cpp",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/inc/fsmci_cfg.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/usbd_rom/usbd_hw.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/gdbinit-FreeRTOS-helpers.txt",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/usb_cdc/src/RTOS/include/FreeRTOS.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/sdif_18xx_43xx.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/usb_cdc/inc/app_usbd_cfg.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_ngx_xplorer_4330/src/board.c",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/semphr.h",
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/usbd_rom/usbd_cdcuser.h",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/ff.h",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/src/map_errno.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/src/board.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/src/fs_mci.c",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/ffsystem.c",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/ffconf.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/syscalls.c",
 		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen/periph_sdmmc/src/sdmmc.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_ngx_xplorer_4330/src/board.c",
 		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/sdmmc.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/sdmmc_18xx_43xx.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/diskio.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/uart_18xx_43xx.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/freertos/FreeRTOSv10.0.1/FreeRTOS-Plus/Source/Reliance-Edge/os/freertos/services/osbdev.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/freertos/FreeRTOSv10.0.1/FreeRTOS-Plus/Source/Reliance-Edge/os/freertos/include/redostypes.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/ff_dev_support.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/include/ff_headers.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/include/ff_file.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/sdmmc/fatfs/ff_crc.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/freertos/160919_FreeRTOS_Labs/FreeRTOS-Plus/Demo/Common/FreeRTOS_Plus_FAT_Demos/test/ff_stdio_tests_with_cwd.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen/periph_systick/src/systick.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/core_cm4.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/FreeRTOSConfig.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src/heap_useNewlib.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src/tasks.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/sysinit.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/test_cpp_Debug.ld",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/sdio_18xx_43xx.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/iap_18xx_43xx.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/RTOS/include/FreeRTOSConfig.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/src/chip_18xx_43xx.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/src/board_sysinit.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_config.cpp",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/inc/board.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/inc/Hal/lpc_chip_43xx/inc/romapi_18xx_43xx.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_board_bambino/inc/Hal/lpc_board_bambino/inc/board.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/cr_startup_lpc43xx.cpp",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src/heap_3.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/src/port.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/freertos/FreeRTOSv10.0.1/FreeRTOS/Demo/CORTEX_M4F_M0_LPC43xx_Keil/M4/main.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/freertos/FreeRTOSv10.0.1/FreeRTOS/Demo/CORTEX_M4F_M0_LPC43xx_Keil/system/core_cm4.c",
-		"/home/morris/work/reprap/lpcopen-smoothie2/freertos/FreeRTOSv10.0.1/FreeRTOS/Demo/CORTEX_M4F_M0_LPC43xx_Keil/system/system_LPC43xx.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/freertos/FreeRTOSv10.0.1/FreeRTOS/Demo/CORTEX_M4F_M0_LPC43xx_Keil/system/core_cm4.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/RTOS/include/Hal/lpc_chip_43xx/inc/cmsis_43xx.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/freertos/FreeRTOSv10.0.1/FreeRTOS/Demo/CORTEX_M4F_M0_LPC43xx_Keil/system/LPC43xx.h",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/Adc.cpp",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_streams.cpp",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/main.cpp",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/TestUnits/TEST_adc.cpp",
-		"/home/morris/work/reprap/lpcopen-smoothie2/lpcopen-smoothiev2.sublime-project",
-		"/home/morris/work/reprap/lpcopen-smoothie2/build.log",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/cr_cpp_config.cpp",
-		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/src/cr_startup_lpc43xx.c",
-		"/home/morris/work/reprap/smoothie-host/Stuff/Kivy/kivy/uix/videoplayer.py",
-		"/home/morris/work/reprap/smoothie-host/mjpegviewer.py",
-		"/usr/local/lib/python3.5/dist-packages/kivy/uix/screenmanager.py",
-		"/home/morris/work/reprap/smoothie-host/kivy/properties.pyx",
-		"/home/morris/work/reprap/smoothie-host/viewer.py",
-		"/home/morris/work/reprap/smoothie-host/mpg_knob.py",
-		"/home/morris/work/reprap/smoothie-host/rpi.kv",
-		"/home/morris/work/reprap/smoothie-host/desktop.kv",
-		"/home/morris/work/reprap/smoothie-host/dro.kv",
-		"/home/morris/work/reprap/smoothie-host/extruder.kv",
-		"/home/morris/work/reprap/smoothie-host/jogrose.kv",
-		"/home/morris/work/reprap/smoothie-host/macros.kv",
-		"/home/morris/work/reprap/smoothie-host/file_dialog.py",
-		"/home/morris/work/reprap/smoothie-host/kbd.kv",
-		"/home/morris/work/reprap/smoothie-host/web_server.py",
-		"/home/morris/.config/sublime-text-3/Packages/MarkdownEditing/Default (Linux).sublime-keymap",
-		"/home/morris/work/reprap/smoothie-host/README.md",
-		"/usr/local/lib/python3.5/dist-packages/kivy/uix/tabbedpanel.py",
-		"/home/morris/work/reprap/smoothie-host/mpg.kv",
-		"/usr/local/lib/python3.5/dist-packages/kivy/lang/parser.py",
-		"/home/morris/work/reprap/smoothie-host/numeric.json",
-		"/home/morris/work/reprap/smoothie-host/smoothiehost.ini",
-		"/usr/local/lib/python3.5/dist-packages/kivy/uix/behaviors/focus.py",
-		"/home/morris/work/reprap/smoothie-host/dial-gauge.py",
-		"/home/morris/work/reprap/smoothie-host/input_box.py",
-		"/home/morris/work/reprap/smoothie-host/selection_box.py",
-		"/home/morris/work/reprap/smoothie-host/message_box.py",
-		"/home/morris/work/reprap/smoothie-host/test-parse-status.py",
-		"/home/morris/.config/sublime-text-3/Packages/User/Markdown.sublime-settings",
-		"/home/morris/.config/sublime-text-3/Packages/MarkdownEditing/Markdown.sublime-settings",
-		"/home/morris/work/reprap/smoothie-host/macros.ini",
-		"/home/morris/work/reprap/smoothie-host/circle-test.g",
-		"/home/morris/work/reprap/smoothie-host/tests/test.gcode",
-		"/home/morris/work/reprap/smoothie-host/tests/pyserial-asyncio/serial_asyncio/__init__.py",
-		"/home/morris/work/reprap/smoothie-host/comms-net.py",
-		"/home/morris/work/reprap/Smoothie/src/modules/robot/Block.h",
-		"/home/morris/work/reprap/smoothie-host/tests/async-file.py",
-		"/home/morris/work/reprap/smoothie-host/tests/dial-guage.py",
-		"/usr/lib/python2.7/dist-packages/kivy/lang.py",
-		"/home/morris/work/reprap/smoothie-host/tests/boost/main.cpp",
-		"/home/morris/work/reprap/smoothie-host/smoothie-host.sublime-project",
-		"/home/morris/work/reprap/smoothie-host/tests/boost/GCodeSender.hpp",
-		"/home/morris/work/reprap/smoothie-host/tests/boost/GCodeSender.cpp",
-		"/home/morris/work/reprap/smoothie-host/main.py",
-		"/home/morris/work/reprap/smoothie-host/kivy-pronterface.sublime-project",
-		"/home/morris/work/reprap/kivy-pronterface/kbd.kv",
-		"/home/morris/work/reprap/kivy-pronterface/kbd_widget.py",
-		"/home/morris/work/reprap/kivy-pronterface/kbd_widget.pyc",
-		"/home/morris/work/reprap/kivy-pronterface/mainwindow.kv",
-		"/home/morris/work/reprap/Smoothie/src/modules/utils/motordrivercontrol/drivers/TMC26X/TMC26X.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/ZProbe.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/DeltaCalibrationStrategy.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/endstops/Endstops.h",
-		"/home/morris/work/reprap/Smoothie/src/libs/USBDevice/USBSerial/USBSerial.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/endstops/Endstops.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/extruder/Extruder.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/ThreePointStrategy.cpp",
-		"/home/morris/work/reprap/Smoothie/build/mbed_custom.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/zprobe/CartGridStrategy.cpp",
-		"/home/morris/work/reprap/Smoothie/src/libs/SlowTicker.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/robot/BlockQueue.h",
-		"/home/morris/work/reprap/Smoothie/src/modules/robot/BlockQueue.cpp",
-		"/home/morris/work/reprap/Smoothie/src/libs/StepperMotor.h",
-		"/home/morris/work/reprap/Smoothie/src/libs/StepperMotor.cpp",
-		"/home/morris/work/reprap/Smoothie/new-acceleration-sim-multi-fp-64.rb",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/temperaturecontrol/TemperatureControl.cpp",
-		"/home/morris/work/reprap/Smoothie/src/libs/MemoryPool.h",
-		"/home/morris/work/reprap/Smoothie/src/libs/MemoryPool.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/temperaturecontrol/TemperatureControlPool.cpp",
-		"/home/morris/work/reprap/Smoothie/src/libs/Watchdog.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/switch/SwitchPool.cpp",
-		"/home/morris/work/reprap/Smoothie/src/modules/tools/switch/Switch.h"
+		"/home/morris/work/reprap/lpcopen-smoothie2/Firmware/Hal/lpc_chip_43xx/inc/sdmmc_18xx_43xx.h"
 	],
 	"find":
 	{
-		"height": 24.0
+		"height": 36.0
 	},
 	"find_in_files":
 	{
@@ -1035,54 +1059,134 @@
 		"case_sensitive": false,
 		"find_history":
 		[
-			"SRC",
-			"OBJ",
-			"Finfo",
-			"FR_INVALID_NAME",
-			"__env",
-			"environ",
-			"find_volume",
-			"disk_initialize",
-			"mount",
-			"disk_initialize",
-			"Board_SDMMC_Init",
-			"disk_initialize",
-			"CARD_HANDLE_T",
-			"mount",
-			"f_mount",
-			"VolumeStr",
-			"FF_STR_VOLUME_ID",
-			"f_mount",
-			"sdmmc_setup_wakeup",
-			"App_SDMMC_Init",
-			"sdcardinfo",
-			"SDMMC_CARD_T",
-			"sdcardinfo",
-			"sdmmc_setup_wakeup",
-			"sdio_wait_exit",
-			"portNVIC_SYSTICK_LOAD_REG",
-			"configSYSTICK_CLOCK_HZ",
-			"configCPU_CLOCK_HZ",
-			"configSYSTICK_CLOCK_HZ",
-			"Timer",
-			"__top_RamLoc128",
-			"__user_heap_base",
-			"HEAP_SIZE",
-			"heap",
-			"__FPU_PRESENT",
-			"vStartLEDFlashTasks",
-			"configTICK_RATE_HZ",
-			"__NVIC_PRIO_BITS",
-			"configPRIO_BITS",
-			"nvic",
-			"SystemInit",
-			"vApplicationTickHook",
-			"Minialpha",
-			"ResetISR",
-			"LIBGCC",
-			"NUTTX",
-			"makelibs",
-			"ARFLAGS"
+			"__Vendor_SysTickConfig",
+			"SHP",
+			"portNVIC_SYSTICK_PRI",
+			"portNVIC_SYSPRI2_REG",
+			"configMAX_PRIORITIES",
+			"PINCONF_GPIO2p7",
+			"ninstances",
+			"Chip_ADC_EnableChannel",
+			"num_channels",
+			"DEBUGINIT",
+			"play_led",
+			"idle_led",
+			"play_led",
+			"idle_led",
+			"play_led",
+			"is_halted",
+			"idle_led",
+			"2.7",
+			"[0]7",
+			"hotend",
+			"SD_CONFIG",
+			"DEBUG",
+			"common",
+			"Chip_ADC_Int_SetChannelCmd",
+			"Chip_ADC_Channel_Int_Cmd",
+			"20000",
+			"vTaskDelay",
+			"usleep",
+			"iap_entry",
+			"TIMER0",
+			"readAdcVal",
+			"Chip_ADC_Int_SetChannelCmd",
+			"sample_isr",
+			"play_thread_p",
+			"play_thread_exited",
+			"player_thread",
+			"vRunTestsTask",
+			"player_thread",
+			"play_thread_exited",
+			"play_thread",
+			"play_thread_p",
+			"last_time",
+			"capture_fnc",
+			"sdmmc_waitms",
+			"sdmmc_irq_driven_wait",
+			"SD_CONFIG",
+			"fatfs",
+			"started",
+			"BASE_FREQUENCY",
+			"HardFault_Handler",
+			"commandthrd",
+			"rxBuf",
+			"uploading",
+			"commandthrd",
+			"command_thread",
+			"smoothie_startup",
+			"configureSPIFI",
+			"do_query",
+			"theos",
+			"g_rxBuff",
+			"xTaskToNotify",
+			"g_rxBuff",
+			"configKERNEL_INTERRUPT_PRIORITY",
+			"vPortSetupTimerInterrupt",
+			"portNVIC_SYSTICK_CTRL_REG",
+			"xPortSysTickHandler",
+			"systick",
+			"->TC",
+			"TC",
+			"LPC_TIMER1",
+			"TIMER_INT_ON_MATCH",
+			"TIMER_MATCH_INT",
+			"TIMER_INT_ON_MATCH",
+			"MCR",
+			"unstep_timer_handler",
+			"robot",
+			"AHB0_RAM",
+			"RamAHB32",
+			"queue_delay_time_ms",
+			"AHBSRAM0",
+			"PINCONF_PINSB",
+			"PINCONF_PINSA",
+			"SFSP",
+			"static const int ",
+			"gpiocfg",
+			"GPIOPORT",
+			"gpioport",
+			"GPIOPORT",
+			"PINCONF_PULLUP",
+			"PINCONF_INBUFFER",
+			"GPIO_MODE_MASK",
+			"pin.cpp",
+			"\nPINCONF",
+			"PINCONF",
+			"PORT_MASK",
+			"PINCONF_PINS0",
+			"NUM_GPIO_NGROUPS",
+			"#define",
+			"NUM",
+			"TESTING",
+			"usb_comms",
+			".data",
+			".ramfunctions",
+			"dispatch",
+			"send_message_queue",
+			"132",
+			"message.os",
+			"message.line",
+			"msg_buffer",
+			"sendqueue",
+			"xRxedMessage",
+			"configUSE_STATS_FORMATTING_FUNCTIONS",
+			"dispatch_line",
+			"sendqueue",
+			"vComTask",
+			"DispatchQueue",
+			"dispatchQueue",
+			"line[",
+			"cnt",
+			"xTaskToNotify",
+			"rdCnt",
+			"VCOM_RX_DONE",
+			"rfd",
+			"VCOM_TX_BUSY",
+			"OutputStream",
+			"g_rxBuff",
+			"vPortPendSVHandler_native",
+			"dbgPendingTaskHandle"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -1100,7 +1204,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 4,
 			"sheets":
 			[
 				{
@@ -1109,15 +1213,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 7916,
+						"buffer_size": 8288,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								5835,
-								5835
+								5068,
+								5068
 							]
 						],
 						"settings":
@@ -1128,27 +1232,27 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2370.0,
+						"translation.y": 2304.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "Firmware/TestUnits/TEST_sdcard.cpp",
+					"file": "Firmware/src/main.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8917,
+						"buffer_size": 25408,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								5806,
-								5806
+								21782,
+								21782
 							]
 						],
 						"settings":
@@ -1159,41 +1263,40 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2880.0,
+						"translation.y": 11032.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "Firmware/src/syscalls.c",
+					"file": "Firmware/Hal/lpc_board_bambino/src/board.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4869,
+						"buffer_size": 7401,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3015,
-								3015
+								6665,
+								6665
 							]
 						],
 						"settings":
 						{
 							"git_gutter_is_enabled": true,
 							"syntax": "Packages/C++/C.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 2440.0,
+						"translation.y": 576.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -1202,15 +1305,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6330,
+						"buffer_size": 11947,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3196,
-								3196
+								10720,
+								10720
 							]
 						],
 						"settings":
@@ -1221,10 +1324,69 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1488.0,
+						"translation.y": 4800.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "Firmware/Hal/uart_comms.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2744,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2446,
+								2446
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"open_with_edit": true,
+							"syntax": "Packages/C++/C.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 672.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "Firmware/Hal/inc/uart_comms.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 302,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								220,
+								220
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/C++/C++.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
 					"type": "text"
 				}
 			]
@@ -2011,6 +2173,10 @@
 		"selected_items":
 		[
 			[
+				"pin.h",
+				"Firmware/Hal/inc/Pin.h"
+			],
+			[
 				"swi",
 				"src/modules/tools/switch/Switch.cpp"
 			],
@@ -2517,10 +2683,6 @@
 			[
 				"led",
 				"src/modules/utils/led_ring/LedRing.cpp"
-			],
-			[
-				"fil",
-				"src/modules/tools/filamentdetector/FilamentDetector.cpp"
 			]
 		],
 		"width": 0.0
@@ -2579,7 +2741,7 @@
 	"show_open_files": true,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 275.0,
+	"side_bar_width": 280.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

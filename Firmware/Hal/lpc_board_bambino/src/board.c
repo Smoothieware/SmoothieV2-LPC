@@ -49,6 +49,10 @@ void Board_UART_Init(LPC_USART_T *pUART)
 		Chip_SCU_PinMuxSet(0x1, 13, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC1));				/* P1.13 : UART1_TXD */
 		Chip_SCU_PinMuxSet(0x1, 14, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC1));	/* P1.14 : UART1_RX */
 	}
+	else if (pUART == LPC_USART2) {
+		Chip_SCU_PinMuxSet(0xa, 1, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC3));				/* PA.1 : UART2_TXD */
+		Chip_SCU_PinMuxSet(0xa, 2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC3));	/* PA.2 : UART2_RX */
+	}
 }
 
 #if 0
