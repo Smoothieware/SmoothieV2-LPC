@@ -328,12 +328,9 @@ static Pin *play_led = nullptr;
 /*
  * All commands must be executed in the context of this thread. It is equivalent to the main_loop in v1.
  * Commands are sent to this thread via the message queue from things that can block (like I/O)
- * How to queue things from interupts like from Switch?
- * 1. We could have a timeout on the I/O queue of about 100-200ms and check an internal queue for commands
- * 2. we could call a on_main_loop to all registed modules.
- * Not fond of 2 and 1 requires somw form of locking so interrupts can access the queue too.
+ * Other things can call dispatch_line direct from the in_command_ctx call.
  */
-static void commandthrd(void *)
+static void command_handler()
 {
     printf("Command thread running\n");
     // {
@@ -375,6 +372,7 @@ static void commandthrd(void *)
         }
 
         // call in_command_ctx for all modules that want it
+        // dispatch_line can be called from that
         Module::broadcast_in_commmand_ctx(idle);
 
         // we check the queue to see if it is ready to run
@@ -441,7 +439,7 @@ static std::stringstream ss(str);
 extern "C" bool setup_sdmmc();
 #endif
 
-static void smoothie_startup()
+static void smoothie_startup(void *)
 {
     printf("Smoothie V2.alpha Build for %s - starting up\n", BUILD_TARGET);
     //get_pll1_clk();
@@ -681,11 +679,6 @@ static void smoothie_startup()
         printf("Error: failed to create comms i/o queue\n");
     }
 
-
-    // launch the command thread that executes all incoming commands
-    // 10000 Bytes stack
-    xTaskCreate(commandthrd, "CommandThread", 10000/4, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
-
     // Start comms threads Higher priority than the command thread
     // fixed stack size of 4k Bytes each
     xTaskCreate(usb_comms, "USBCommsThread", 4096/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
@@ -699,9 +692,10 @@ static void smoothie_startup()
     struct mallinfo mi = mallinfo();
     printf("Initial: free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
 
-    /* Start the scheduler */
-    vTaskStartScheduler();
+    // run the command handler in this thread
+    command_handler();
 
+    // does not return from above
 }
 
 int main(int argc, char *argv[])
@@ -722,7 +716,15 @@ int main(int argc, char *argv[])
     configureSPIFI(); // setup the winbond SPIFI to max speed
 
     printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
-    smoothie_startup();
+
+    // launch the startup thread which will become the command thread that executes all incoming commands
+    // 10000 Bytes stack
+    xTaskCreate(smoothie_startup, "CommandThread", 10000/4, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
+
+    /* Start the scheduler */
+    vTaskStartScheduler();
+
+    // never gets here
     return 1;
 }
 

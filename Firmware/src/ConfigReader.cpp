@@ -2,6 +2,7 @@
 #include "StringUtils.h"
 
 #include <cstring>
+#include <cstdlib>
 
 // match the line for a section header
 bool ConfigReader::match_section(const char *line, std::string& section_name)
@@ -196,7 +197,8 @@ float ConfigReader::get_float(const section_map_t& m, const char *key, float def
 {
     auto s = m.find(key);
     if(s != m.end()) {
-        return std::stof(s->second);
+        // TODO should check it is a valid float
+        return strtof(s->second.c_str(), nullptr);
     }
 
     return def;
@@ -216,7 +218,8 @@ int ConfigReader::get_int(const section_map_t& m, const char *key, int def)
 {
     auto s = m.find(key);
     if(s != m.end()) {
-        return std::stoi(s->second);
+        // TODO should check it is a valid number
+        return strtol (s->second.c_str(), nullptr, 0);
     }
 
     return def;

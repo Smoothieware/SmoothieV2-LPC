@@ -159,7 +159,8 @@ toggle_enable = false  # set to true to make it a toggle button (like an estop)\
 unkill_enable = true   # enable kill button hold for 2 seconds does unkill\n\
 \n\
 [system leds]\n\
-idle_led = gpio6_13    # flashes when running but idle\n\
+idle_led = gpio6_12    # flashes when running but idle\n\
+play_led = gpio6_13    # on when playing, flashes when halted\n\
 \n\
 [pwm]\n\
 frequency=10000        # PWM frequency\n\
