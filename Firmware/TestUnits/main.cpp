@@ -347,7 +347,7 @@ int main()   //int argc, char *argv[])
         printf("WARNING: SlowTicker did not start\n");
     }
 
-    xTaskCreate(vRunTestsTask, "vTestsTask", 512, /* *4 as 32bit words */
+    xTaskCreate(vRunTestsTask, "vTestsTask", 1024, /* *4 as 32bit words */
                 NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
 
 #ifdef TESTCOMMS

@@ -833,6 +833,8 @@ bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
     fsout.close();
 
     // now rename the config.ini file to config.bak and config.tmp file to config.ini
+    // remove old backup file first
+    remove("/sd/config.bak");
     int s = rename("/sd/config.ini", "/sd/config.bak");
     if(s == 0) {
         s = rename("/sd/config.tmp", "/sd/config.ini");

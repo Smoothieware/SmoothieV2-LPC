@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <fstream>
+#include <iostream>
 
 #include "ff.h"
 
@@ -271,6 +273,9 @@ REGISTER_TEST(SDCardTest, time_read_write)
     uint32_t n = 5000;
     for (uint32_t i = 1; i <= n; ++i) {
         char buf[512];
+        for (size_t j = 0; j < sizeof(buf); ++j) {
+            buf[j]= (i+j)&255;
+        }
         size_t x = fwrite(buf, 1, sizeof(buf), fp);
         if(x != sizeof(buf)) {
             TEST_FAIL();
@@ -294,11 +299,126 @@ REGISTER_TEST(SDCardTest, time_read_write)
         if(x != sizeof(buf)) {
             TEST_FAIL();
         }
+        // check it
+        for (size_t j = 0; j < sizeof(buf); ++j) {
+            TEST_ASSERT_EQUAL_INT((i+j)&255, buf[j]);
+        }
+
     }
     en = clock_systimer();
     printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
+}
+
+#include "md5.h"
+static BYTE buffer[4096];   /* File copy buffer */
+REGISTER_TEST(SDCardTest, copy_file_raw)
+{
+    static MD5 w_md5;
+    static MD5 r_md5;
+    const char *fn1= "/sd/test_large_file.tst";
+    const char *fn2= "/sd/test_large_file.copy";
+
+    printf("Starting copy test...\n");
+    FIL fsrc, fdst;      /* File objects */
+    FRESULT ret;          /* FatFs function common result code */
+    UINT br, bw;         /* File read/write count */
+
+    ret = f_open(&fsrc, fn1, FA_READ);
+    TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+
+    /* Create destination file on the drive 0 */
+    ret = f_open(&fdst, fn2, FA_WRITE | FA_CREATE_ALWAYS);
+    TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+
+    /* Copy source to destination */
+    bool done= false;
+    while (!done) {
+        ret = f_read(&fsrc, buffer, sizeof buffer, &br);  /* Read a chunk of source file */
+        TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+        if (br < sizeof(buffer)) done = true; /* eof */
+        if(br > 0) {
+            w_md5.update(buffer, br);
+            ret = f_write(&fdst, buffer, br, &bw);            /* Write it to the destination file */
+            TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+            TEST_ASSERT_EQUAL_INT(br, bw);
+        }
+    }
+
+    /* Close open files */
+    f_close(&fsrc);
+    f_close(&fdst);
+
+    printf("test copied file...\n");
+    // read file back and check md5
+    ret = f_open(&fsrc, fn2, FA_READ);
+    TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+
+    done= false;
+    while (!done) {
+        ret = f_read(&fsrc, buffer, sizeof buffer, &br);  /* Read a chunk of source file */
+        TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+        if (br < sizeof(buffer)) done = true; /* eof */
+        r_md5.update(buffer, br);
+    }
+
+    printf("md5: %s - %s\n", w_md5.finalize().hexdigest().c_str(), r_md5.finalize().hexdigest().c_str());
+    TEST_ASSERT_EQUAL_STRING(w_md5.finalize().hexdigest().c_str(), r_md5.finalize().hexdigest().c_str());
+}
+
+REGISTER_TEST(SDCardTest, copy_file_fstreams)
+{
+    static MD5 w_md5;
+    static MD5 r_md5;
+    const char *fn1= "/sd/test_large_file.tst";
+    const char *fn2= "/sd/test_large_file.cs2";
+
+    printf("Starting fstream copy test...\n");
+
+    std::fstream fsin;
+    std::fstream fsout;
+
+    fsin.open(fn1, std::fstream::in);
+    TEST_ASSERT_TRUE(fsin.is_open());
+
+    fsout.open(fn2, std::fstream::out);
+    TEST_ASSERT_TRUE(fsout.is_open());
+
+    /* Copy source to destination */
+    while (!fsin.eof()) {
+        fsin.read((char *)buffer, sizeof(buffer));
+        //TEST_ASSERT_TRUE(fsin.good());
+        int br= fsin.gcount();
+        if(br > 0) {
+            w_md5.update(buffer, br);
+            fsout.write((char *)buffer, br);
+            TEST_ASSERT_TRUE(fsout.good());
+        }
+    }
+
+    /* Close open files */
+    fsin.close();
+    fsout.close();
+
+    printf("test fstream copied file...\n");
+    FIL fsrc;
+
+    // read file back and check md5
+    FRESULT ret = f_open(&fsrc, fn2, FA_READ);
+    TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+
+    UINT br;
+    bool done= false;
+    while (!done) {
+        ret = f_read(&fsrc, buffer, sizeof buffer, &br);  /* Read a chunk of source file */
+        TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+        if (br < sizeof(buffer)) done = true; /* eof */
+        r_md5.update(buffer, br);
+    }
+
+    printf("md5: %s - %s\n", w_md5.finalize().hexdigest().c_str(), r_md5.finalize().hexdigest().c_str());
+    TEST_ASSERT_EQUAL_STRING(w_md5.finalize().hexdigest().c_str(), r_md5.finalize().hexdigest().c_str());
 }
 
 REGISTER_TEST(SDCardTest, unmount)
