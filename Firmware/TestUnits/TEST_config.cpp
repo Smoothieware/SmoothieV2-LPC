@@ -128,6 +128,23 @@ REGISTER_TEST(ConfigTest, load_sub_sections)
     TEST_ASSERT_FALSE(psuok);
 }
 
+REGISTER_TEST(ConfigTest, read_bad_values)
+{
+    std::stringstream ss("[dummy]\nbad_int = fred\nbad_float = dan\n");
+    ConfigReader cr(ss);
+
+    ConfigReader::section_map_t m;
+    bool b= cr.get_section("dummy", m);
+    TEST_ASSERT_TRUE(b);
+    TEST_ASSERT_EQUAL_INT(2, m.size());
+    TEST_ASSERT_TRUE(m.find("bad_int") != m.end());
+    TEST_ASSERT_EQUAL_STRING("fred", m["bad_int"].c_str());
+    TEST_ASSERT_EQUAL_INT(0, cr.get_int(m, "bad_int", -1));
+    TEST_ASSERT_EQUAL_STRING("dan", m["bad_float"].c_str());
+    TEST_ASSERT_EQUAL_FLOAT(0.0F, cr.get_int(m, "bad_float", -1));
+}
+
+
 REGISTER_TEST(ConfigTest, write_no_change)
 {
     std::istringstream iss(str);

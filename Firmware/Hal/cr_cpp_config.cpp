@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 void *operator new(size_t size)
 {
@@ -50,7 +51,9 @@ extern "C" void free(void *) {
 namespace __gnu_cxx {
 void __verbose_terminate_handler()
 {
-  while(1);
+  ::puts("FATAL: Uncaught exception\n");
+  __asm("bkpt #0");
+  while(1) ;
 }
 }
 #endif
