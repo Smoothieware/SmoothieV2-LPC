@@ -17,17 +17,37 @@ STATIC RINGBUFF_T txring, rxring;
 /* Transmit and receive buffers */
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
 
+// select the UART to use
 #ifdef Bambino
-/* Use UART0 for Bambino boards */
+/* Use UART0 for Bambino boards P6.5 : UART0_TXD, P6.4 : UART0_RXD */
 #define LPC_UARTX       LPC_USART0
 #define UARTx_IRQn      USART0_IRQn
 #define UARTx_IRQHandler UART0_IRQHandler
 
-#elif Minialpha
-/* Use UART2 for mini alpha boards */
+// Mini alpha also needs to be told which uart it uses as the pins are different
+#elif defined(Minialpha) && defined(USE_UART2)
+/* Use UART2 for mini alpha boards PA.1 : UART2_TXD, PA.2 : UART2_RX */
 #define LPC_UARTX       LPC_USART2
 #define UARTx_IRQn      USART2_IRQn
 #define UARTx_IRQHandler UART2_IRQHandler
+
+#elif defined(Minialpha) && defined(USE_UART0)
+/* Use UART0 for mini alpha boards P2.0 : UART0_TXD, P2.1 : UART0_RX */
+#define LPC_UARTX       LPC_USART0
+#define UARTx_IRQn      USART0_IRQn
+#define UARTx_IRQHandler UART0_IRQHandler
+#if !defined(UART0_PINSET) || (UART0_PINSET != 2 && UART0_PINSET != 6)
+#error Minialpha UART0 also needs to be told the UART0_PINSET to use (2 or 6)
+#endif
+
+#elif defined(Minialpha) && defined(USE_UART1)
+// Use UART1 P1.13 : UART1_TXD, P1.14 : UART1_RX
+#define LPC_UARTX       LPC_UART1
+#define UARTx_IRQn      UART1_IRQn
+#define UARTx_IRQHandler UART1_IRQHandler
+
+#elif defined(Minialpha)
+#error Minialpha needs to define which UART to use (USE_UART[0|1|2])
 
 #else
 #error No Board defined (Bambino|Minialpha)

@@ -73,19 +73,6 @@ extern "C" {
  * @}
  */
 
-/* Board name */
-#define BOARD_NGX_XPLORER_4330
-
-
-
-
-
-
-
-
-
-
-
 /* Build for RMII interface */
 #define USE_RMII
 #define BOARD_ENET_PHY_ADDR	0x01

@@ -42,8 +42,13 @@ const uint32_t OscRateIn = 12000000;
 void Board_UART_Init(LPC_USART_T *pUART)
 {
 	if (pUART == LPC_USART0) {
+		#if defined(UART0_PINSET) && UART0_PINSET == 2
+		Chip_SCU_PinMuxSet(0x2, 0, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC1));					/* P2.0 : UART0_TXD */
+		Chip_SCU_PinMuxSet(0x2, 1, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC1));/* P2.1 : UART0_RXD */
+		#else
 		Chip_SCU_PinMuxSet(0x6, 4, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC2));					/* P6.5 : UART0_TXD */
 		Chip_SCU_PinMuxSet(0x6, 5, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));/* P6.4 : UART0_RXD */
+		#endif
 	}
 	else if (pUART == LPC_UART1) {
 		Chip_SCU_PinMuxSet(0x1, 13, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC1));				/* P1.13 : UART1_TXD */
@@ -213,7 +218,13 @@ void Board_SDMMC_Init(void)
 	Chip_SCU_PinMuxSet(0x1, 12, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* P1.12 connected to SDIO_D3 */
 
 	Chip_SCU_ClockPinMuxSet(2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));	/* CLK2 connected to SDIO_CLK */
-	Chip_SCU_PinMuxSet(0x1, 6, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* P1.6 connected to SDIO_CMD */
+	#ifdef Bambino
+		Chip_SCU_PinMuxSet(0x1, 6, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* P1.6 connected to SDIO_CMD */
+	#elif defined(Minialpha)
+		Chip_SCU_PinMuxSet(0xC, 8, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* PC.8 connected to SDIO_CMD */
+	#else
+	#error SD_CD neeeds to know if it is Bambino or Minialpha
+	#endif
 }
 
 void Board_SSP_Init(LPC_SSP_T *pSSP)

@@ -15,6 +15,17 @@ else
   TARGET = ENV['target']
 end
 
+if TARGET == 'Minialpha'
+  # need to select the UART to use
+  UART_TO_USE = '-DUSE_UART0'
+  # Only define this if UART0 is used
+  # select the pinset either 2 or 6
+  UART0_PINSET_TO_USE = '-DUART0_PINSET=2'
+else
+  UART_TO_USE = ''
+  UART0_PINSET_TO_USE = ''
+end
+
 puts "Target is #{TARGET}"
 
 DEBUG = ENV['debug'] == '1'
@@ -174,7 +185,7 @@ if DEBUG
 end
 
 # Target specified #defines
-defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" -D#{TARGET}"
+defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" -D#{TARGET} #{UART_TO_USE} #{UART0_PINSET_TO_USE}"
 if TARGET == 'Bambino'
 defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
 elsif TARGET == 'Minialpha'
