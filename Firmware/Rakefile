@@ -15,15 +15,14 @@ else
   TARGET = ENV['target']
 end
 
+target_defines= []
 if TARGET == 'Minialpha'
   # need to select the UART to use
-  UART_TO_USE = '-DUSE_UART0'
+  target_defines << '-DUSE_UART0'
   # Only define this if UART0 is used
   # select the pinset either 2 or 6
-  UART0_PINSET_TO_USE = '-DUART0_PINSET=2'
-else
-  UART_TO_USE = ''
-  UART0_PINSET_TO_USE = ''
+  target_defines << '-DUART0_PINSET=2'
+  target_defines << "-DNOETHERNET"
 end
 
 puts "Target is #{TARGET}"
@@ -185,12 +184,14 @@ if DEBUG
 end
 
 # Target specified #defines
-defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" -D#{TARGET} #{UART_TO_USE} #{UART0_PINSET_TO_USE}"
+defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" -D#{TARGET}"
 if TARGET == 'Bambino'
 defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
 elsif TARGET == 'Minialpha'
 defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
 end
+
+defines += target_defines
 
 DEFINES= defines.join(' ')
 

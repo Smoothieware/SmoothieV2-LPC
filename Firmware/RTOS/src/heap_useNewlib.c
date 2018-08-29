@@ -77,7 +77,7 @@ static int heapBytesRemaining = -1;
 //! sbrk/_sbrk version supporting reentrant newlib (depends upon above symbols defined by linker control file).
 char * sbrk(int incr) {
     static char *currentHeapEnd = &__HeapBase;
-    static char *stackBase= (char *)&_vStackTop - 2048; // (char *)__get_MSP(); // current stack
+    static char *stackBase= (char *)&_vStackTop - 4092; // (char *)__get_MSP(); // current stack
 
     vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started
 

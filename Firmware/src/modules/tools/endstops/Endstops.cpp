@@ -1017,7 +1017,7 @@ bool Endstops::request(const char *key, void *value)
 {
     if(strcmp(key, "get_homing_status") == 0) {
         bool *homing = static_cast<bool *>(value);
-        *homing = this->status != NOT_HOMING;
+        *homing = this->status != NOT_HOMING && this->status != LIMIT_TRIGGERED;
         return true;
     }
 

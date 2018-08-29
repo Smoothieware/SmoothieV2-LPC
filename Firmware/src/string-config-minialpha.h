@@ -186,7 +186,7 @@ minx.max_travel = 500              # the maximum travel in mm before it times ou
 minx.fast_rate = 30               # fast homing rate in mm/sec\n\
 minx.slow_rate = 5               # slow homing rate in mm/sec\n\
 minx.retract = 5                # bounce off endstop in mm\n\
-minx.limit_enable = true        # enable hard limit\n\
+minx.limit_enable = false        # enable hard limit\n\
 \n\
 miny.enable = true                  # enable an endstop\n\
 miny.pin = gpio2_0                  # pin\n\
@@ -197,7 +197,7 @@ miny.max_travel = 500               # the maximum travel in mm before it times o
 miny.fast_rate = 30                 # fast homing rate in mm/sec\n\
 miny.slow_rate = 5                  # slow homing rate in mm/sec\n\
 miny.retract = 5                    # bounce off endstop in mm\n\
-miny.limit_enable = true            # enable hard limits\n\
+miny.limit_enable = false            # enable hard limits\n\
 \n\
 #minz.pin = gpio7_22\n\
 #probe.pin = gpio7_21\n\

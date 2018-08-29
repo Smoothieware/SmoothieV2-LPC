@@ -66,6 +66,7 @@ STATIC const PINMUX_GRP_T spifipinmuxing[] = {
 };
 
 STATIC const PINMUX_GRP_T pinmuxing[] = {
+	#ifndef NOETHERNET
 	/* RMII pin group */
 	{0x1, 15,
 	 (SCU_MODE_HIGHSPEEDSLEW_EN | SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC3)},
@@ -86,6 +87,7 @@ STATIC const PINMUX_GRP_T pinmuxing[] = {
 	#else
 	#warning can not have both RMII and UART0_PINSET 2 as P2.0 is in conflict
 	#endif
+	#endif // NOETHERNET
 
 	// /* Board LEDs */
 	// {0x6, 11, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)},

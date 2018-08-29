@@ -431,7 +431,7 @@ void safe_sleep(uint32_t ms)
 void configureSPIFI();
 //float get_pll1_clk();
 
-#define SD_CONFIG
+//#define SD_CONFIG
 
 #ifndef SD_CONFIG
 #include STRING_CONFIG_H
@@ -472,8 +472,7 @@ static void smoothie_startup()
             std::cout << "Error setting up sdmmc\n";
             break;
         }
-        int ret =
-        f_mount(&fatfs, "sd", 1);
+        int ret = f_mount(&fatfs, "sd", 1);
         if(FR_OK != ret) {
             std::cout << "Error mounting: " << "/sd: " << ret << "\n";
             break;
