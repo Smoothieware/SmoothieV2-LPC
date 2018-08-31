@@ -7,6 +7,9 @@
 
 #include "TestRegistry.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 REGISTER_TEST(MemoryTest, stats)
 {
     struct mallinfo mem= mallinfo();
@@ -43,14 +46,11 @@ REGISTER_TEST(MemoryTest, ramfunc)
 }
 
 using systime_t= uint32_t;
-#define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
+#define clock_systimer() ((systime_t)LPC_RITIMER->COUNTER)
 #define TICK2USEC(x) ((systime_t)(((uint64_t)(x)*1000000)/timerFreq))
 
-_ramfunc_ void runMemoryTest()
+_ramfunc_ void runMemoryTest(uint32_t timerFreq)
 {
-    /* Get RIT timer peripheral clock rate */
-    uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
-
     register uint32_t* p = (uint32_t *)0x14000000;
     register uint32_t r1;
     register uint32_t r2;
@@ -77,6 +77,10 @@ _ramfunc_ void runMemoryTest()
 
 REGISTER_TEST(MemoryTest, time_flash)
 {
-    printf("TIming memory at 0x14000000\n");
-    runMemoryTest();
+    printf("Timing memory at 0x14000000\n");
+    /* Get RIT timer peripheral clock rate */
+    uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
+    taskENTER_CRITICAL();
+    runMemoryTest(timerFreq);
+    taskEXIT_CRITICAL();
 }
