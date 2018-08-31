@@ -45,18 +45,40 @@ void Board_UART_Init(LPC_USART_T *pUART)
 		#if defined(UART0_PINSET) && UART0_PINSET == 2
 		Chip_SCU_PinMuxSet(0x2, 0, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC1));					/* P2.0 : UART0_TXD */
 		Chip_SCU_PinMuxSet(0x2, 1, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC1));/* P2.1 : UART0_RXD */
-		#else
+		#elif defined(UART0_PINSET) && UART0_PINSET == 6
 		Chip_SCU_PinMuxSet(0x6, 4, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC2));					/* P6.5 : UART0_TXD */
 		Chip_SCU_PinMuxSet(0x6, 5, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));/* P6.4 : UART0_RXD */
+		#elif defined(UART0_PINSET) && UART0_PINSET == 15
+		Chip_SCU_PinMuxSet(0xF, 10, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC1));					/* PF.10 : UART0_TXD */
+		Chip_SCU_PinMuxSet(0xF, 11, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC1));/* PF.11 : UART0_RXD */
+		#elif defined(USE_UART0)
+		#error UART0 needs to have the pinset defined [2|6|15]
+		#else
+		printf("FATAL: no valid UART defined\n");
+		__asm("bkpt #0");
 		#endif
 	}
 	else if (pUART == LPC_UART1) {
+		#if defined(UART1_PINSET) && UART1_PINSET == 1
 		Chip_SCU_PinMuxSet(0x1, 13, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC1));				/* P1.13 : UART1_TXD */
 		Chip_SCU_PinMuxSet(0x1, 14, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC1));	/* P1.14 : UART1_RX */
+		#elif defined(UART1_PINSET) && UART1_PINSET == 12
+		Chip_SCU_PinMuxSet(0xC, 13, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC2));				/* PC.13 : UART1_TXD */
+		Chip_SCU_PinMuxSet(0xC, 14, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));	/* PC.14 : UART1_RX */
+		#elif defined(USE_UART1)
+		#error UART1 needs to have the pinset defined [1|12]
+		#else
+		printf("FATAL: no valid UART defined\n");
+		__asm("bkpt #0");
+		#endif
 	}
 	else if (pUART == LPC_USART2) {
 		Chip_SCU_PinMuxSet(0xa, 1, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC3));				/* PA.1 : UART2_TXD */
 		Chip_SCU_PinMuxSet(0xa, 2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC3));	/* PA.2 : UART2_RX */
+	}
+	else if (pUART == LPC_USART3) {
+		Chip_SCU_PinMuxSet(0x2, 3, (SCU_MODE_PULLDOWN | SCU_MODE_FUNC2));				/* P2.3 : UART3_TXD */
+		Chip_SCU_PinMuxSet(0x2, 4, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));	/* P2.4 : UART3_RX */
 	}
 }
 
@@ -222,6 +244,8 @@ void Board_SDMMC_Init(void)
 	#ifdef Bambino
 	Chip_SCU_ClockPinMuxSet(2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));	/* CLK2 connected to SDIO_CLK */
 	#elif defined(Minialpha)
+	Chip_SCU_PinMuxSet(0xC, 0, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* PC.0 connected to SDIO_CLK */
+	#elif defined(Alpha)
 	Chip_SCU_PinMuxSet(0xC, 0, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* PC.0 connected to SDIO_CLK */
 	#else
 	#error board not defined for SDMMC

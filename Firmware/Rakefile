@@ -8,8 +8,8 @@ TESTING = ENV['testing'].nil? ? false : ENV['testing'] == '1'
 PROG = 'smoothiev2'
 if ENV['target'].nil?
   TARGET = 'Bambino'
-elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Minialpha')
-  puts "ERROR: Must specify target=[Bambino|Minialpha]"
+elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Minialpha' && ENV['target'] != 'Alpha')
+  puts "ERROR: Must specify target=[Bambino|Minialpha|Alpha]"
   exit 0
 else
   TARGET = ENV['target']
@@ -19,10 +19,16 @@ target_defines= []
 if TARGET == 'Minialpha'
   # need to select the UART to use
   target_defines << '-DUSE_UART0'
-  # Only define this if UART0 is used
   # select the pinset either 2 or 6
   target_defines << '-DUART0_PINSET=2'
   target_defines << "-DNOETHERNET"
+elsif TARGET == 'Alpha'
+  # on G5
+  target_defines << '-DUSE_UART0'
+  target_defines << "-DUART0_PINSET=15"
+elsif TARGET == 'Bambino'
+  target_defines << '-DUSE_UART0'
+  target_defines << '-DUART0_PINSET=6'
 end
 
 puts "Target is #{TARGET}"
@@ -188,6 +194,8 @@ defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" -D#{TARGET}"
 if TARGET == 'Bambino'
 defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
 elsif TARGET == 'Minialpha'
+defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
+elsif TARGET == 'Alpha'
 defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
 end
 
