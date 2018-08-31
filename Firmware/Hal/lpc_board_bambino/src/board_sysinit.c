@@ -94,12 +94,14 @@ STATIC const PINMUX_GRP_T pinmuxing[] = {
 	// {0x2, 5,  (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC4)},
 
 	/*  I2S  */
+	#if 0
 	{0x3, 0,  (SCU_PINIO_FAST | SCU_MODE_FUNC2)},
 	{0x6, 0,  (SCU_PINIO_FAST | SCU_MODE_FUNC4)},
 	{0x7, 2,  (SCU_PINIO_FAST | SCU_MODE_FUNC2)},
 	{0x6, 2,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},
 	{0x7, 1,  (SCU_PINIO_FAST | SCU_MODE_FUNC2)},
 	{0x6, 1,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},
+	#endif
 };
 
 /*****************************************************************************
@@ -121,7 +123,7 @@ void Board_SetupMuxing(void)
 	Chip_SCU_SetPinMuxing(pinmuxing, sizeof(pinmuxing) / sizeof(PINMUX_GRP_T));
 
 	/* SPIFI pin setup is done prior to setting up system clocking */
-	Chip_SCU_SetPinMuxing(spifipinmuxing, sizeof(spifipinmuxing) / sizeof(PINMUX_GRP_T));
+	//Chip_SCU_SetPinMuxing(spifipinmuxing, sizeof(spifipinmuxing) / sizeof(PINMUX_GRP_T));
 }
 
 /* Set up and initialize clocking prior to call to main */

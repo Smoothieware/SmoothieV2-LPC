@@ -77,5 +77,6 @@ _ramfunc_ void runMemoryTest()
 
 REGISTER_TEST(MemoryTest, time_flash)
 {
+    printf("TIming memory at 0x14000000\n");
     runMemoryTest();
 }

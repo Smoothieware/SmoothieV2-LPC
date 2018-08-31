@@ -205,7 +205,6 @@ defines += target_defines
 
 DEFINES= defines.join(' ')
 
-#  -specs=redlib.specs ??
 DEPFLAGS = '-MMD '
 CSTD = '-std=c99'
 FFLAGS = ' -fmessage-length=0 -fno-builtin-printf -fno-builtin-isnan -ffast-math -ffunction-sections -fdata-sections '

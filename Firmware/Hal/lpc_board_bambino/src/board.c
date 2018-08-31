@@ -239,11 +239,12 @@ void Board_SDMMC_Init(void)
 	Chip_SCU_PinMuxSet(0x1, 11, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* P1.11 connected to SDIO_D2 */
 	Chip_SCU_PinMuxSet(0x1, 12, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* P1.12 connected to SDIO_D3 */
 	Chip_SCU_PinMuxSet(0x1, 6, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* P1.6 connected to SDIO_CMD */
-	Chip_SCU_PinMuxSet(0xC, 8, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* PC.8 connected to SD_CD */
+	Chip_SCU_PinMuxSet(0x1, 13, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* P1.13 connected to SD_CD */
 
 	#ifdef Bambino
 	Chip_SCU_ClockPinMuxSet(2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));	/* CLK2 connected to SDIO_CLK */
 	#elif defined(Minialpha)
+	Chip_SCU_PinMuxSet(0xC, 8, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* PC.8 connected to SD_CD */
 	Chip_SCU_PinMuxSet(0xC, 0, (SCU_MODE_INBUFF_EN|SCU_MODE_ZIF_DIS|SCU_MODE_HIGHSPEEDSLEW_EN|SCU_MODE_FUNC7));	/* PC.0 connected to SDIO_CLK */
 	// not sure if this needs to be done but nuttx does it
 	Chip_SCU_ClockPinMuxSet(2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));	/* CLK2 connected to SDIO_CLK */
