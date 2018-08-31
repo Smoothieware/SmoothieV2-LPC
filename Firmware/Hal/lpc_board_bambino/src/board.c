@@ -244,9 +244,11 @@ void Board_SDMMC_Init(void)
 	#ifdef Bambino
 	Chip_SCU_ClockPinMuxSet(2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));	/* CLK2 connected to SDIO_CLK */
 	#elif defined(Minialpha)
-	Chip_SCU_PinMuxSet(0xC, 0, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* PC.0 connected to SDIO_CLK */
-	#elif defined(Alpha)
-	Chip_SCU_PinMuxSet(0xC, 0, (SCU_PINIO_FAST | SCU_MODE_FUNC7));	/* PC.0 connected to SDIO_CLK */
+	Chip_SCU_PinMuxSet(0xC, 0, (SCU_MODE_INBUFF_EN|SCU_MODE_ZIF_DIS|SCU_MODE_HIGHSPEEDSLEW_EN|SCU_MODE_FUNC7));	/* PC.0 connected to SDIO_CLK */
+	// not sure if this needs to be done but nuttx does it
+	Chip_SCU_ClockPinMuxSet(2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_FUNC4));	/* CLK2 connected to SDIO_CLK */
+	#elif defined(Primealpha)
+	Chip_SCU_PinMuxSet(0xC, 0, (SCU_MODE_INBUFF_EN|SCU_MODE_ZIF_DIS|SCU_MODE_HIGHSPEEDSLEW_EN|SCU_MODE_FUNC7));	/* PC.0 connected to SDIO_CLK */
 	#else
 	#error board not defined for SDMMC
 	#endif
