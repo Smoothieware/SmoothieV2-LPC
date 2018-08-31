@@ -195,8 +195,10 @@ if TARGET == 'Bambino'
 defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
 elsif TARGET == 'Minialpha'
 defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
-elsif TARGET == 'PrimeAlpha'
+elsif TARGET == 'Primealpha'
 defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
+else
+  raise("Error unhandled target")
 end
 
 defines += target_defines
