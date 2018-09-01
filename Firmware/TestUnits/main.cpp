@@ -21,6 +21,8 @@
 
 #include "uart_comms.h"
 
+extern float get_pll1_clk();
+
 #define TESTCOMMS
 
 // // place holder
@@ -114,6 +116,8 @@ void print_to_all_consoles(const char *str)
 
 extern "C" void vRunTestsTask(void *pvParameters)
 {
+    get_pll1_clk();
+
     run_tests();
 
     //vTaskGetTaskState();

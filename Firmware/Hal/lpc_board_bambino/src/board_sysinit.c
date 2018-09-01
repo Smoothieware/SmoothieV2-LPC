@@ -143,11 +143,11 @@ void Board_SetupClocking(void)
 	/* Setup a divider E for main PLL clock switch SPIFI clock to that divider.
 	   Divide rate is based on CPU speed and speed of SPI FLASH part. */
 #if (MAX_CLOCK_FREQ > 180000000)
-	Chip_Clock_SetDivider(CLK_IDIV_E, CLKIN_MAINPLL, 5);
+	Chip_Clock_SetDivider(CLK_IDIV_B, CLKIN_MAINPLL, 5);
 #else
 	Chip_Clock_SetDivider(CLK_IDIV_E, CLKIN_MAINPLL, 4);
 #endif
-	Chip_Clock_SetBaseClock(CLK_BASE_SPIFI, CLKIN_IDIVE, true, false);
+	Chip_Clock_SetBaseClock(CLK_BASE_SPIFI, CLKIN_IDIVB, true, false);
 
 	/* Setup system base clocks and initial states. This won't enable and
 	   disable individual clocks, but sets up the base clock sources for
