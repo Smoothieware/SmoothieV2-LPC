@@ -19,6 +19,7 @@ class FastTicker
         void detach(int n);
         void tick();
         bool is_running() const { return started; }
+        // this depends on FreeRTOS systick rate as SlowTicker cannot go faster than that
         static uint32_t get_min_frequency() { return 1000; }
 
     private:

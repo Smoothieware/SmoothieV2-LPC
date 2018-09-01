@@ -27,7 +27,9 @@ FastTicker::~FastTicker()
     tmr1_stop();
 }
 
-static void timer_handler()
+#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
+
+_ramfunc_ static void timer_handler()
 {
     FastTicker::getInstance()->tick();
 }
@@ -111,8 +113,8 @@ bool FastTicker::set_frequency( int frequency )
     return true;
 }
 
-// This is an ISR
-void FastTicker::tick()
+// This is an ISR anything that this calls that is faster than 1KHz should be a ramfunc too
+_ramfunc_ void FastTicker::tick()
 {
     // Call all callbacks that need to be called
     for(auto& i : callbacks) {
