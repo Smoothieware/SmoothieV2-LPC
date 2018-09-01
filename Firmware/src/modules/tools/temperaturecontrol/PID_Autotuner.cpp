@@ -1,5 +1,4 @@
 #include "PID_Autotuner.h"
-#include "SlowTicker.h"
 #include "TemperatureControl.h"
 #include "SigmaDeltaPwm.h"
 #include "OutputStream.h"

@@ -407,6 +407,7 @@ void safe_sleep(uint32_t ms)
 
 #include "CommandShell.h"
 #include "SlowTicker.h"
+#include "FastTicker.h"
 #include "StepTicker.h"
 #include "ConfigReader.h"
 #include "Switch.h"
@@ -426,7 +427,7 @@ void safe_sleep(uint32_t ms)
 #include "main.h"
 #include <fstream>
 
-void configureSPIFI();
+extern void configureSPIFI();
 //float get_pll1_clk();
 
 //#define SD_CONFIG
@@ -446,6 +447,9 @@ static void smoothie_startup(void *)
 
     // create the SlowTicker here as it is used by some modules
     SlowTicker *slow_ticker = new SlowTicker();
+
+    // create the FastTicker here as it is used by some modules
+    FastTicker *fast_ticker = new FastTicker();
 
     // create the StepTicker, don't start it yet
     StepTicker *step_ticker = new StepTicker();
@@ -520,6 +524,17 @@ static void smoothie_startup(void *)
 
         ///////////////////////////////////////////////////////////
         // configure other modules here
+        {
+            // Pwm needs to be initialized, there can only be one frequency
+            // needs to be done before any module that could use it
+            uint32_t freq = 10000; // default is 10KHz
+            ConfigReader::section_map_t m;
+            if(cr.get_section("pwm", m)) {
+                freq = cr.get_int(m, "frequency", 10000);
+            }
+            Pwm::setup(freq);
+            printf("INFO: PWM frequency set to %lu Hz\n", freq);
+        }
 
         {
             printf("configure switches\n");
@@ -566,17 +581,6 @@ static void smoothie_startup(void *)
             printf("INFO: No kill button enabled\n");
             delete kill_button;
             kill_button = nullptr;
-        }
-
-        {
-            // Pwm needs to be initialized, there can only be one frequency
-            float freq = 10000; // default is 10KHz
-            ConfigReader::section_map_t m;
-            if(cr.get_section("pwm", m)) {
-                freq = cr.get_float(m, "frequency", 10000);
-            }
-            Pwm::setup(freq);
-            printf("INFO: PWM frequency set to %f Hz\n", freq);
         }
 
         printf("configure current control\n");
@@ -662,6 +666,10 @@ static void smoothie_startup(void *)
         // start the timers
         if(!slow_ticker->start()) {
             printf("Error: failed to start SlowTicker\n");
+        }
+
+        if(!fast_ticker->start()) {
+            printf("WARNING: failed to start FastTicker (maybe nothing is using it?)\n");
         }
 
         if(!step_ticker->start()) {

@@ -19,7 +19,7 @@ static void timer_callback10khz(void)
     ++timer_cnt10khz;
 }
 
-REGISTER_TEST(FastTicker, test_20_and_100_hz)
+REGISTER_TEST(FastTicker, test_2khz_and_10khz)
 {
     FastTicker *flt= FastTicker::getInstance();
     if(flt == nullptr) {
@@ -29,9 +29,15 @@ REGISTER_TEST(FastTicker, test_20_and_100_hz)
     }
     TEST_ASSERT_FALSE(flt->is_running());
 
+    // won't start as nothing has attached to it
+    TEST_ASSERT_FALSE(flt->start());
+
     // 2 KHz
     int n1= flt->attach(2000, timer_callback2khz);
     TEST_ASSERT_TRUE(n1 >= 0);
+
+    // start it now
+    TEST_ASSERT_TRUE(flt->start());
     TEST_ASSERT_TRUE(flt->is_running());
 
     // 10 KHz

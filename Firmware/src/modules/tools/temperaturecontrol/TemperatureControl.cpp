@@ -5,6 +5,7 @@
 #include "OutputStream.h"
 #include "GCode.h"
 #include "SlowTicker.h"
+#include "FastTicker.h"
 #include "Dispatcher.h"
 #include "main.h"
 #include "PID_Autotuner.h"
@@ -203,7 +204,12 @@ bool TemperatureControl::configure(ConfigReader& cr, ConfigReader::section_map_t
         this->heater_pin->set(0);
         //set_low_on_debug(heater_pin->port_number, heater_pin->pin);
         // TODO use single slowtimer for all sigma delta
-        SlowTicker::getInstance()->attach(cr.get_float(m, pwm_frequency_key, 2000), std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin));
+        float freq= cr.get_float(m, pwm_frequency_key, 2000);
+        if(freq >= 1000) { // if >= 1KHz use FastTicker
+            FastTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin));
+        }else{
+            SlowTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin));
+        }
     }
 
     // runaway timer

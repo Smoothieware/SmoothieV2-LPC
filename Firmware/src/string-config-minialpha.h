@@ -132,7 +132,7 @@ hotend.thermistor = EPCOS100K    # See http://smoothieware.org/temperaturecontro
 hotend.set_m_code = 104          # M-code to set the temperature for this module\n\
 hotend.set_and_wait_m_code = 109 # M-code to set-and-wait for this module\n\
 hotend.designator = T            # Designator letter for this module\n\
-hotend.pwm_frequency = 100       # FIXME slow for now when is SPIFI\n\
+hotend.pwm_frequency = 1000      # FIXME slow for now when is SPIFI\n\
 \n\
 hotend2.enable = false            # Whether to activate this ( 'hotend' ) module at all.\n\
 hotend2.tool_id = 1               # T1 will select\n\
@@ -150,7 +150,7 @@ bed.thermistor = Honeywell100K # See http://smoothieware.org/temperaturecontrol#
 bed.set_m_code = 140 # M-code to set the temperature for this module\n\
 bed.set_and_wait_m_code = 190 # M-code to set-and-wait for this module\n\
 bed.designator = B # Designator letter for this module\n\
-bed.pwm_frequency = 100       # FIXME slow for now when is SPIFI\n\
+bed.pwm_frequency = 1000      # FIXME slow for now when is SPIFI\n\
 \n\
 [kill button]\n\
 enable = true          # Set to true to enable a kill button\n\

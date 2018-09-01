@@ -11,6 +11,7 @@ class FastTicker
         FastTicker();
         virtual ~FastTicker();
 
+        bool start();
         bool stop();
 
         // call back frequency in Hz
@@ -21,7 +22,6 @@ class FastTicker
 
     private:
         static FastTicker *instance;
-        bool init();
 
         // set frequency of timer in Hz
         bool set_frequency( int frequency );

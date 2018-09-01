@@ -9,6 +9,7 @@
 
 #include "board.h"
 
+uint32_t Pwm::frequency= 0;
 
 /* 43xx Pinmap for PWM to CTOUT and function
 Pin  a, b, COUT#, Function
@@ -132,12 +133,13 @@ Pwm::Pwm(const char *pin)
 }
 
 // static
-bool Pwm::setup(float freq)
+bool Pwm::setup(uint32_t freq)
 {
     /* Initialize the SCT as PWM and set frequency */
     Chip_SCTPWM_Init(LPC_SCT);
     Chip_SCTPWM_SetRate(LPC_SCT, freq); // 10KHz
 	Chip_SCTPWM_Start(LPC_SCT);
+    frequency= freq;
 	return true;
 }
 

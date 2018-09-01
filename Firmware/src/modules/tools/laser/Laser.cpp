@@ -4,6 +4,7 @@
 #include "Robot.h"
 #include "Dispatcher.h"
 #include "SlowTicker.h"
+#include "FastTicker.h"
 #include "Pwm.h"
 #include "Pin.h"
 #include "StepTicker.h"
@@ -18,7 +19,6 @@
 #define pwm_pin_key "pwm_pin"
 #define inverted_key "inverted_pwm"
 #define ttl_pin_key "ttl_pin"
-#define pwm_period_key "pwm_period"
 #define maximum_power_key "maximum_power"
 #define minimum_power_key "minimum_power"
 #define maximum_s_value_key "maximum_s_value"
@@ -90,8 +90,14 @@ bool Laser::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 221, std::bind(&Laser::handle_M221, this, _1, _2));
 
     // no point in updating the power more than the PWM frequency, but no more than 1KHz
-    // std::min(1000UL, 1000000/period)
-    SlowTicker::getInstance()->attach(100, std::bind(&Laser::set_proportional_power, this));
+    uint32_t pwm_freq= Pwm::get_frequency();
+    uint32_t f= std::min(1000UL, pwm_freq);
+    if(f >= 1000) {
+        FastTicker::getInstance()->attach(f, std::bind(&Laser::set_proportional_power, this));
+
+    } else {
+        SlowTicker::getInstance()->attach(f, std::bind(&Laser::set_proportional_power, this));
+    }
 
     return true;
 }

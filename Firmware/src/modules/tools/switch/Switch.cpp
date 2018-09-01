@@ -4,6 +4,7 @@
 #include "OutputStream.h"
 #include "ConfigReader.h"
 #include "SlowTicker.h"
+#include "FastTicker.h"
 #include "SigmaDeltaPwm.h"
 #include "Pwm.h"
 #include "GCodeProcessor.h"
@@ -26,7 +27,6 @@
 #define max_pwm_key             "max_pwm"
 #define output_on_command_key   "output_on_command"
 #define output_off_command_key  "output_off_command"
-#define pwm_period_ms_key       "pwm_period_ms"
 #define failsafe_key            "failsafe_set_to"
 #define ignore_onhalt_key       "ignore_on_halt"
 
@@ -214,10 +214,9 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
 
     if(this->output_type == SIGMADELTA) {
         // SIGMADELTA tick
-        // TODO We should probably have one timer for all sigmadelta pins, and sigma delta should have its own fast timer
-        // or piggy back off of the StepTicker
-        // FIXME should be 1-2KHz, set to 100 while running from SPIFI which is slow
-        SlowTicker::getInstance()->attach(100, std::bind(&SigmaDeltaPwm::on_tick, this->sigmadelta_pin));
+        // TODO We should probably have one timer for all sigmadelta pins
+        // TODO we should be allowed to set the frequency for this
+        FastTicker::getInstance()->attach(1000, std::bind(&SigmaDeltaPwm::on_tick, this->sigmadelta_pin));
     }
 
     // for commands we may need to replace _ for space for old configs

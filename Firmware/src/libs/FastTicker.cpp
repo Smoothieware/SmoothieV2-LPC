@@ -33,13 +33,24 @@ static void timer_handler()
 }
 
 // called once to start the timer
-bool FastTicker::init()
+bool FastTicker::start()
 {
-    if(!started) {
-        tmr1_setup(max_frequency, (void *)timer_handler);
-    }else{
-        printf("WARNING: tmr1 already init'd\n");
+    if(max_frequency == 0) {
+        printf("WARNING: FastTicker not started as nothing has attached to it\n");
+        return false;
     }
+
+    if(!started) {
+        if(max_frequency < MIN_FREQUENCY || max_frequency > MAX_FREQUENCY) {
+            printf("ERROR: FastTicker cannot be set < %dHz or > %dHz\n", MIN_FREQUENCY, MAX_FREQUENCY);
+            return false;
+        }
+        tmr1_setup(max_frequency, (void *)timer_handler);
+
+    }else{
+        printf("WARNING: FastTicker already started\n");
+    }
+
     started= true;
     return true;
 }
@@ -47,7 +58,10 @@ bool FastTicker::init()
 // called to stop the timer usually only called in TESTs
 bool FastTicker::stop()
 {
-    tmr1_stop();
+    if(started) {
+        tmr1_stop();
+        started= false;
+    }
     return true;
 }
 
@@ -57,22 +71,12 @@ int FastTicker::attach(uint32_t frequency, std::function<void(void)> cb)
     int countdown = period;
 
     if( frequency > max_frequency ) {
-        max_frequency = frequency;
-        if(!started) {
-            // we don't want this running unless something needs it first
-            if(frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY) {
-                printf("ERROR: FastTicker cannot be set < %dHz or > %dHz\n", MIN_FREQUENCY, MAX_FREQUENCY);
-                return -1;
-            }
-            init();
-
-        } else {
-            // reset frequency to a higher value
-            if(!set_frequency(frequency)) {
-                printf("ERROR: FastTicker cannot be set < %dHz or > %dHz\n", MIN_FREQUENCY, MAX_FREQUENCY);
-                return -1;
-            }
+        // reset frequency to a higher value
+        if(!set_frequency(frequency)) {
+            printf("ERROR: FastTicker cannot be set < %dHz or > %dHz\n", MIN_FREQUENCY, MAX_FREQUENCY);
+            return -1;
         }
+        max_frequency = frequency;
     }
 
     taskENTER_CRITICAL();
@@ -99,8 +103,10 @@ bool FastTicker::set_frequency( int frequency )
     if(frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY) return false;
     this->interval = BASE_FREQUENCY / frequency; // microsecond period
 
-    // change frequency of timer callback
-    tmr1_set_frequency(frequency);
+    if(started) {
+        // change frequency of timer callback
+        tmr1_set_frequency(frequency);
+    }
 
     return true;
 }

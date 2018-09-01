@@ -137,7 +137,7 @@ int tmr1_setup(uint32_t frequency, void *timer_handler)
     Chip_TIMER_ResetOnMatchEnable(LPC_TIMER1, 0);
     Chip_TIMER_Enable(LPC_TIMER1);
 
-    printf("TMR0 MR1 period=%lu cycles; interrupt rate=%lu Hz\n", period, tmr1_timerFreq / period);
+    printf("TMR1 MR0 period=%lu cycles; interrupt rate=%lu Hz\n", period, tmr1_timerFreq / period);
 
     // setup the upstream handler
     tmr1_handler = timer_handler;
@@ -167,7 +167,7 @@ int tmr1_set_frequency(uint32_t frequency)
     Chip_TIMER_ResetOnMatchEnable(LPC_TIMER1, 0);
     Chip_TIMER_Enable(LPC_TIMER1);
 
-    printf("TMR0 new MR1 period=%lu cycles; interrupt rate=%lu Hz\n", period, tmr1_timerFreq / period);
+    printf("TMR1 new MR0 period=%lu cycles; interrupt rate=%lu Hz\n", period, tmr1_timerFreq / period);
     /* Enable the timer interrupt at the NVIC and at TMR1 */
     NVIC_EnableIRQ(TIMER1_IRQn);
     return tmr1_timerFreq % period;
