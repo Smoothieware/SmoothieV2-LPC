@@ -19,6 +19,7 @@ class FastTicker
         void detach(int n);
         void tick();
         bool is_running() const { return started; }
+        static uint32_t get_min_frequency() { return 1000; }
 
     private:
         static FastTicker *instance;

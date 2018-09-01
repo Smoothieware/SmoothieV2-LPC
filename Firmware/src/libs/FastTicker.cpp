@@ -7,7 +7,7 @@
 // timers are specified in Hz and periods in microseconds
 #define BASE_FREQUENCY 1000000
 #define MAX_FREQUENCY 10000
-#define MIN_FREQUENCY 1000
+#define MIN_FREQUENCY (FastTicker::get_min_frequency())
 
 
 FastTicker *FastTicker::instance;
@@ -42,7 +42,7 @@ bool FastTicker::start()
 
     if(!started) {
         if(max_frequency < MIN_FREQUENCY || max_frequency > MAX_FREQUENCY) {
-            printf("ERROR: FastTicker cannot be set < %dHz or > %dHz\n", MIN_FREQUENCY, MAX_FREQUENCY);
+            printf("ERROR: FastTicker cannot be set < %luHz or > %dHz\n", MIN_FREQUENCY, MAX_FREQUENCY);
             return false;
         }
         tmr1_setup(max_frequency, (void *)timer_handler);
@@ -73,7 +73,7 @@ int FastTicker::attach(uint32_t frequency, std::function<void(void)> cb)
     if( frequency > max_frequency ) {
         // reset frequency to a higher value
         if(!set_frequency(frequency)) {
-            printf("ERROR: FastTicker cannot be set < %dHz or > %dHz\n", MIN_FREQUENCY, MAX_FREQUENCY);
+            printf("ERROR: FastTicker cannot be set < %luHz or > %dHz\n", MIN_FREQUENCY, MAX_FREQUENCY);
             return -1;
         }
         max_frequency = frequency;
@@ -100,7 +100,7 @@ void FastTicker::detach(int n)
 // NOTE this is a fast ticker so ticks slower than 1000Hz are not allowed
 bool FastTicker::set_frequency( int frequency )
 {
-    if(frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY) return false;
+    if(frequency < (int)MIN_FREQUENCY || frequency > MAX_FREQUENCY) return false;
     this->interval = BASE_FREQUENCY / frequency; // microsecond period
 
     if(started) {

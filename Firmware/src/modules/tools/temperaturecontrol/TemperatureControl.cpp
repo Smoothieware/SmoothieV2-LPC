@@ -205,10 +205,17 @@ bool TemperatureControl::configure(ConfigReader& cr, ConfigReader::section_map_t
         //set_low_on_debug(heater_pin->port_number, heater_pin->pin);
         // TODO use single slowtimer for all sigma delta
         float freq= cr.get_float(m, pwm_frequency_key, 2000);
-        if(freq >= 1000) { // if >= 1KHz use FastTicker
-            FastTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin));
+        if(freq >= FastTicker::get_min_frequency()) { // if >= 1KHz use FastTicker
+            if(FastTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin)) < 0) {
+                printf("configure-temperature: ERROR Fast Ticker was not set (Too slow?)\n");
+                return false;
+            }
+
         }else{
-            SlowTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin));
+            if(SlowTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin)) < 0) {
+                printf("configure-temperature: ERROR Slow Ticker was not set (Too fast?)\n");
+                return false;
+            }
         }
     }
 
