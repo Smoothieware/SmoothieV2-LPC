@@ -116,7 +116,8 @@ void print_to_all_consoles(const char *str)
 
 extern "C" void vRunTestsTask(void *pvParameters)
 {
-    get_pll1_clk();
+    // show the DIVB clock rate used for SPIFI
+    //get_pll1_clk();
 
     run_tests();
 
