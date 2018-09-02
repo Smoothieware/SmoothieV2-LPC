@@ -55,6 +55,7 @@ STATIC const struct CLK_BASE_STATES InitClkStates[] = {
 	{CLK_BASE_USB1, CLKIN_IDIVD, true, true}
 };
 
+#if 0
 /* SPIFI high speed pin mode setup */
 STATIC const PINMUX_GRP_T spifipinmuxing[] = {
 	{0x3, 3,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	/* SPIFI CLK */
@@ -64,6 +65,7 @@ STATIC const PINMUX_GRP_T spifipinmuxing[] = {
 	{0x3, 7,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	/* SPIFI D0 */
 	{0x3, 8,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)}	/* SPIFI CS/SSEL */
 };
+#endif
 
 STATIC const PINMUX_GRP_T pinmuxing[] = {
 	#ifndef NOETHERNET

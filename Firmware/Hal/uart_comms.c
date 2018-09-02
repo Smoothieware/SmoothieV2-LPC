@@ -118,6 +118,7 @@ size_t read_uart(char * buf, size_t length)
 
 size_t write_uart(const char *buf, size_t length)
 {
+	#if 0
 	// Note we do a blocking write here until all is written
 	size_t sent_cnt = 0;
 	while(sent_cnt < length) {
@@ -126,6 +127,11 @@ size_t write_uart(const char *buf, size_t length)
 			sent_cnt += n;
 		}
 	}
-
 	return length;
+	#else
+	taskENTER_CRITICAL();
+	size_t n= Chip_UART_SendBlocking(LPC_UARTX, buf, length);
+	taskEXIT_CRITICAL();
+	return n;
+	#endif
 }

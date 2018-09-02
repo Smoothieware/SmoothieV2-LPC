@@ -430,7 +430,7 @@ void safe_sleep(uint32_t ms)
 extern void configureSPIFI();
 //float get_pll1_clk();
 
-//#define SD_CONFIG
+#define SD_CONFIG
 
 #ifndef SD_CONFIG
 #include STRING_CONFIG_H

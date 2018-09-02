@@ -44,6 +44,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "ls", std::bind( &CommandShell::ls_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "rm", std::bind( &CommandShell::rm_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "mv", std::bind( &CommandShell::mv_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "cp", std::bind( &CommandShell::cp_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "cat", std::bind( &CommandShell::cat_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "md5sum", std::bind( &CommandShell::md5sum_cmd, this, _1, _2) );
 
@@ -98,7 +99,7 @@ bool CommandShell::m20_cmd(GCode& gcode, OutputStream& os)
 
 bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
 {
-    HELP("list files: -s show size");
+    HELP("list files: dir [-s show size]");
     std::string path, opts;
     while(!params.empty()) {
         std::string s = stringutils::shift_parameter( params );
@@ -185,7 +186,7 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::rm_cmd(std::string& params, OutputStream& os)
 {
-    HELP("delete file");
+    HELP("delete: file");
     std::string fn = stringutils::shift_parameter( params );
     int s = remove(fn.c_str());
     if (s != 0) os.printf("Could not delete %s\n", fn.c_str());
@@ -194,11 +195,59 @@ bool CommandShell::rm_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::mv_cmd(std::string& params, OutputStream& os)
 {
-    HELP("rename file");
+    HELP("rename: from to");
     std::string fn1 = stringutils::shift_parameter( params );
     std::string fn2 = stringutils::shift_parameter( params );
     int s = rename(fn1.c_str(), fn2.c_str());
     if (s != 0) os.printf("Could not rename %s to %s\n", fn1.c_str(), fn2.c_str());
+    return true;
+}
+
+bool CommandShell::cp_cmd(std::string& params, OutputStream& os)
+{
+    HELP("copy a file: from to");
+    std::string fn1 = stringutils::shift_parameter( params );
+    std::string fn2 = stringutils::shift_parameter( params );
+
+    std::fstream fsin;
+    std::fstream fsout;
+    fsin.open(fn1, std::fstream::in|std::fstream::binary);
+    if(!fsin.is_open()) {
+        os.printf("File %s does not exist\n", fn1.c_str());
+        return true;
+    }
+
+    fsout.open(fn2, std::fstream::out|std::fstream::binary|std::fstream::trunc);
+    if(!fsout.is_open()) {
+        os.printf("Could not open File %s for write\n", fn2.c_str());
+        return true;
+    }
+
+    // allocate from heap rather than the limited stack
+    char *buffer= (char *)malloc(4096);
+    if(buffer != nullptr) {
+        /* Copy source to destination */
+        while (!fsin.eof()) {
+            fsin.read(buffer, sizeof(buffer));
+            int br= fsin.gcount();
+            if(br > 0) {
+                fsout.write(buffer, br);
+                if(!fsout.good()) {
+                    os.printf("Write failed to File %s\n", fn2.c_str());
+                    break;
+                }
+            }
+        }
+        free(buffer);
+
+    }else{
+        os.printf("Not enough memory for operation\n");
+    }
+
+    /* Close open files */
+    fsin.close();
+    fsout.close();
+
     return true;
 }
 
@@ -783,7 +832,7 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
 bool CommandShell::version_cmd(std::string& params, OutputStream& os)
 {
     HELP("version - print version");
-    os.printf("Smoothie Version2 for Mini Alpha: build 0.5\n");
+    os.printf("Smoothie Version2 for %s: build 0.7\n", BUILD_TARGET);
     return true;
 }
 

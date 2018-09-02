@@ -233,11 +233,6 @@ REGISTER_TEST(SDCardTest, directory)
 #endif
 }
 
-REGISTER_TEST(SDCardTest, read_config_init)
-{
-    TEST_IGNORE();
-}
-
 using systime_t= uint32_t;
 #define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
 #define TICK2USEC(x) ((systime_t)(((uint64_t)(x)*1000000)/timerFreq))
@@ -376,13 +371,14 @@ REGISTER_TEST(SDCardTest, copy_file_fstreams)
 
     printf("Starting fstream copy test...\n");
 
+#if 1
     std::fstream fsin;
     std::fstream fsout;
 
-    fsin.open(fn1, std::fstream::in);
+    fsin.open(fn1, std::fstream::in|std::fstream::binary);
     TEST_ASSERT_TRUE(fsin.is_open());
 
-    fsout.open(fn2, std::fstream::out);
+    fsout.open(fn2, std::fstream::out|std::fstream::binary|std::fstream::trunc);
     TEST_ASSERT_TRUE(fsout.is_open());
 
     /* Copy source to destination */
@@ -396,10 +392,23 @@ REGISTER_TEST(SDCardTest, copy_file_fstreams)
             TEST_ASSERT_TRUE(fsout.good());
         }
     }
-
     /* Close open files */
     fsin.close();
     fsout.close();
+
+#else
+    // This is quite slow
+    std::ifstream src(fn1, std::ios::binary);
+    TEST_ASSERT_TRUE(src.is_open());
+    std::ofstream dst(fn2, std::ios::binary);
+    TEST_ASSERT_TRUE(dst.is_open());
+
+    dst << src.rdbuf();
+    TEST_ASSERT_TRUE(dst.good());
+    src.close();
+    dst.close();
+
+#endif
 
     printf("test fstream copied file...\n");
     FIL fsrc;
