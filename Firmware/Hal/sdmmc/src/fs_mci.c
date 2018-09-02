@@ -33,6 +33,9 @@
 #include "board.h"
 #include "chip.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -52,6 +55,23 @@ static CARD_HANDLE_T *hCard;
 /*****************************************************************************
  * Private functions
  ****************************************************************************/
+static void sdmmc_wait_for_card_insert()
+{
+    while (Chip_SDIF_CardNDetect(LPC_SDMMC)) {
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+static int sdmmc_card_ready_wait(CARD_HANDLE_T *hCrd, int tout)
+{
+    int32_t cntms= tout;
+    while(Chip_SDMMC_GetState(LPC_SDMMC) == -1) {
+        vTaskDelay(pdMS_TO_TICKS(1)); // if systick is > 1ms then we need an alternative to this,
+        if(--cntms == 0) break;
+    }
+
+    return Chip_SDMMC_GetState(LPC_SDMMC) != -1;
+}
 
 /*****************************************************************************
  * Public functions

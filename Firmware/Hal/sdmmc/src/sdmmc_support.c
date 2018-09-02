@@ -4,30 +4,18 @@
 #include "ff.h"
 
 #include "FreeRTOS.h"
+#include "task.h"
 
 #include <string.h>
 
 /* SDMMC card info structure */
 mci_card_struct sdcardinfo;
 
-static volatile int32_t sdio_wait_exit = 0;
-
 /* Delay callback for timed SDIF/SDMMC functions */
 static void sdmmc_waitms(uint32_t time)
 {
-    /* In an RTOS, the thread would sleep allowing other threads to run.
-       For standalone operation, we just spin on RI timer */
-    int32_t curr = (int32_t) Chip_RIT_GetCounter(LPC_RITIMER);
-    int32_t final = curr + ((SystemCoreClock / 1000) * time);
-
-    if (final == curr) return;
-
-    if ((final < 0) && (curr > 0)) {
-        while (Chip_RIT_GetCounter(LPC_RITIMER) < (uint32_t) final) {}
-    } else {
-        while ((int32_t) Chip_RIT_GetCounter(LPC_RITIMER) < final) {}
-    }
-
+    /* In an RTOS, the thread would sleep allowing other threads to run. */
+    vTaskDelay(pdMS_TO_TICKS(time));
     return;
 }
 
@@ -36,12 +24,16 @@ static void sdmmc_waitms(uint32_t time)
  * @param   bits : Status bits to poll for command completion
  * @return  Nothing
  */
+static xTaskHandle xTaskToNotify = NULL;
 static void sdmmc_setup_wakeup(void *bits)
 {
+    // I presume that this will be called from the thread that will also be waiting
+    // If not we need a binary mutex
+    xTaskToNotify= xTaskGetCurrentTaskHandle();
+
     uint32_t bit_mask = *((uint32_t *)bits);
     /* Wait for IRQ - for an RTOS, you would pend on an event here with a IRQ based wakeup. */
     NVIC_ClearPendingIRQ(SDIO_IRQn);
-    sdio_wait_exit = 0;
     Chip_SDIF_SetIntMask(LPC_SDMMC, bit_mask);
     NVIC_EnableIRQ(SDIO_IRQn);
 }
@@ -53,9 +45,20 @@ static void sdmmc_setup_wakeup(void *bits)
 static uint32_t sdmmc_irq_driven_wait(void)
 {
     uint32_t status;
+    const TickType_t waitms = pdMS_TO_TICKS( 500 );
 
-    /* Wait for event, would be nice to have a timeout, but keep it  simple */
-    while (sdio_wait_exit == 0) {}
+    // sanity check may be removed eventually
+    if(xTaskGetCurrentTaskHandle() != xTaskToNotify) {
+        puts("We have a problem that this was a differnt thread than expected\n");
+        __asm("bkpt #0");
+    }
+
+    /* Wait for event */
+    uint32_t ulNotificationValue = ulTaskNotifyTake(pdTRUE, waitms);
+    if( ulNotificationValue != 1 ) {
+        /* The call to ulTaskNotifyTake() timed out. */
+        return -1;
+    }
 
     /* Get status and clear interrupts */
     status = Chip_SDIF_GetIntStatus(LPC_SDMMC);
@@ -94,7 +97,11 @@ void SDIO_IRQHandler(void)
     /* Set wait exit flag to tell wait function we are ready. In an RTOS,
        this would trigger wakeup of a thread waiting for the IRQ. */
     NVIC_DisableIRQ(SDIO_IRQn);
-    sdio_wait_exit = 1;
+
+    static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    /* Notify the task that the transmission is complete. */
+    vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 bool setup_sdmmc()

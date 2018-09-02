@@ -122,7 +122,7 @@ typedef mci_card_struct CARD_HANDLE_T;
 #define FSMCI_InitRealTimeClock()       // rtc_initialize()
 
 #if (!defined(BOARD_NGX_XPLORER_4330) && !defined(BOARD_NGX_XPLORER_1830))
-#define FSMCI_CardInsertWait(hc)        while (Chip_SDIF_CardNDetect(LPC_SDMMC)) {}
+#define FSMCI_CardInsertWait(hc)        sdmmc_wait_for_card_insert()
 #else
 #define FSMCI_CardInsertWait(hc)        /* NGX board ignored SD_CD pin */
 #endif
@@ -136,20 +136,7 @@ extern void rtc_initialize(void);   /**< RTC initialization function */
  * @param	tout	: Time to wait, in milliseconds
  * @return	0 when operation failed 1 when successfully completed
  */
-STATIC INLINE int FSMCI_CardReadyWait(CARD_HANDLE_T *hCrd, int tout)
-{
-	int32_t curr = (int32_t) Chip_RIT_GetCounter(LPC_RITIMER);
-	int32_t final = curr + ((SystemCoreClock / 1000) * tout);
-
-	if ((final < 0) && (curr > 0)) {
-		while (Chip_RIT_GetCounter(LPC_RITIMER) < (uint32_t) final) { if (Chip_SDMMC_GetState(LPC_SDMMC) != -1) break; }
-	}
-	else {
-		while ((int32_t) Chip_RIT_GetCounter(LPC_RITIMER) < final) { if (Chip_SDMMC_GetState(LPC_SDMMC) != -1) break; }
-	}
-
-	return Chip_SDMMC_GetState(LPC_SDMMC) != -1;
-}
+#define FSMCI_CardReadyWait(hCrd, tout) sdmmc_card_ready_wait(hCrd, tout)
 
 /**
  * @brief	Get the state of the sdcard

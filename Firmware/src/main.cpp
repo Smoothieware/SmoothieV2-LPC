@@ -496,6 +496,24 @@ static void smoothie_startup(void *)
         ConfigReader cr(ss);
         printf("Starting configuration of modules from memory...\n");
 #endif
+        {
+            // configure system leds (if any)
+            ConfigReader::section_map_t m;
+            if(cr.get_section("system leds", m)) {
+                std::string p = cr.get_string(m, "idle_led", "nc");
+                idle_led = new Pin(p.c_str(), Pin::AS_OUTPUT);
+                if(!idle_led->connected()) {
+                    delete idle_led;
+                    idle_led = nullptr;
+                }
+                p = cr.get_string(m, "play_led", "nc");
+                play_led = new Pin(p.c_str(), Pin::AS_OUTPUT);
+                if(!play_led->connected()) {
+                    delete play_led;
+                    play_led = nullptr;
+                }
+            }
+        }
 
         {
             // get general system settings
@@ -613,26 +631,6 @@ static void smoothie_startup(void *)
             printf("WARNING: Failed to configure Player\n");
         }
 
-        {
-            // configure system leds (if any)
-            ConfigReader::section_map_t m;
-            if(cr.get_section("system leds", m)) {
-                std::string p = cr.get_string(m, "idle_led", "nc");
-                idle_led = new Pin(p.c_str(), Pin::AS_OUTPUT);
-                if(!idle_led->connected()) {
-                    delete idle_led;
-                    idle_led = nullptr;
-                }
-                p = cr.get_string(m, "play_led", "nc");
-                play_led = new Pin(p.c_str(), Pin::AS_OUTPUT);
-                if(!play_led->connected()) {
-                    delete play_led;
-                    play_led = nullptr;
-                }
-            }
-        }
-
-
         // end of module creation and configuration
         ////////////////////////////////////////////////////////////////
 
@@ -679,6 +677,10 @@ static void smoothie_startup(void *)
         if(!Adc::start()) {
             printf("Error: failed to start ADC\n");
         }
+
+    } else {
+        puts("Configure failed\n");
+        __asm("bkpt #0");
     }
 
     // create queue for incoming buffers from the I/O ports
