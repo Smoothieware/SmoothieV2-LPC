@@ -188,6 +188,10 @@ bool CommandShell::rm_cmd(std::string& params, OutputStream& os)
 {
     HELP("delete: file");
     std::string fn = stringutils::shift_parameter( params );
+    if(fn.empty()) {
+        os.puts("file name required\n");
+        return true;
+    }
     int s = remove(fn.c_str());
     if (s != 0) os.printf("Could not delete %s\n", fn.c_str());
     return true;
@@ -198,6 +202,10 @@ bool CommandShell::mv_cmd(std::string& params, OutputStream& os)
     HELP("rename: from to");
     std::string fn1 = stringutils::shift_parameter( params );
     std::string fn2 = stringutils::shift_parameter( params );
+    if(fn1.empty() || fn2.empty()) {
+        os.puts("from and to files required\n");
+        return true;
+    }
     int s = rename(fn1.c_str(), fn2.c_str());
     if (s != 0) os.printf("Could not rename %s to %s\n", fn1.c_str(), fn2.c_str());
     return true;
@@ -309,6 +317,12 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
     // Get params ( filename and line limit )
     std::string filename          = stringutils::shift_parameter( params );
     std::string limit_parameter   = stringutils::shift_parameter( params );
+
+    if(filename.empty()) {
+        os.puts("file name required\n");
+        return true;
+    }
+
     int limit = -1;
 
     if ( limit_parameter != "" ) {
@@ -343,9 +357,15 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
 bool CommandShell::md5sum_cmd(std::string& params, OutputStream& os)
 {
     HELP("calculate the md5sum of given filename");
+    std::string filename          = stringutils::shift_parameter( params );
+
+    if(filename.empty()) {
+        os.puts("file name required\n");
+        return true;
+    }
 
     // Open file
-    FILE *lp = fopen(params.c_str(), "r");
+    FILE *lp = fopen(filename.c_str(), "r");
     if (lp != NULL) {
         MD5 md5;
         uint8_t buf[64];
