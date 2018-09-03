@@ -127,7 +127,7 @@ if TESTING
   if ENV['test'].nil?
     # all tests
     src += FileList['TestUnits/TEST_*.cpp']
-    #src.exclude("TestUnits/TEST_sdcard.cpp") # sdcard is not always present
+    src.exclude("TestUnits/TEST_diskio.cpp") # we do not want to do this as it wipes out the sdcard
     if ENV['exclude']
       ENV['exclude'].split(',').map { |i| "TestUnits/TEST_#{i}.cpp" }.each do |e|
         src.exclude(e)

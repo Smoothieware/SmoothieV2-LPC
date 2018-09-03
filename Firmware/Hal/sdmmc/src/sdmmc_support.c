@@ -45,7 +45,7 @@ static void sdmmc_setup_wakeup(void *bits)
 static uint32_t sdmmc_irq_driven_wait(void)
 {
     uint32_t status;
-    const TickType_t waitms = pdMS_TO_TICKS( 500 );
+    const TickType_t waitms = pdMS_TO_TICKS( 10000 );
 
     // sanity check may be removed eventually
     if(xTaskGetCurrentTaskHandle() != xTaskToNotify) {

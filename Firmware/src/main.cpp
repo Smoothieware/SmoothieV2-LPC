@@ -25,6 +25,8 @@
 #include "Dispatcher.h"
 #include "Robot.h"
 
+static bool system_running= false;
+
 //set in uart thread to signal command_thread to print a query response
 static bool do_query = false;
 static OutputStream *query_os = nullptr;
@@ -702,6 +704,9 @@ static void smoothie_startup(void *)
     struct mallinfo mi = mallinfo();
     printf("Initial: free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
 
+    // indicate we are up and running
+    system_running= true;
+
     // run the command handler in this thread
     command_handler();
 
@@ -754,7 +759,7 @@ extern "C" void vApplicationIdleHook( void )
     memory allocated by the kernel to any task that has since been deleted. */
 
     // handle play led
-    if(play_led != nullptr) {
+    if(system_running && play_led != nullptr) {
         if(Module::is_halted()) {
             static TickType_t last_time_check = xTaskGetTickCount();
             if(TICKS2MS(xTaskGetTickCount() - last_time_check) >= 300) {

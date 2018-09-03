@@ -36,6 +36,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include <stdlib.h>
+
+
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -195,8 +198,22 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, UINT count)
 		return RES_NOTRDY;
 	}
 
-	if (FSMCI_CardReadSectors(hCard, buff, sector, count)) {
-		return RES_OK;
+	// DMA needs to be on aligned 32bit boundaries
+	if(((uint32_t)buff & 0x03) == 0) {
+		// aligned buffer is ok
+		if (FSMCI_CardReadSectors(hCard, buff, sector, count)) {
+			return RES_OK;
+		}
+	}else {
+		// unaligned buffer is not ok
+		int32_t cbRead = count * MMC_SECTOR_SIZE;
+		uint32_t *aligned_buffer = (uint32_t *)malloc(cbRead);
+		int ret= FSMCI_CardReadSectors(hCard, aligned_buffer, sector, count);
+		memcpy(buff, aligned_buffer, cbRead);
+		free(aligned_buffer);
+		if(ret > 0) {
+			return RES_OK;
+		}
 	}
 
 	return RES_ERROR;
@@ -223,8 +240,23 @@ DRESULT disk_write(BYTE drv, const BYTE *buff, DWORD sector, UINT count)
 		return RES_NOTRDY;
 	}
 
-	if ( FSMCI_CardWriteSectors(hCard, (void *) buff, sector, count)) {
-		return RES_OK;
+	// DMA needs to be on aligned 32bit boundaries
+	if(((uint32_t)buff & 0x03) == 0) {
+		// aligned buffer is ok
+		if (FSMCI_CardWriteSectors(hCard, (void *) buff, sector, count)) {
+			return RES_OK;
+		}
+
+	}else {
+		// unaligned buffer is not ok
+		int32_t cbWrite = count * MMC_SECTOR_SIZE;
+		uint32_t *aligned_buffer = (uint32_t *)malloc(cbWrite);
+		memcpy(aligned_buffer, buff, cbWrite);
+		int ret= FSMCI_CardWriteSectors(hCard, aligned_buffer, sector, count);
+		free(aligned_buffer);
+		if(ret > 0) {
+			return RES_OK;
+		}
 	}
 
 	return RES_ERROR;

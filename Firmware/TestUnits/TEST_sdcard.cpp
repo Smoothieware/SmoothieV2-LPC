@@ -15,6 +15,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "md5.h"
+
 extern "C" bool setup_sdmmc();
 
 static FATFS fatfs; /* File system object */
@@ -60,7 +62,7 @@ REGISTER_TEST(SDCardTest, raw_read_write)
         char buf[32];
         char *l = f_gets(buf, sizeof(buf), &fp);
         TEST_ASSERT_NOT_NULL(l);
-        printf("test: %s", buf);
+        //printf("test: %s", buf);
         // now verify
         char vbuf[32];
         int n = snprintf(vbuf, sizeof(vbuf), "Line %d\n", i);
@@ -87,7 +89,7 @@ REGISTER_TEST(SDCardTest, write_read)
     fp = fopen(fn, "w");
     TEST_ASSERT_NOT_NULL(fp);
 
-    for (int i = 1; i <= 10; ++i) {
+    for (int i = 1; i <= 1000; ++i) {
         char buf[32];
         int n = snprintf(buf, sizeof(buf), "Line %d\n", i);
         int x = fwrite(buf, 1, n, fp);
@@ -101,12 +103,12 @@ REGISTER_TEST(SDCardTest, write_read)
     TEST_ASSERT_NOT_NULL(fp);
 
     // check each line of the file
-    for (int i = 1; i <= 10; ++i) {
+    for (int i = 1; i <= 1000; ++i) {
         TEST_ASSERT_TRUE(!feof(fp));
         char buf[32];
         char *l = fgets(buf, sizeof(buf), fp);
         TEST_ASSERT_NOT_NULL(l);
-        printf("test: %s", buf);
+        //printf("test: %s", buf);
         // now verify
         char vbuf[32];
         int n = snprintf(vbuf, sizeof(vbuf), "Line %d\n", i);
@@ -148,7 +150,7 @@ REGISTER_TEST(SDCardTest, stat)
     struct stat buf;
     int res= stat("/sd/test_file.tst", &buf);
     TEST_ASSERT_EQUAL_INT(0, res);
-    TEST_ASSERT_EQUAL_INT(71, buf.st_size);
+    TEST_ASSERT_EQUAL_INT(8893, buf.st_size);
     TEST_ASSERT_FALSE(S_ISDIR(buf.st_mode));
     TEST_ASSERT_TRUE(S_ISREG(buf.st_mode));
 }
@@ -233,6 +235,8 @@ REGISTER_TEST(SDCardTest, directory)
 #endif
 }
 
+#if 1
+
 using systime_t= uint32_t;
 #define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
 #define TICK2USEC(x) ((systime_t)(((uint64_t)(x)*1000000)/timerFreq))
@@ -306,7 +310,6 @@ REGISTER_TEST(SDCardTest, time_read_write)
     fclose(fp);
 }
 
-#include "md5.h"
 static BYTE buffer[4096];   /* File copy buffer */
 REGISTER_TEST(SDCardTest, copy_file_raw)
 {
@@ -429,9 +432,55 @@ REGISTER_TEST(SDCardTest, copy_file_fstreams)
     printf("md5: %s - %s\n", w_md5.finalize().hexdigest().c_str(), r_md5.finalize().hexdigest().c_str());
     TEST_ASSERT_EQUAL_STRING(w_md5.finalize().hexdigest().c_str(), r_md5.finalize().hexdigest().c_str());
 }
+#endif
+
+REGISTER_TEST(SDCardTest, cat_config_ini)
+{
+    static MD5 md5;
+
+    #if 1
+
+    std::ifstream is;
+    is.open("/sd/config.ini");
+    TEST_ASSERT_TRUE(is.is_open());
+    int cnt= 0;
+    std::string s;
+    while (std::getline(is, s)) {
+        printf("Line %d: %s\n", ++cnt, s.c_str());
+        md5.update(s.c_str(), s.size());
+        md5.update("\n", 1);
+    }
+    printf("md5: %s\n", md5.finalize().hexdigest().c_str());
+    is.close();
+
+    #else
+
+    FIL fp;  /* File object */
+    FRESULT ret = f_open(&fp, "/sd/config.ini", FA_READ);
+    TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+
+    int cnt= 0;
+    // read each line of the file
+    while(f_eof(&fp) == 0) {
+        char buf[256];
+        char *l = f_gets(buf, sizeof(buf), &fp);
+        TEST_ASSERT_NOT_NULL(l);
+        printf("%d: %s", ++cnt, buf);
+        md5.update(buf, strlen(buf));
+        TEST_ASSERT_TRUE(f_error(&fp) == 0);
+    }
+    printf("md5: %s\n", md5.finalize().hexdigest().c_str());
+
+    TEST_ASSERT_TRUE(f_eof(&fp) != 0);
+
+    ret = f_close(&fp);
+    TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+    #endif
+}
 
 REGISTER_TEST(SDCardTest, unmount)
 {
     int ret = f_unmount("sd");
     TEST_ASSERT_EQUAL_INT(FR_OK, ret);
 }
+

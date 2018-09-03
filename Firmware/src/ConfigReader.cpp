@@ -68,13 +68,10 @@ bool ConfigReader::get_section(const char *section, section_map_t& config)
     reset();
     current_section =  section;
     bool in_section = false;
-    while (!is.eof()) {
-        std::string s;
-        std::getline(is, s);
-
-        if(!is.good()) break;
+    std::string s;
+    while (std::getline(is, s)) {
         s = stringutils::trim(s);
-
+        if(s.empty()) continue;
 
         // only check lines that are not blank and are not all comments
         if (s.size() > 0 && s[0] != '#') {
@@ -115,12 +112,10 @@ bool ConfigReader::get_sub_sections(const char *section, sub_section_map_t& conf
     reset();
     current_section =  section;
     bool in_section = false;
-    while (!is.eof()) {
-        std::string s;
-        std::getline(is, s);
-
-        if(!is.good()) break;
+    std::string s;
+    while (std::getline(is, s)) {
         s = stringutils::trim(s);
+        if(s.empty()) continue;
 
         // only check lines that are not blank and are not all comments
         if (s.size() > 0 && s[0] != '#') {
@@ -161,13 +156,10 @@ bool ConfigReader::get_sections(sections_t& config)
     reset();
     current_section =  "";
 
-    while (!is.eof()) {
-        std::string s;
-        std::getline(is, s);
-
-        if(!is.good()) break;
-
+    std::string s;
+    while (std::getline(is, s)) {
         s = stringutils::trim(s);
+        if(s.empty()) continue;
 
         // only check lines that are not blank and are not all comments
         if (s.size() > 0 && s[0] != '#') {

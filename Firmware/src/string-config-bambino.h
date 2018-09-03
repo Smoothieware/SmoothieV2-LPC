@@ -124,7 +124,7 @@ bed.pwm_frequency = 1000       # FIXME slow for now when is SPIFI\n\
 \n\
 [kill button]\n\
 enable = true          # Set to true to enable a kill button\n\
-pin = p2.7             # Kill button pin.\n\
+pin = p1.7             # Kill button pin.\n\
 toggle_enable = false  # set to true to make it a toggle button (like an estop)\n\
 unkill_enable = true   # enable kill button hold for 2 seconds does unkill\n\
 \n\

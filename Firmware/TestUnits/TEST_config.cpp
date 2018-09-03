@@ -47,6 +47,11 @@ REGISTER_TEST(ConfigTest, load_section)
     TEST_ASSERT_TRUE(m.find("enable") != m.end());
     TEST_ASSERT_EQUAL_STRING("false", m["enable"].c_str());
     TEST_ASSERT_FALSE(cr.get_bool(m, "enable", true));
+
+    // try non existing section
+    m.clear();
+    b= cr.get_section("nothere", m);
+    TEST_ASSERT_FALSE(b);
 }
 
 REGISTER_TEST(ConfigTest, load_sub_sections)
@@ -275,3 +280,76 @@ REGISTER_TEST(ConfigTest, write_remove_nonexistant_key)
     // check it is unchanged
     TEST_ASSERT_TRUE(oss.str() == iss.str());
 }
+
+#if 1
+extern "C" bool setup_sdmmc();
+#include <fstream>
+#include "ff.h"
+REGISTER_TEST(ConfigTest, read_config_ini)
+{
+    static FATFS fatfs; /* File system object */
+    TEST_ASSERT_TRUE(setup_sdmmc());
+    TEST_ASSERT_EQUAL_INT(FR_OK, f_mount(&fatfs, "sd", 1));
+
+    std::fstream fs;
+    fs.open("/sd/config.ini", std::fstream::in);
+    TEST_ASSERT_TRUE(fs.is_open());
+
+    ConfigReader cr(fs);
+    {
+        puts("Print sections\n");
+        ConfigReader::sections_t sections;
+        if(cr.get_sections(sections)) {
+            std::cout << sections << "\n";
+        }
+
+        for(auto& i : sections) {
+            cr.reset();
+            std::cout << i << "...\n";
+            ConfigReader::section_map_t config;
+            if(cr.get_section(i.c_str(), config)) {
+                std::cout << config << "\n";
+            }
+        }
+    }
+
+    {
+        puts("Print subsections\n");
+        ConfigReader::section_map_t config;
+        if(cr.get_section("actuator", config)) {
+            std::cout << config << "\n";
+        }
+
+        // see if we have sub sections
+        bool is_sub_section = false;
+        for(auto& i : config) {
+            if(i.first.find_first_of('.') != std::string::npos) {
+                is_sub_section = true;
+                break;
+            }
+        }
+
+        if(is_sub_section) {
+            cr.reset();
+            std::cout << "\nSubsections...\n";
+            ConfigReader::sub_section_map_t ssmap;
+            // dump sub sections too
+            if(cr.get_sub_sections("gamma", ssmap)) {
+                std::cout << ssmap << "\n";
+            }
+
+            for(auto& i : ssmap) {
+                std::string ss = i.first;
+                std::cout << ss << ":\n";
+                for(auto& j : i.second) {
+                    std::cout << "  " << j.first << ": " << j.second << "\n";
+                }
+            }
+        }
+    }
+
+    fs.close();
+    int ret = f_unmount("sd");
+    TEST_ASSERT_EQUAL_INT(FR_OK, ret);
+}
+#endif
