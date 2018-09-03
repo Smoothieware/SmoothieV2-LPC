@@ -94,6 +94,9 @@ bool dispatch_line(OutputStream& os, const char *cl)
             } else {
                 os.printf("error:Unsupported command - %s\n", line);
             }
+
+        }else{
+            os.puts("ok\n");
         }
 
         return true;
