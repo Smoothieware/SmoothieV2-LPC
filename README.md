@@ -1,9 +1,7 @@
 # smoothie version 2
 Smoothie V2 using LPCopen and FreeRTOS.
 
-Currently runs on Bambino baords and V2 Mini proto boards.
-
-Smoothie for version 2 boards using lpcopen as the HAL nd FreeRTOS as the RTOS
+Currently runs on Bambino boards and V2 Mini proto boards.
 
 Firmware/... is for Smoothie firmware code and Test Units
 
