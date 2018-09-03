@@ -21,9 +21,11 @@ Modules that have been ported so far...
 * laser
 * switch
 * temperaturecontrol
+* temperatureswitch
 * zprobe
 * currentcontrol
 * killbutton
+* player
 
 *NOTE* for the smooothiev2 mini alpha replace Bambino above with Minialpha...
 
