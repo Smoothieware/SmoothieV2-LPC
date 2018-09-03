@@ -209,6 +209,11 @@ bool CommandShell::cp_cmd(std::string& params, OutputStream& os)
     std::string fn1 = stringutils::shift_parameter( params );
     std::string fn2 = stringutils::shift_parameter( params );
 
+    if(fn1.empty() || fn2.empty()) {
+        os.puts("from and to files required\n");
+        return true;
+    }
+
     std::fstream fsin;
     std::fstream fsout;
     fsin.open(fn1, std::fstream::in|std::fstream::binary);
