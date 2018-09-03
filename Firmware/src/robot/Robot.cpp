@@ -161,7 +161,7 @@ bool Robot::configure(ConfigReader& cr)
     }
 
     this->feed_rate = cr.get_float(m, default_feed_rate_key, 100.0F);
-    this->seek_rate = default_seek_rate= cr.get_float(m, default_seek_rate_key, 100.0F);
+    this->seek_rate = default_seek_rate= cr.get_float(m, default_seek_rate_key, 100.0F) / 60.0F;
     this->mm_per_line_segment = cr.get_float(m, mm_per_line_segment_key, 0.0F);
     this->delta_segments_per_second = cr.get_float(m, delta_segments_per_second_key, 0.0f);
     this->mm_per_arc_segment = cr.get_float(m, mm_per_arc_segment_key, 0.0f);
@@ -864,16 +864,19 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
             pop_state();
             break;
 
-        case 203: // M203 Set maximum feedrates in mm/sec, M203.1 set maximum actuator feedrates
+        case 203: // M203 Set maximum feedrates in mm/sec and default seek rate, M203.1 set maximum actuator feedrates
             if(gcode.get_num_args() == 0) {
                 for (size_t i = X_AXIS; i <= Z_AXIS; i++) {
-                    os.printf(" %c: %g ", 'X' + i, gcode.get_subcode() == 0 ? this->max_speeds[i] : actuators[i]->get_max_rate());
+                    os.printf(" %c:%g ", 'X' + i, gcode.get_subcode() == 0 ? this->max_speeds[i] : actuators[i]->get_max_rate());
                 }
                 if(gcode.get_subcode() == 1) {
                     for (size_t i = A_AXIS; i < n_motors; i++) {
-                        if(actuators[i]->is_extruder()) continue; //extruders handle this themselves
-                        os.printf(" %c: %g ", 'A' + i - A_AXIS, actuators[i]->get_max_rate());
+                        if(actuators[i]->is_extruder()) continue; // extruders handle this themselves
+                        os.printf(" %c:%g ", 'A' + i - A_AXIS, actuators[i]->get_max_rate());
                     }
+
+                }else{
+                    os.printf(" S:%g ", this->default_seek_rate);
                 }
 
                 os.set_append_nl();
@@ -885,6 +888,10 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                         if(gcode.get_subcode() == 0) this->max_speeds[i] = v;
                         else if(gcode.get_subcode() == 1) actuators[i]->set_max_rate(v);
                     }
+                }
+
+                if (gcode.has_arg('S')) {
+                    this->default_seek_rate = gcode.get_arg('S'); // is specified in mm/sec
                 }
 
                 if(gcode.get_subcode() == 1) {
@@ -992,7 +999,7 @@ bool Robot::handle_M500(GCode& gcode, OutputStream& os)
 
     os.printf(";X- Junction Deviation, Z- Z junction deviation, S - Minimum Planner speed mm/sec:\nM205 X%1.5f Z%1.5f S%1.5f\n", Planner::getInstance()->xy_junction_deviation, Planner::getInstance()->z_junction_deviation, Planner::getInstance()->minimum_planner_speed);
 
-    os.printf(";Max cartesian feedrates in mm/sec:\nM203 X%1.5f Y%1.5f Z%1.5f\n", this->max_speeds[X_AXIS], this->max_speeds[Y_AXIS], this->max_speeds[Z_AXIS]);
+    os.printf(";Max cartesian feedrates in mm/sec:\nM203 X%1.5f Y%1.5f Z%1.5f S%1.5f\n", this->max_speeds[X_AXIS], this->max_speeds[Y_AXIS], this->max_speeds[Z_AXIS], this->default_seek_rate);
 
     os.printf(";Max actuator feedrates in mm/sec:\nM203.1 ");
     for (int i = 0; i < n_motors; ++i) {
