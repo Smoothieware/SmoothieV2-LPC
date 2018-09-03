@@ -30,33 +30,8 @@ bool ConfigWriter::write(const char *section, const char* key, const char *value
         return false;
 
     // first find the section we want
-    while (!is.eof()) {
-        std::string s;
-
-        std::getline(is, s);
-
-        if(!is.good()) {
-            if(is.eof()) {
-                // make sure we don't need to add a new section
-                if(!changed_line && value != nullptr && strlen(value) > 0) {
-                    std::string new_line;
-                    if(!in_section) {
-                        // need to add new section at the end of the file, unless we were in the last section
-                        new_line.push_back('[');
-                        new_line.append(section);
-                        new_line.append("]\n");
-                    }
-                    new_line.append(key);
-                    new_line.append(" = ");
-                    new_line.append(value);
-                    new_line.push_back('\n');
-                    os.write(new_line.c_str(), new_line.size());
-                    return os.good();
-                }
-                return true;
-            }
-            return false;
-        }
+    std::string s;
+    while (std::getline(is, s)) {
 
         if(changed_line) {
             // just copy the lines. no need to check anymore
@@ -70,7 +45,7 @@ bool ConfigWriter::write(const char *section, const char* key, const char *value
 
         // only check lines that are not blank and are not all comments
         if (sn.size() > 0 && sn[0] != '#') {
-            ConfigReader::strip_comments(sn);
+            std::string comment= ConfigReader::strip_comments(sn);
 
             std::string sec;
 
@@ -99,6 +74,11 @@ bool ConfigWriter::write(const char *section, const char* key, const char *value
                         std::string new_line(key);
                         new_line.append(" = ");
                         new_line.append(value);
+                        if(!comment.empty()) {
+                            // append the original comment
+                            new_line.append("  ");
+                            new_line.append(comment);
+                        }
                         new_line.push_back('\n');
                         os.write(new_line.c_str(), new_line.size());
                         if(!os.good()) return false;
@@ -144,7 +124,23 @@ bool ConfigWriter::write(const char *section, const char* key, const char *value
         }
     }
 
-    return true;;
+    // make sure we don't need to add a new section
+    if(!changed_line && value != nullptr && strlen(value) > 0) {
+        std::string new_line;
+        if(!in_section) {
+            // need to add new section at the end of the file, unless we were in the last section
+            new_line.push_back('[');
+            new_line.append(section);
+            new_line.append("]\n");
+        }
+        new_line.append(key);
+        new_line.append(" = ");
+        new_line.append(value);
+        new_line.push_back('\n');
+        os.write(new_line.c_str(), new_line.size());
+        return os.good();
+    }
+    return true;
 }
 
 #if 0

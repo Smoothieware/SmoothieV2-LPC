@@ -54,12 +54,17 @@ bool ConfigReader::extract_sub_key_value(const char *line, std::string& key1, st
     return true;
 }
 
-void ConfigReader::strip_comments(std::string& s)
+// strips the commend from the line and returns the comment
+std::string ConfigReader::strip_comments(std::string& s)
 {
     auto n= s.find_first_of("#");
     if(n != std::string::npos) {
+        std::string comment= s.substr(n);
         s= s.substr(0, n);
+        return comment;
     }
+
+    return "";
 }
 
 // just extract the key/values from the specified section

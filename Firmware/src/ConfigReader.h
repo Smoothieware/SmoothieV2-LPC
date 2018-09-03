@@ -32,7 +32,7 @@ private:
     static bool match_section(const char *line, std::string& section_name);
     static bool extract_key_value(const char *line, std::string& key, std::string& value);
     static bool extract_sub_key_value(const char *line, std::string& key1, std::string& key2, std::string& value);
-    static void strip_comments(std::string& s);
+    static std::string strip_comments(std::string& s);
 
     std::istream& is;
     std::string current_section;
