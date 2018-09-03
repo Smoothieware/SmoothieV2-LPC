@@ -64,7 +64,7 @@ delta.ms1_pin = gpio7_5         # Pin for delta micro stepping\n\
 delta.ms2_pin = gpio3_2         # Pin for delta micro stepping\n\
 #delta.ms3_pin = gpio3_4        # Pin for delta micro stepping\n\
 delta.microstepping = 1,1       # settings for delta micro stepping pins 1/16\n\
-delta.acceleration = 500        # Acceleration for the stepper motor mm/sec²\n\
+delta.acceleration = 1800        # Acceleration for the stepper motor mm/sec²\n\
 delta.max_rate = 3000.0           # Maximum rate in mm/min\n\
 \n\
 [current control]\n\
@@ -113,11 +113,9 @@ led1.output_type       = digital\n\
 [extruder]\n\
 hotend.enable = true             # Whether to activate the extruder module at all. All configuration is ignored if false\n\
 hotend.tool_id = 0               # T0 will select\n\
-hotend.default_feed_rate = 600   # Default rate ( mm/minute ) for moves where only the extruder moves\n\
 # Second extruder module configuration\n\
 hotend2.enable = false            # Whether to activate the extruder module at all. All configuration is ignored if false\n\
 hotend2.tool_id = 1               # T1 will select\n\
-hotend2.default_feed_rate = 600  # Default rate ( mm/minute ) for moves where only the extruder moves\n\
 \n\
 hotend2.x_offset = 0             # x offset from origin in mm\n\
 hotend2.y_offset = 25.0          # y offset from origin in mm\n\

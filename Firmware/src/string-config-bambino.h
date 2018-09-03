@@ -36,7 +36,7 @@ gamma.steps_per_mm = 1600 # Steps per mm for gamma ( Z ) stepper\n\
 gamma.step_pin = p2_13 # Pin for gamma stepper step signal\n\
 gamma.dir_pin = p7_1 # Pin for gamma stepper direction, add '!' to reverse direction\n\
 gamma.en_pin = nc # Pin for gamma enable\n\
-gamma.max_rate = 300.0 # Maximum rate in mm/min\n\
+gamma.max_rate = 1800.0 # Maximum rate in mm/min\n\
 gamma.acceleration = 500  # overrides the default acceleration for this axis\n\
 \n\
 delta.steps_per_mm = 140        # Steps per mm for extruder stepper\n\
@@ -44,7 +44,7 @@ delta.step_pin = p5_3            # Pin for extruder step signal\n\
 delta.dir_pin = p9_6            # Pin for extruder dir signal ( add '!' to reverse direction )\n\
 delta.en_pin = p6.6             # Pin for extruder enable signal\n\
 delta.acceleration = 500        # Acceleration for the stepper motor mm/sec²\n\
-delta.max_rate = 50.0           # Maximum rate in mm/min\n\
+delta.max_rate = 1800.0         # Maximum rate in mm/min\n\
 \n\
 [switch]\n\
 fan.enable = false # Enable this module\n\
@@ -80,13 +80,10 @@ but1.input_pin_behavior = toggle\n\
 [extruder]\n\
 hotend.enable = true             # Whether to activate the extruder module at all. All configuration is ignored if false\n\
 hotend.tool_id = 0               # T0 will select\n\
-hotend.default_feed_rate = 600   # Default rate ( mm/minute ) for moves where only the extruder moves\n\
-hotend.max_speed = 50            # Maximum speed in mm/s\n\
 \n\
 # Second extruder module configuration\n\
 hotend2.enable = false            # Whether to activate the extruder module at all. All configuration is ignored if false\n\
 hotend2.tool_id = 1               # T1 will select\n\
-hotend2.default_feed_rate = 600  # Default rate ( mm/minute ) for moves where only the extruder moves\n\
 \n\
 hotend2.x_offset = 0             # x offset from origin in mm\n\
 hotend2.y_offset = 25.0          # y offset from origin in mm\n\

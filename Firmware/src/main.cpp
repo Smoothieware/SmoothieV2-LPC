@@ -458,7 +458,7 @@ static void smoothie_startup(void *)
 
     // create the StepTicker, don't start it yet
     StepTicker *step_ticker = new StepTicker();
-#if 1//def DEBUG
+#ifdef DEBUG
     // when debug is enabled we cannot run stepticker at full speed
     step_ticker->set_frequency(10000); // 10KHz
 #else
@@ -696,8 +696,8 @@ static void smoothie_startup(void *)
 
     // Start comms threads Higher priority than the command thread
     // fixed stack size of 4k Bytes each
-    xTaskCreate(usb_comms, "USBCommsThread", 4096/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
-    xTaskCreate(uart_comms, "UARTCommsThread", 4096/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+    xTaskCreate(usb_comms, "USBCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+    xTaskCreate(uart_comms, "UARTCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
 
     // wait for command thread to start
     // std::unique_lock<std::mutex> lk(m);
