@@ -891,7 +891,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                 }
 
                 if (gcode.has_arg('S')) {
-                    this->default_seek_rate = gcode.get_arg('S'); // is specified in mm/sec
+                    this->seek_rate= this->default_seek_rate = gcode.get_arg('S'); // is specified in mm/sec
                 }
 
                 if(gcode.get_subcode() == 1) {
