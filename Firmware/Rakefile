@@ -253,7 +253,7 @@ end
 
 task :default => [:build] #, :size]
 
-task :build => [:version, "#{OBJDIR}/#{PROG}.bin"]
+task :build => ["#{OBJDIR}/#{PROG}.bin"]
 
 task :size do
   sh "#{SIZE} #{OBJDIR}/#{PROG}.elf"
@@ -267,7 +267,6 @@ task :version do
   v1= `git symbolic-ref HEAD 2> /dev/null`
   v2= `git log --pretty=format:%h -1`
   $version = ' -D__GITVERSIONSTRING__=\"' + "#{v1[11..-1].chomp}-#{v2}".chomp + '\"'
-  FileUtils.touch './src/version.cpp' # we want it compiled everytime
 end
 
 file "#{OBJDIR}/#{PROG}.bin" => ["#{OBJDIR}/#{PROG}.elf"] do |t|
@@ -283,6 +282,12 @@ end
 file "#{OBJDIR}/libhal.a" => HAL_OBJ do |t|
   puts "Creating #{t.name}"
   sh "#{AR} #{ARFLAGS} #{t.name} #{HAL_OBJ}"
+end
+
+# special case to always build the version
+file "#{OBJDIR}/src/version.o" => [:version, 'src/version.cpp'] do |t|
+  puts "Compiling src/version.cpp"
+  sh "#{CCPP} #{CPPFLAGS} #{INCLUDE} #{DEFINES} #{$version} -c -o #{t.name} src/version.cpp"
 end
 
 #arm-none-eabi-objcopy -R .stack -O ihex ../LPC1768/main.elf ../LPC1768/main.hex

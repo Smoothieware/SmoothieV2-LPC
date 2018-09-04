@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstring>
 #include <stdio.h>
+#include <stdlib.h>
 
 OutputStream::OutputStream(wrfnc f) : append_nl(false), prepend_ok(false), deleteos(true)
 {
@@ -53,19 +54,22 @@ int OutputStream::printf(const char *format, ...)
 {
 	if(os == nullptr) return 0;
 
-	char buffer[132 + 4];
+	char buffer[132];
 	va_list args;
 	va_start(args, format);
 
 	size_t size = vsnprintf(buffer, sizeof(buffer), format, args);
+	if (size > sizeof(buffer)) {
+		// too big for internal buffer so allocate it from heap
+		char *buf= (char *)malloc(size+1);
+		size = vsnprintf(buf, size+1, format, args);
+		int n= this->write(buf, size);
+		free(buf);
+		va_end(args);
+		return n;
 
-	va_end(args);
-
-	if (size >= sizeof(buffer) - 4) {
-		// TODO should we append \n if he format ends in \n ?
-		memcpy(&buffer[sizeof(buffer) - 4], "...", 3);
-		buffer[sizeof(buffer) - 1] = '\0';
-		size = sizeof(buffer) - 1;
+	}else{
+		va_end(args);
 	}
 
 	return this->write(buffer, size);

@@ -10,12 +10,8 @@
 #include <array>
 
 #ifndef MAX_ROBOT_ACTUATORS
-    #ifdef CNC
-    #define MAX_ROBOT_ACTUATORS 3
-    #else
-    // includes 2 extruders
+    // includes 2 extruders or A and B axis
     #define MAX_ROBOT_ACTUATORS 5
-    #endif
 #endif
 
 #if MAX_ROBOT_ACTUATORS < 3 || MAX_ROBOT_ACTUATORS > 6
@@ -23,7 +19,7 @@
 #endif
 
 #ifndef N_PRIMARY_AXIS
-    // This may chnage and include ABC
+    // This may change and include ABC
     #define N_PRIMARY_AXIS 3
 #endif
 
