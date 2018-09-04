@@ -61,6 +61,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "$H", std::bind( &CommandShell::grblDH_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "test", std::bind( &CommandShell::test_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "version", std::bind( &CommandShell::version_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "break", std::bind( &CommandShell::break_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "reset", std::bind( &CommandShell::reset_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 20, std::bind(&CommandShell::m20_cmd, this, _1, _2));
@@ -951,6 +952,14 @@ bool CommandShell::upload_cmd(std::string& params, OutputStream& os)
     fclose(fd);
     os.printf("uploaded %d bytes\n", cnt);
 
+    return true;
+}
+
+bool CommandShell::break_cmd(std::string& params, OutputStream& os)
+{
+    HELP("force s/w break_cmd");
+    *(volatile int*)0xa5a5a5a4 = 1; // force hardware fault
+    //__asm("bkpt #0");
     return true;
 }
 

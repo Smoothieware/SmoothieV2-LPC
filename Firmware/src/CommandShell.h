@@ -35,6 +35,7 @@ private:
     bool version_cmd(std::string& params, OutputStream& os);
     bool m20_cmd(GCode& gcode, OutputStream& os);
     bool upload_cmd(std::string& params, OutputStream& os);
+    bool break_cmd(std::string& params, OutputStream& os);
     bool reset_cmd(std::string& params, OutputStream& os);
 
     bool mounted;
