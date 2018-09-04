@@ -253,7 +253,7 @@ end
 
 task :default => [:build] #, :size]
 
-task :build => ["#{OBJDIR}/#{PROG}.bin"]
+task :build => [:version, "#{OBJDIR}/#{PROG}.bin"]
 
 task :size do
   sh "#{SIZE} #{OBJDIR}/#{PROG}.elf"
@@ -263,6 +263,12 @@ task :disasm do
   sh "#{OBJDUMP} -d -f -M reg-names-std --demangle #{OBJDIR}/#{PROG}.elf > #{OBJDIR}/#{PROG}.disasm"
 end
 
+task :version do
+  v1= `git symbolic-ref HEAD 2> /dev/null`
+  v2= `git log --pretty=format:%h -1`
+  $version = ' -D__GITVERSIONSTRING__=\"' + "#{v1[11..-1].chomp}-#{v2}".chomp + '\"'
+  FileUtils.touch './src/version.cpp' # we want it compiled everytime
+end
 
 file "#{OBJDIR}/#{PROG}.bin" => ["#{OBJDIR}/#{PROG}.elf"] do |t|
   puts "Creating #{t.name}"
@@ -284,12 +290,12 @@ end
 
 rule '.o' => lambda{ |objfile| obj2src(objfile, 'cpp') } do |t|
   puts "Compiling #{t.source}"
-  sh "#{CCPP} #{CPPFLAGS} #{INCLUDE} #{DEFINES} -c -o #{t.name} #{t.source}"
+  sh "#{CCPP} #{CPPFLAGS} #{INCLUDE} #{DEFINES} #{$version} -c -o #{t.name} #{t.source}"
 end
 
 rule '.o' => lambda{ |objfile| obj2src(objfile, 'c') } do |t|
   puts "Compiling #{t.source}"
-  sh "#{CC} #{CFLAGS} #{CSTD} #{INCLUDE} #{DEFINES} -c -o #{t.name} #{t.source}"
+  sh "#{CC} #{CFLAGS} #{CSTD} #{INCLUDE} #{DEFINES} #{$version} -c -o #{t.name} #{t.source}"
 end
 
 rule '.o' => lambda{ |objfile| obj2src(objfile, 's') } do |t|

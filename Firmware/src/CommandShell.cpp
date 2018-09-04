@@ -10,6 +10,7 @@
 #include "TemperatureControl.h"
 #include "ConfigWriter.h"
 #include "Conveyor.h"
+#include "version.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -65,6 +66,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "reset", std::bind( &CommandShell::reset_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 20, std::bind(&CommandShell::m20_cmd, this, _1, _2));
+    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 115, std::bind(&CommandShell::m115_cmd, this, _1, _2));
 
     return true;
 }
@@ -858,7 +860,21 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
 bool CommandShell::version_cmd(std::string& params, OutputStream& os)
 {
     HELP("version - print version");
-    os.printf("Smoothie Version2 for %s: build 0.7\n", BUILD_TARGET);
+
+    Version vers;
+    const char *mcu = "LPC4330 on " BUILD_TARGET;
+    os.printf("Build version: %s, Build date: %s, MCU: %s, System Clock: %ldMHz\r\n", vers.get_build(), vers.get_build_date(), mcu, SystemCoreClock / 1000000);
+    os.printf("%d axis\n", MAX_ROBOT_ACTUATORS);
+
+    return true;
+}
+
+bool CommandShell::m115_cmd(GCode& gcode, OutputStream& os)
+{
+    Version vers;
+
+    os.printf("FIRMWARE_NAME:Smoothieware2, FIRMWARE_URL:http%%3A//smoothieware.org, X-SOURCE_CODE_URL:https://github.com/Smoothieware/SmoothieV2, FIRMWARE_VERSION:%s, X-FIRMWARE_BUILD_DATE:%s, X-SYSTEM_CLOCK:%ldMHz, X-AXES:%d, X-GRBL_MODE:%d", vers.get_build(), vers.get_build_date(), SystemCoreClock / 1000000, MAX_ROBOT_ACTUATORS, Dispatcher::getInstance()->is_grbl_mode());
+
     return true;
 }
 
@@ -957,7 +973,7 @@ bool CommandShell::upload_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::break_cmd(std::string& params, OutputStream& os)
 {
-    HELP("force s/w break_cmd");
+    HELP("force s/w break point");
     *(volatile int*)0xa5a5a5a4 = 1; // force hardware fault
     //__asm("bkpt #0");
     return true;
