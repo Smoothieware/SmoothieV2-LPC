@@ -11,6 +11,7 @@
 #include "ConfigWriter.h"
 #include "Conveyor.h"
 #include "version.h"
+#include "xmodem.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -51,6 +52,8 @@ bool CommandShell::initialize()
 
     THEDISPATCHER->add_handler( "config-set", std::bind( &CommandShell::config_set_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "upload", std::bind( &CommandShell::upload_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "rx", std::bind( &CommandShell::rx_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "truncate", std::bind( &CommandShell::truncate_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler( "mem", std::bind( &CommandShell::mem_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "switch", std::bind( &CommandShell::switch_cmd, this, _1, _2) );
@@ -102,8 +105,9 @@ bool CommandShell::m20_cmd(GCode& gcode, OutputStream& os)
 
 bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
 {
-    HELP("list files: dir [-s show size]");
-    std::string path, opts;
+    HELP("list files: dir [folder]");
+    std::string path;
+    std::string opts;
     while(!params.empty()) {
         std::string s = stringutils::shift_parameter( params );
         if(s.front() == '-') {
@@ -117,6 +121,7 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
             break;
         }
     }
+
 #if 0
     DIR *d;
     struct dirent *p;
@@ -157,7 +162,7 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
     DWORD p1, s1, s2;
     p1 = s1 = s2 = 0;
     for(;;) {
-        if(Module::is_halted()) {f_closedir(&dir); return true; }
+        //if(Module::is_halted()) {f_closedir(&dir); return true; }
         res = f_readdir(&dir, &finfo);
         if ((res != FR_OK) || !finfo.fname[0]) break;
         if (finfo.fattrib & AM_DIR) {
@@ -938,10 +943,11 @@ bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
 }
 
 // Special hack that switches the input comms to send everything here until we finish.
+// NOTE Only works for ascii files.
 // unfortunately due to incorrect USB flow control we cannot use this as it drops characters on USB serial
 bool CommandShell::upload_cmd(std::string& params, OutputStream& os)
 {
-    HELP("upload filename - upload a file and save to sd");
+    HELP("upload filename - upload an ascii/text file and save to sd");
 
     if(!Conveyor::getInstance()->is_idle()) {
         os.printf("upload not allowed while printing or busy\n");
@@ -967,6 +973,95 @@ bool CommandShell::upload_cmd(std::string& params, OutputStream& os)
     set_capture(nullptr);
     fclose(fd);
     os.printf("uploaded %d bytes\n", cnt);
+
+    return true;
+}
+
+// HACK to add xmodem download to smoothie for binary files
+static OutputStream *prxos;
+static void rxsend(char c)
+{
+    prxos->write(&c, 1);
+}
+
+bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
+{
+    HELP("xmodem recieve: rx filename");
+
+    if(!Conveyor::getInstance()->is_idle()) {
+        os.printf("rx not allowed while printing or busy\n");
+        return true;
+    }
+
+    // open file to upload to
+    std::string upload_filename = params;
+    FILE *fd = fopen(upload_filename.c_str(), "w");
+    if(fd != NULL) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+        os.printf("xmodem to file: %s\r\n", upload_filename.c_str());
+    } else {
+        os.printf("failed to open file: %s.\r\n", upload_filename.c_str());
+        return true;
+    }
+
+    prxos= &os;
+    init_xmodem(rxsend);
+    set_capture([fd](char c){ add_to_xmodem_inbuff(c); });
+    int ret= xmodemReceive(fd);
+    set_capture(nullptr);
+    deinit_xmodem();
+    fclose(fd);
+    if(ret > 0) {
+        os.printf("uploaded %d bytes ok\n", ret);
+    }else{
+        remove(upload_filename.c_str());
+        os.printf("upload failed with error %d\n", ret);
+    }
+
+    return true;
+}
+
+bool CommandShell::truncate_cmd(std::string& params, OutputStream& os)
+{
+    HELP("truncate file to size: truncate filename size-in-bytes");
+    std::string fn = stringutils::shift_parameter( params );
+    std::string sizestr = stringutils::shift_parameter( params );
+
+    if(fn.empty() || sizestr.empty()) {
+        os.printf("Usage: truncate filename size\n");
+        return true;
+    }
+
+    char *e = NULL;
+    int size = strtol(sizestr.c_str(), &e, 10);
+    if (e <= sizestr.c_str() || size <= 0) {
+        os.printf("size must be > 0\n");
+        return true;
+    }
+
+    FIL fp;  /* File object */
+    // Open file
+    int ret = f_open(&fp, fn.c_str(), FA_WRITE);
+    if(FR_OK != ret) {
+        os.printf("file %s does not exist\n", fn.c_str());
+        return true;
+    }
+
+    ret= f_lseek(&fp, size);
+    if(FR_OK != ret) {
+        f_close(&fp);
+        os.printf("error %d seeking to %d bytes\n", ret, size);
+        return true;
+    }
+
+    ret= f_truncate(&fp);
+    if(FR_OK != ret) {
+        os.printf("error %d truncating file\n", ret);
+    } else {
+        os.printf("File truncated to %d size\n", size);
+    }
+
+    f_close(&fp);
 
     return true;
 }
