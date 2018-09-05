@@ -117,7 +117,6 @@ bool Endstops::load_endstops(ConfigReader& cr)
         return false;
     }
 
-    size_t i= 0;
     for(auto& s : ssmap) {
 
         // foreach endstop
@@ -157,10 +156,6 @@ bool Endstops::load_endstops(ConfigReader& cr)
                 continue;
         }
 
-        // keep track of the maximum index that has been defined
-        if(i > max_index) max_index= i;
-        ++i;
-
         // init pin struct
         pin_info->debounce= 0;
         pin_info->axis= toupper(axis[0]);
@@ -173,12 +168,15 @@ bool Endstops::load_endstops(ConfigReader& cr)
         // enter into endstop array
         endstops.push_back(pin_info);
 
-        // check we are not going above the number of defined actuators/axis
-        if(a >= k_max_actuators) {
-            // too many axis we only have configured k_max_actuators
+        // check we are not going above the number of configured actuators/axis
+        if(a >= Robot::getInstance()->get_number_registered_motors()) {
+            // too many axis we only have configured n_motors
             printf("configure-endstop: Too many endstops defined for the number of axis\n");
             continue;
         }
+
+        // keep track of the maximum index that has been defined
+        if(a > max_index) max_index= a;
 
         // if set to none it means not used for homing (maybe limit only) so do not add to the homing array
         std::string direction= cr.get_string(mm, direction_key, "none");
