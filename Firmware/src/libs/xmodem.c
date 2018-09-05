@@ -42,7 +42,7 @@ void add_to_xmodem_inbuff(char c)
 static void (*txc)(char c);
 void init_xmodem(void (*tx)(char c))
 {
-	inbuff= malloc(2046);
+	inbuff= malloc(2048);
 	inptr= outptr= 0;
 	txc= tx;
 }
