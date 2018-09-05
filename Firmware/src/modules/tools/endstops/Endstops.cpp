@@ -99,6 +99,7 @@ bool Endstops::configure(ConfigReader& cr)
 bool Endstops::load_endstops(ConfigReader& cr)
 {
     limit_enabled= false;
+    size_t max_index= 0;
 
     std::array<homing_info_t, k_max_actuators> temp_axis_array; // needs to be at least XYZ, but allow for ABC
     {
@@ -116,6 +117,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
         return false;
     }
 
+    size_t i= 0;
     for(auto& s : ssmap) {
 
         // foreach endstop
@@ -154,6 +156,10 @@ bool Endstops::load_endstops(ConfigReader& cr)
                 delete pin_info;
                 continue;
         }
+
+        // keep track of the maximum index that has been defined
+        if(i > max_index) max_index= i;
+        ++i;
 
         // init pin struct
         pin_info->debounce= 0;
@@ -213,7 +219,11 @@ bool Endstops::load_endstops(ConfigReader& cr)
     // if no pins defined then disable the module
     if(endstops.empty()) return false;
 
-    // copy to the homing_axis array
+    homing_axis.shrink_to_fit();
+    endstops.shrink_to_fit();
+
+    // copy to the homing_axis array, make sure that undefined entries are filled in as well
+    // as the order is important and all slots must be filled upto the max_index
     for (size_t i = 0; i < temp_axis_array.size(); ++i) {
         if(temp_axis_array[i].axis == 0) {
             // was not configured above, if it is XYZ then we need to force a dummy entry
@@ -224,7 +234,16 @@ bool Endstops::load_endstops(ConfigReader& cr)
                 t.axis_index= i;
                 t.pin_info= nullptr; // this tells it that it cannot be used for homing
                 homing_axis.push_back(t);
-            }
+
+            }else if(i <= max_index) {
+                // for instance case where we defined C without A or B
+                homing_info_t t;
+                t.axis= 'A' + i;
+                t.axis_index= i;
+                t.pin_info= nullptr; // this tells it that it cannot be used for homing
+                homing_axis.push_back(t);
+             }
+
 
         }else{
             homing_axis.push_back(temp_axis_array[i]);

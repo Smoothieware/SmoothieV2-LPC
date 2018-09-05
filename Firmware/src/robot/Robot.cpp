@@ -78,14 +78,14 @@
 #define ARC_ANGULAR_TRAVEL_EPSILON 5E-7F // Float (radians)
 #define PI 3.14159265358979323846F // force to be float, do not use M_PI
 
-Robot *Robot::instance= nullptr;
+Robot *Robot::instance = nullptr;
 
 // The Robot converts GCodes into actual movements, and then adds them to the Planner, which passes them to the Conveyor so they can be added to the queue
 // It takes care of cutting arcs into segments, same thing for line that are too long
 
 Robot::Robot() : Module("robot")
 {
-    if(instance == nullptr) instance= this;
+    if(instance == nullptr) instance = this;
 
     this->inch_mode = false;
     this->absolute_mode = true;
@@ -161,7 +161,7 @@ bool Robot::configure(ConfigReader& cr)
     }
 
     this->feed_rate = cr.get_float(m, default_feed_rate_key, 100.0F);
-    this->seek_rate = default_seek_rate= cr.get_float(m, default_seek_rate_key, 100.0F) / 60.0F;
+    this->seek_rate = default_seek_rate = cr.get_float(m, default_seek_rate_key, 100.0F) / 60.0F;
     this->mm_per_line_segment = cr.get_float(m, mm_per_line_segment_key, 0.0F);
     this->delta_segments_per_second = cr.get_float(m, delta_segments_per_second_key, 0.0f);
     this->mm_per_arc_segment = cr.get_float(m, mm_per_arc_segment_key, 0.0f);
@@ -237,7 +237,7 @@ bool Robot::configure(ConfigReader& cr)
         if(ms1_pin.connected() && ms2_pin.connected() && !ms3_pin.connected()) {
             // A4982
             printf("DEBUG:configure-robot: for actuator %s ms-pins: %s, %s\n", s->first.c_str(), ms1_pin.to_string().c_str(), ms2_pin.to_string().c_str());
-            std::string ms= cr.get_string(mm, ms_key, "");
+            std::string ms = cr.get_string(mm, ms_key, "");
             if(ms.empty()) {
                 // set default
                 ms1_pin.set(true);
@@ -248,19 +248,19 @@ bool Robot::configure(ConfigReader& cr)
                 if(v.size() == 2) {
                     ms1_pin.set(v[0] > 0.001F);
                     ms2_pin.set(v[1] > 0.001F);
-                }else{
+                } else {
                     printf("WARNING:configure-robot: %s.microstepping settings needs two numbers 1,1 - SET to default\n", s->first.c_str());
                     ms1_pin.set(true);
                     ms2_pin.set(true);
                 }
             }
             printf("DEBUG:configure-robot: microstepping for %s set to %d,%d\n",
-                    s->first.c_str(), ms1_pin.get(), ms2_pin.get());
+                   s->first.c_str(), ms1_pin.get(), ms2_pin.get());
 
         } else if(ms1_pin.connected() && ms2_pin.connected() && ms3_pin.connected()) {
             // A5984 1/32 default
             printf("DEBUG:configure-robot: for actuator %s ms-pins: %s, %s, %s\n", s->first.c_str(), ms1_pin.to_string().c_str(), ms2_pin.to_string().c_str(), ms3_pin.to_string().c_str());
-            std::string ms= cr.get_string(mm, ms_key, "");
+            std::string ms = cr.get_string(mm, ms_key, "");
             if(ms.empty()) {
                 // set default
                 ms1_pin.set(true);
@@ -273,7 +273,7 @@ bool Robot::configure(ConfigReader& cr)
                     ms1_pin.set(v[0] > 0.001F);
                     ms2_pin.set(v[1] > 0.001F);
                     ms3_pin.set(v[2] > 0.001F);
-                }else{
+                } else {
                     printf("WARNING:configure-robot: %s.microstepping settings needs three numbers 1,1,1 - SET to default\n", s->first.c_str());
                     ms1_pin.set(true);
                     ms2_pin.set(true);
@@ -281,7 +281,7 @@ bool Robot::configure(ConfigReader& cr)
                 }
             }
             printf("DEBUG:configure-robot: microstepping for %s set to %d,%d,%d\n",
-                    s->first.c_str(), ms1_pin.get(), ms2_pin.get(), ms3_pin.get());
+                   s->first.c_str(), ms1_pin.get(), ms2_pin.get(), ms3_pin.get());
         }
 
         actuators[a]->change_steps_per_mm(cr.get_float(mm, steps_per_mm_key, a == Z_AXIS ? 2560.0F : 80.0F));
@@ -307,8 +307,14 @@ bool Robot::configure(ConfigReader& cr)
     // so the first move can be correct if homing is not performed
     ActuatorCoordinates actuator_pos;
     arm_solution->cartesian_to_actuator(machine_position, actuator_pos);
-    for (size_t i = 0; i < n_motors; i++)
+    for (size_t i = X_AXIS; i <= Z_AXIS; i++) {
         actuators[i]->change_last_milestone(actuator_pos[i]);
+    }
+
+    // initialize any extra axis to machine position
+    for (size_t i = A_AXIS; i < n_motors; i++) {
+        actuators[i]->change_last_milestone(machine_position[i]);
+    }
 
     //this->clearToolOffset();
 
@@ -674,7 +680,19 @@ bool Robot::handle_G92(GCode& gcode, OutputStream& os)
             actuators[selected_extruder]->change_last_milestone(get_e_scale_fnc ? e * get_e_scale_fnc() : e);
         }
     }
+    if(gcode.get_subcode() == 0 && gcode.get_num_args() > 0) {
+        for (int i = A_AXIS; i < n_motors; i++) {
+            // ABC just need to set machine_position and compensated_machine_position if specified
+            char axis = 'A' + i - 3;
+            if(!actuators[i]->is_extruder() && gcode.has_arg(axis)) {
+                float ap = gcode.get_arg(axis);
+                machine_position[i] = compensated_machine_position[i] = ap;
+                actuators[i]->change_last_milestone(ap); // this updates the last_milestone in the actuator
+            }
+        }
+    }
 #endif
+
     return true;
 }
 
@@ -682,15 +700,15 @@ bool Robot::handle_motion_command(GCode& gcode, OutputStream& os)
 {
     bool handled = true;
     enum MOTION_MODE_T motion_mode = NONE;
-        if( gcode.has_g()) {
-            switch( gcode.get_code() ) {
-                case 0: motion_mode = SEEK;    break;
-                case 1: motion_mode = LINEAR;  break;
-                case 2: motion_mode = CW_ARC;  break;
-                case 3: motion_mode = CCW_ARC; break;
-                default: handled = false; break;
-            }
+    if( gcode.has_g()) {
+        switch( gcode.get_code() ) {
+            case 0: motion_mode = SEEK;    break;
+            case 1: motion_mode = LINEAR;  break;
+            case 2: motion_mode = CW_ARC;  break;
+            case 3: motion_mode = CCW_ARC; break;
+            default: handled = false; break;
         }
+    }
 
     if( motion_mode != NONE) {
         is_g123 = motion_mode != SEEK;
@@ -711,7 +729,7 @@ void Robot::do_park()
     // TODO: spec says if XYZ specified move to them first then move to MCS of specifed axis
     push_state();
     absolute_mode = true;
-    next_command_is_MCS= true; // must use machine coordinates in case G92 or WCS is in effect
+    next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
     OutputStream nullos;
     THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', from_millimeters(park_position[X_AXIS]), 'Y', from_millimeters(park_position[Y_AXIS]), 'F', default_seek_rate, 0);
 
@@ -732,40 +750,40 @@ bool Robot::handle_gcodes(GCode& gcode, OutputStream& os)
         case 20: this->inch_mode = true;   break;
         case 21: this->inch_mode = false;   break;
         case 28: // we only handle the park codes here, the homing module will handle the homing commands
-               switch(gcode.get_subcode()) {
-                   case 0: // G28 in grbl mode will do a rapid to the predefined position otherwise it is home command
-                        if(is_grbl_mode()){
-                            do_park();
-                        }else{
-                            handled= false;
-                        }
-                        break;
+            switch(gcode.get_subcode()) {
+                case 0: // G28 in grbl mode will do a rapid to the predefined position otherwise it is home command
+                    if(is_grbl_mode()) {
+                        do_park();
+                    } else {
+                        handled = false;
+                    }
+                    break;
 
-                    case 1: // G28.1 set pre defined park position
-                        // saves current position in absolute machine coordinates
-                        get_axis_position(park_position, 2); // Only XY are used
-                        // Note the following is only meant to be used for recovering a saved position from config-override
-                        // Not a standard Gcode and not to be relied on
-                        if (gcode.has_arg('X')) park_position[X_AXIS] = gcode.get_arg('X');
-                        if (gcode.has_arg('Y')) park_position[Y_AXIS] = gcode.get_arg('Y');
-                        break;
+                case 1: // G28.1 set pre defined park position
+                    // saves current position in absolute machine coordinates
+                    get_axis_position(park_position, 2); // Only XY are used
+                    // Note the following is only meant to be used for recovering a saved position from config-override
+                    // Not a standard Gcode and not to be relied on
+                    if (gcode.has_arg('X')) park_position[X_AXIS] = gcode.get_arg('X');
+                    if (gcode.has_arg('Y')) park_position[Y_AXIS] = gcode.get_arg('Y');
+                    break;
 
-                    case 2: // G28.2 in grbl mode does homing (triggered by $H), otherwise it moves to the park position
-                        if(!is_grbl_mode()) {
-                            do_park();
-                        }else{
-                            handled= false;
-                        }
-                        break;
+                case 2: // G28.2 in grbl mode does homing (triggered by $H), otherwise it moves to the park position
+                    if(!is_grbl_mode()) {
+                        do_park();
+                    } else {
+                        handled = false;
+                    }
+                    break;
 
-                    default: handled= false;
-                }
-                break;
+                default: handled = false;
+            }
+            break;
 
         case 53: // G53 not fully supported. G53 G1 X1 Y1 is ok, but G53 X1 Y1 is not supported
             if(gcode.has_no_args()) {
-                next_command_is_MCS= true;
-            }else{
+                next_command_is_MCS = true;
+            } else {
                 os.printf("WARNING: G53 with args is not supported\n");
             }
             break;
@@ -875,7 +893,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                         os.printf(" %c:%g ", 'A' + i - A_AXIS, actuators[i]->get_max_rate());
                     }
 
-                }else{
+                } else {
                     os.printf(" S:%g ", this->default_seek_rate);
                 }
 
@@ -891,7 +909,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                 }
 
                 if (gcode.has_arg('S')) {
-                    this->seek_rate= this->default_seek_rate = gcode.get_arg('S'); // is specified in mm/sec
+                    this->seek_rate = this->default_seek_rate = gcode.get_arg('S'); // is specified in mm/sec
                 }
 
                 if(gcode.get_subcode() == 1) {
