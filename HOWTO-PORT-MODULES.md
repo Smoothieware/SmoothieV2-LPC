@@ -1,5 +1,5 @@
 This document is a brief discussion on how to port a V1 smoothie module to v2.
-There are many differences between V1 and V2 many come from using Nuttx as the base RTOS, and a discussion of that is beyond the scope of this note.
+There are many differences between V1 and V2 many come from using FreeRTOS as the base RTOS, and a discussion of that is beyond the scope of this note.
 
 The other major difference is the use of a new config file format. V2 uses a .ini formatted file for the config.
 All  modules have their own section header, and there is an extension that allows multiple instances of the same module
@@ -11,7 +11,7 @@ etc...
 ```
 See the tools/example-config.ini file
 
-Checksums are no longer used and the #defines are renambed to xxx_key instead and are strings.
+Checksums are no longer used and the #defines are renamed to xxx_key instead and are strings.
 There is a helper script that converts many of the checksums into keys and calls to the new config library are converted too.
 tools/convert-config.rb is the script and you need to install ruby and the gem rio to use it. You can also do it manually and use an existing ported module for examples.
 ```ruby convert-config.rb mymodule.cpp > my converted-module.cpp```
@@ -75,7 +75,7 @@ All gcodes and mcodes need to be registered with the Dispatcher, examples can be
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 221, std::bind(&Laser::handle_M221, this, _1, _2));
 ```
 
-The slowticker is limited to 100Hz, there will eventually be a fastticker for events faster than this.
+The slowticker is limited to 100Hz, there is a fastticker for events faster than this.
 
 ```
     SlowTicker::getInstance()->attach(100, std::bind(&Laser::set_proportional_power, this));
