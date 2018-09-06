@@ -986,36 +986,84 @@ static void rxsend(char c)
 
 bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
 {
-    HELP("xmodem recieve: rx filename");
+    HELP("xmodem recieve: rx filename | ymodem recieve: rx");
 
     if(!Conveyor::getInstance()->is_idle()) {
         os.printf("rx not allowed while printing or busy\n");
         return true;
     }
 
+    int ymodem;
+    int file_size;
+    FILE *fd= nullptr;
+    char fn[132]= {0};
     // open file to upload to
     std::string upload_filename = params;
-    FILE *fd = fopen(upload_filename.c_str(), "w");
-    if(fd != NULL) {
-        vTaskDelay(pdMS_TO_TICKS(500));
-        os.printf("xmodem to file: %s\r\n", upload_filename.c_str());
-    } else {
-        os.printf("failed to open file: %s.\r\n", upload_filename.c_str());
-        return true;
+    if(!upload_filename.empty()) {
+        fd = fopen(upload_filename.c_str(), "w");
+        if(fd == NULL) {
+            os.printf("failed to open file: %s.\r\n", upload_filename.c_str());
+            return true;
+        }
+        ymodem= 0;
+        strcpy(fn, upload_filename.c_str());
+
+    }else{
+        ymodem= 1;
     }
+
+    os.printf("%cmodem to file: %s\r\n", ymodem?'y':'x', ymodem?"??":upload_filename.c_str());
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
     prxos= &os;
     init_xmodem(rxsend);
-    set_capture([fd](char c){ add_to_xmodem_inbuff(c); });
-    int ret= xmodemReceive(fd);
+    set_capture([](char c){ add_to_xmodem_inbuff(c); });
+    int ret= xmodemReceive(&fd, ymodem, fn, &file_size);
     set_capture(nullptr);
     deinit_xmodem();
-    fclose(fd);
     if(ret > 0) {
-        os.printf("uploaded %d bytes ok\n", ret);
+        fclose(fd);
+        if(ymodem && ret > file_size) {
+            // we need to truncate file
+            if(!truncate_file(fn, file_size, os)) {
+                os.printf("WARNING: failed to truncate file\n");
+            }else{
+                ret= file_size;
+                printf("DEBUG: truncated file to %d\n", file_size); // DEBUG
+            }
+        }
+        os.printf("uploaded file: %s, size: %d bytes ok\n", fn, ret);
     }else{
-        remove(upload_filename.c_str());
+        if(fd != nullptr) fclose(fd);
+        if(fn[0] != 0) remove(fn);
         os.printf("upload failed with error %d\n", ret);
+    }
+
+    return true;
+}
+
+bool CommandShell::truncate_file(const char *fn, int size, OutputStream& os)
+{
+    FIL fp;  /* File object */
+    // Open file
+    int ret = f_open(&fp, fn, FA_WRITE);
+    if(FR_OK != ret) {
+        os.printf("file %s does not exist\n", fn);
+        return false;
+    }
+
+    ret= f_lseek(&fp, size);
+    if(FR_OK != ret) {
+        f_close(&fp);
+        os.printf("error %d seeking to %d bytes\n", ret, size);
+        return false;
+    }
+
+    ret= f_truncate(&fp);
+    f_close(&fp);
+    if(FR_OK != ret) {
+        os.printf("error %d truncating file\n", ret);
+        return false;
     }
 
     return true;
@@ -1039,29 +1087,9 @@ bool CommandShell::truncate_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
-    FIL fp;  /* File object */
-    // Open file
-    int ret = f_open(&fp, fn.c_str(), FA_WRITE);
-    if(FR_OK != ret) {
-        os.printf("file %s does not exist\n", fn.c_str());
-        return true;
+    if(truncate_file(fn.c_str(), size, os)) {
+        os.printf("File %s truncated to %d bytes\n", fn.c_str(), size);
     }
-
-    ret= f_lseek(&fp, size);
-    if(FR_OK != ret) {
-        f_close(&fp);
-        os.printf("error %d seeking to %d bytes\n", ret, size);
-        return true;
-    }
-
-    ret= f_truncate(&fp);
-    if(FR_OK != ret) {
-        os.printf("error %d truncating file\n", ret);
-    } else {
-        os.printf("File truncated to %d size\n", size);
-    }
-
-    f_close(&fp);
 
     return true;
 }

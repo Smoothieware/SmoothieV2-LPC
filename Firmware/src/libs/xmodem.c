@@ -21,6 +21,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -117,15 +119,20 @@ static void flushinput(void)
 	while (_inbyte(((DLY_1S)*3)>>1) >= 0)
 		;
 }
-int xmodemReceive(FILE *fp)
+int xmodemReceive(FILE **fp, int use_ymodem, char *fn, int *fsize)
 {
 	unsigned char xbuff[1030]; /* 1024 for XModem 1k + 3 head chars + 2 crc + nul */
+	int file_size= 0;
+	int err_ret;
+	int first_packet= 1;
 	unsigned char *p;
 	int bufsz, crc = 0;
 	unsigned char trychar = 'C';
-	unsigned char packetno = 1;
+	unsigned char packetno = use_ymodem ? 0 : 1;
 	int i, c, len= 0;
 	int retry, retrans = MAXRETRANS;
+
+restart:
 	for(;;) {
 		for( retry = 0; retry < 16; ++retry) {
 			if (trychar) _outbyte(trychar);
@@ -138,7 +145,17 @@ int xmodemReceive(FILE *fp)
 					bufsz = 1024;
 					goto start_recv;
 				case EOT:
-					flushinput();
+					if(use_ymodem) {
+						//printf("DEBUG: got EOT\n");
+						// ymodem we don't end here
+						_outbyte(ACK);
+						trychar = 'C';
+						packetno = 0;
+						retrans = MAXRETRANS;
+						first_packet= 1;
+						goto restart;
+					}
+done:				flushinput();
 					_outbyte(ACK);
 					return len; /* normal end */
 				case CAN:
@@ -172,17 +189,60 @@ int xmodemReceive(FILE *fp)
 			(xbuff[1] == packetno || xbuff[1] == (unsigned char)packetno-1) &&
 			check(crc, &xbuff[3], bufsz)) {
 			if (xbuff[1] == packetno)	{
-				fwrite(&xbuff[3], bufsz, 1, fp);
-				len += bufsz;
+				if(use_ymodem && first_packet) {
+					first_packet= 0;
+					// get filename and size starting at offset 3
+					if(xbuff[3] == 0) {
+						// end of batch
+						//printf("DEBUG: got end of batch\n");
+						goto done;
+					}
+
+					if(len > 0) {
+						// we already got one file and we only allow one file at the moment
+						// not sure this will work though
+						err_ret= len;
+						goto cancel;
+					}
+
+					// get filename
+					strncpy(fn, (char *)&xbuff[3], 132-1);
+					// get file size
+					char s[16];
+					for (int j = 0; j < sizeof(s)-1; ++j) {
+						s[j]= 0;
+						char cc = xbuff[3+strlen(fn)+1+j];
+					    if(!isdigit(cc)) break;
+					    s[j]= cc;
+					}
+					file_size= atoi(s);
+					*fsize= file_size;
+					//printf("DEBUG: ymodem filename: <%s>, file size: %d\n", fn, file_size);
+					*fp= fopen(fn, "w");
+					if(*fp == NULL) {
+						err_ret= -4;
+						goto cancel;
+					}
+					trychar= 'C';
+
+				}else{
+					if(fwrite(&xbuff[3], 1, bufsz, *fp) != bufsz) {
+						err_ret= -5;
+						goto cancel;
+					}
+					len += bufsz;
+				}
+
 				++packetno;
 				retrans = MAXRETRANS+1;
 			}
 			if (--retrans <= 0) {
-				flushinput();
+				err_ret= -3; /* too many retry error */
+cancel: 		flushinput();
 				_outbyte(CAN);
 				_outbyte(CAN);
 				_outbyte(CAN);
-				return -3; /* too many retry error */
+				return err_ret;
 			}
 			_outbyte(ACK);
 			continue;

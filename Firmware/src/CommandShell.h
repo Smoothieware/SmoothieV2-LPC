@@ -14,6 +14,9 @@ public:
     bool initialize();
 
 private:
+    bool truncate_file(const char *fn, int size, OutputStream& os);
+
+    // commands
     bool help_cmd(std::string& params, OutputStream& os);
     bool ls_cmd(std::string& params, OutputStream& os);
     bool rm_cmd(std::string& params, OutputStream& os);
