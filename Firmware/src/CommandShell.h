@@ -40,6 +40,7 @@ private:
     bool m115_cmd(GCode& gcode, OutputStream& os);
     bool upload_cmd(std::string& params, OutputStream& os);
     bool rx_cmd(std::string& params, OutputStream& os);
+    bool ry_cmd(std::string& params, OutputStream& os);
     bool truncate_cmd(std::string& params, OutputStream& os);
     bool break_cmd(std::string& params, OutputStream& os);
     bool reset_cmd(std::string& params, OutputStream& os);

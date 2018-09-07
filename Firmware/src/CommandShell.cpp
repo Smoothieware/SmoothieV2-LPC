@@ -53,6 +53,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "config-set", std::bind( &CommandShell::config_set_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "upload", std::bind( &CommandShell::upload_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "rx", std::bind( &CommandShell::rx_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "ry", std::bind( &CommandShell::ry_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "truncate", std::bind( &CommandShell::truncate_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler( "mem", std::bind( &CommandShell::mem_cmd, this, _1, _2) );
@@ -986,18 +987,15 @@ static void rxsend(char c)
 
 bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
 {
-    HELP("xmodem recieve: rx filename | ymodem recieve: rx");
+    HELP("xmodem recieve: rx filename");
 
     if(!Conveyor::getInstance()->is_idle()) {
         os.printf("rx not allowed while printing or busy\n");
         return true;
     }
 
-    int ymodem;
-    int file_size;
-    FILE *fd= nullptr;
-    char fn[132]= {0};
     // open file to upload to
+    FILE *fd;
     std::string upload_filename = params;
     if(!upload_filename.empty()) {
         fd = fopen(upload_filename.c_str(), "w");
@@ -1005,37 +1003,52 @@ bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
             os.printf("failed to open file: %s.\r\n", upload_filename.c_str());
             return true;
         }
-        ymodem= 0;
-        strcpy(fn, upload_filename.c_str());
 
     }else{
-        ymodem= 1;
+        os.printf("Usage: rx filename\n");
+        return true;
     }
 
-    os.printf("%cmodem to file: %s\r\n", ymodem?'y':'x', ymodem?"??":upload_filename.c_str());
+    os.printf("xmodem to file: %s - start xmodem transfer\n", upload_filename.c_str());
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     prxos= &os;
     init_xmodem(rxsend);
     set_capture([](char c){ add_to_xmodem_inbuff(c); });
-    int ret= xmodemReceive(&fd, ymodem, fn, &file_size);
+    int ret= xmodemReceive(fd);
     set_capture(nullptr);
     deinit_xmodem();
     if(ret > 0) {
-        fclose(fd);
-        if(ymodem && ret > file_size) {
-            // we need to truncate file
-            if(!truncate_file(fn, file_size, os)) {
-                os.printf("WARNING: failed to truncate file\n");
-            }else{
-                ret= file_size;
-                printf("DEBUG: truncated file to %d\n", file_size); // DEBUG
-            }
-        }
-        os.printf("uploaded file: %s, size: %d bytes ok\n", fn, ret);
+        os.printf("uploaded file: %s, size: %d bytes ok\n", upload_filename.c_str(), ret);
     }else{
-        if(fd != nullptr) fclose(fd);
-        if(fn[0] != 0) remove(fn);
+        os.printf("upload failed with error %d\n", ret);
+    }
+
+    fclose(fd);
+    return true;
+}
+
+bool CommandShell::ry_cmd(std::string& params, OutputStream& os)
+{
+    HELP("ymodem recieve");
+
+    if(!Conveyor::getInstance()->is_idle()) {
+        os.printf("ry not allowed while printing or busy\n");
+        return true;
+    }
+
+    os.printf("start ymodem transfer\n");
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    prxos= &os;
+    init_xmodem(rxsend);
+    set_capture([](char c){ add_to_xmodem_inbuff(c); });
+    int ret= ymodemReceive();
+    set_capture(nullptr);
+    deinit_xmodem();
+    if(ret > 0) {
+        os.printf("uploaded %d file(s) ok\n", ret);
+    }else{
         os.printf("upload failed with error %d\n", ret);
     }
 
