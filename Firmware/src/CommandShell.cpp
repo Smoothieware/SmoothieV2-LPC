@@ -51,7 +51,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "md5sum", std::bind( &CommandShell::md5sum_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler( "config-set", std::bind( &CommandShell::config_set_cmd, this, _1, _2) );
-    THEDISPATCHER->add_handler( "upload", std::bind( &CommandShell::upload_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "download", std::bind( &CommandShell::download_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "rx", std::bind( &CommandShell::rx_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "ry", std::bind( &CommandShell::ry_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "truncate", std::bind( &CommandShell::truncate_cmd, this, _1, _2) );
@@ -322,7 +322,7 @@ bool CommandShell::mount_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
 {
-    HELP("display file: nnn option will show first nnn lines");
+    HELP("display file: nnn option will show first nnn lines, -d will delay output and send ^D at end to terminate");
     // Get params ( filename and line limit )
     std::string filename          = stringutils::shift_parameter( params );
     std::string limit_parameter   = stringutils::shift_parameter( params );
@@ -332,9 +332,15 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
+    bool delay= false;
     int limit = -1;
 
-    if ( limit_parameter != "" ) {
+    if(!limit_parameter.empty() && limit_parameter.substr(0, 2) == "-d") {
+        delay= true;
+        limit_parameter= stringutils::shift_parameter( params );
+    }
+
+    if (!limit_parameter.empty()) {
         char *e = NULL;
         limit = strtol(limit_parameter.c_str(), &e, 10);
         if (e <= limit_parameter.c_str())
@@ -344,6 +350,10 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
     // Open file
     FILE *lp = fopen(filename.c_str(), "r");
     if (lp != NULL) {
+        if(delay){
+            os.puts("you have 5 seconds to initiate the upload command on the host...\n");
+            vTaskDelay(pdMS_TO_TICKS(5000));
+        }
         char buffer[132];
         int newlines = 0;
         // Print each line of the file
@@ -354,6 +364,10 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
             }
         };
         fclose(lp);
+        if(delay) {
+            char c= 26;
+            os.write(&c, 1);
+        }
 
     } else {
         os.printf("File not found: %s\n", filename.c_str());
@@ -946,34 +960,34 @@ bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
 // Special hack that switches the input comms to send everything here until we finish.
 // NOTE Only works for ascii files.
 // unfortunately due to incorrect USB flow control we cannot use this as it drops characters on USB serial
-bool CommandShell::upload_cmd(std::string& params, OutputStream& os)
+bool CommandShell::download_cmd(std::string& params, OutputStream& os)
 {
-    HELP("upload filename - upload an ascii/text file and save to sd");
+    HELP("download filename - download an ascii/text file and save to sd");
 
     if(!Conveyor::getInstance()->is_idle()) {
-        os.printf("upload not allowed while printing or busy\n");
+        os.printf("download not allowed while printing or busy\n");
         return true;
     }
 
-    // open file to upload to
-    std::string upload_filename = params;
-    FILE *fd = fopen(upload_filename.c_str(), "w");
+    // open file to download to
+    std::string download_filename = params;
+    FILE *fd = fopen(download_filename.c_str(), "w");
     if(fd != NULL) {
-        os.printf("uploading to file: %s, send control-D or control-Z to finish\r\n", upload_filename.c_str());
+        os.printf("downloading to file: %s, send control-D or control-Z to finish\r\n", download_filename.c_str());
     } else {
-        os.printf("failed to open file: %s.\r\n", upload_filename.c_str());
+        os.printf("failed to open file: %s.\r\n", download_filename.c_str());
         return true;
     }
 
-    volatile bool uploading = true;
+    volatile bool downloading = true;
     int cnt = 0;
-    set_capture([&uploading, fd, &cnt](char c){if( c == 4 || c == 26) uploading = false; else { fputc(c, fd); ++cnt; } });
-    while(uploading) {
+    set_capture([&downloading, fd, &cnt](char c){if( c == 4 || c == 26) downloading = false; else { fputc(c, fd); ++cnt; } });
+    while(downloading) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     set_capture(nullptr);
     fclose(fd);
-    os.printf("uploaded %d bytes\n", cnt);
+    os.printf("downloaded %d bytes\n", cnt);
 
     return true;
 }
@@ -994,13 +1008,13 @@ bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
-    // open file to upload to
+    // open file to download to
     FILE *fd;
-    std::string upload_filename = params;
-    if(!upload_filename.empty()) {
-        fd = fopen(upload_filename.c_str(), "w");
+    std::string download_filename = params;
+    if(!download_filename.empty()) {
+        fd = fopen(download_filename.c_str(), "w");
         if(fd == NULL) {
-            os.printf("failed to open file: %s.\r\n", upload_filename.c_str());
+            os.printf("failed to open file: %s.\r\n", download_filename.c_str());
             return true;
         }
 
@@ -1009,7 +1023,7 @@ bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
-    os.printf("xmodem to file: %s - start xmodem transfer\n", upload_filename.c_str());
+    os.printf("xmodem to file: %s - start xmodem transfer\n", download_filename.c_str());
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     prxos= &os;
@@ -1019,9 +1033,9 @@ bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
     set_capture(nullptr);
     deinit_xmodem();
     if(ret > 0) {
-        os.printf("uploaded file: %s, size: %d bytes ok\n", upload_filename.c_str(), ret);
+        os.printf("downloaded file: %s, size: %d bytes ok\n", download_filename.c_str(), ret);
     }else{
-        os.printf("upload failed with error %d\n", ret);
+        os.printf("download failed with error %d\n", ret);
     }
 
     fclose(fd);
@@ -1047,9 +1061,9 @@ bool CommandShell::ry_cmd(std::string& params, OutputStream& os)
     set_capture(nullptr);
     deinit_xmodem();
     if(ret > 0) {
-        os.printf("uploaded %d file(s) ok\n", ret);
+        os.printf("downloaded %d file(s) ok\n", ret);
     }else{
-        os.printf("upload failed with error %d\n", ret);
+        os.printf("download failed with error %d\n", ret);
     }
 
     return true;
