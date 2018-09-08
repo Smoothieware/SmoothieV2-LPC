@@ -5,7 +5,7 @@
 #include "Block.h"
 #include "Conveyor.h"
 #include "Module.h"
-#include "Timers.h"
+#include "tmr-setup.h"
 
 #include <fcntl.h>
 #include <errno.h>

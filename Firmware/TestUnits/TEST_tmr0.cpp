@@ -1,6 +1,6 @@
 #include "../Unity/src/unity.h"
 #include "TestRegistry.h"
-#include "Timers.h"
+#include "tmr-setup.h"
 
 #include "board.h"
 
