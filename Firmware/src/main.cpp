@@ -718,6 +718,14 @@ static void smoothie_startup(void *)
 
 int main(int argc, char *argv[])
 {
+
+#if configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1
+    extern uint8_t FreeRTOSDebugConfig[];
+    if (FreeRTOSDebugConfig[0]==0) { /* just use it, so the linker cannot remove FreeRTOSDebugConfig[] */
+        for(;;); /* FreeRTOSDebugConfig[0] should always be non-zero, so this should never happen */
+    }
+#endif
+
     //HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
     NVIC_SetPriorityGrouping( 0 );
 
