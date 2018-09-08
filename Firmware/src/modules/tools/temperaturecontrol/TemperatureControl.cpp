@@ -15,7 +15,7 @@
 
 // Temp sensor implementations:
 #include "Thermistor.h"
-#include "max31855.h"
+//#include "max31855.h"
 //#include "AD8495.h"
 //#include "PT100_E3D.h"
 
