@@ -297,11 +297,6 @@ REGISTER_TEST(SDCardTest, time_read_write)
         if(x != sizeof(buffer)) {
             TEST_FAIL();
         }
-        // check it
-        for (size_t j = 0; j < sizeof(buffer); ++j) {
-            TEST_ASSERT_EQUAL_INT((i+j)&255, buffer[j]);
-        }
-
     }
     en = clock_systimer();
     printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * sizeof(buffer), ((float)n * sizeof(buffer)) / (TICK2USEC(en - st) / 1e6F));
