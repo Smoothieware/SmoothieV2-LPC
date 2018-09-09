@@ -46,7 +46,7 @@ extern const uint8_t FreeRTOSDebugConfig[];
 // The IAR supplied examples violate both "rules", so this is a best guess.
 //
 #if defined(__GNUC__)
-const uint8_t FreeRTOSDebugConfig[] __attribute__((section(".rodata"))) =
+const uint8_t FreeRTOSDebugConfig[] __attribute__((section(".rodata"), used)) =
 #elif defined(__CC_ARM)
 const uint8_t FreeRTOSDebugConfig[] __attribute__((used)) =
 #elif defined(__IAR_SYSTEMS_ICC__)
