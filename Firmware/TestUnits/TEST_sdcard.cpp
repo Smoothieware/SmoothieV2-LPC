@@ -19,6 +19,7 @@
 
 extern "C" bool setup_sdmmc();
 
+static BYTE buffer[4096];   /* File copy buffer */
 static FATFS fatfs; /* File system object */
 REGISTER_TEST(SDCardTest, mount)
 {
@@ -269,20 +270,19 @@ REGISTER_TEST(SDCardTest, time_read_write)
 
     systime_t st = clock_systimer();
 
-    uint32_t n = 5000;
+    uint32_t n = 2560000/sizeof(buffer);
     for (uint32_t i = 1; i <= n; ++i) {
-        char buf[512];
-        for (size_t j = 0; j < sizeof(buf); ++j) {
-            buf[j]= (i+j)&255;
+        for (size_t j = 0; j < sizeof(buffer); ++j) {
+            buffer[j]= (i+j)&255;
         }
-        size_t x = fwrite(buf, 1, sizeof(buf), fp);
-        if(x != sizeof(buf)) {
+        size_t x = fwrite(buffer, 1, sizeof(buffer), fp);
+        if(x != sizeof(buffer)) {
             TEST_FAIL();
         }
     }
 
     systime_t en = clock_systimer();
-    printf("elapsed time %lu us for writing %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
+    printf("elapsed time %lu us for writing %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * sizeof(buffer), ((float)n * sizeof(buffer)) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
 
@@ -293,24 +293,22 @@ REGISTER_TEST(SDCardTest, time_read_write)
     // read back data
     st = clock_systimer();
     for (uint32_t i = 1; i <= n; ++i) {
-        char buf[512];
-        size_t x = fread(buf, 1, sizeof(buf), fp);
-        if(x != sizeof(buf)) {
+        size_t x = fread(buffer, 1, sizeof(buffer), fp);
+        if(x != sizeof(buffer)) {
             TEST_FAIL();
         }
         // check it
-        for (size_t j = 0; j < sizeof(buf); ++j) {
-            TEST_ASSERT_EQUAL_INT((i+j)&255, buf[j]);
+        for (size_t j = 0; j < sizeof(buffer); ++j) {
+            TEST_ASSERT_EQUAL_INT((i+j)&255, buffer[j]);
         }
 
     }
     en = clock_systimer();
-    printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * 512, (n * 512.0F) / (TICK2USEC(en - st) / 1e6F));
+    printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * sizeof(buffer), ((float)n * sizeof(buffer)) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
 }
 
-static BYTE buffer[4096];   /* File copy buffer */
 REGISTER_TEST(SDCardTest, copy_file_raw)
 {
     static MD5 w_md5;

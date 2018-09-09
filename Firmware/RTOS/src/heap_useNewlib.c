@@ -75,6 +75,7 @@ extern char __HeapBase;  // make sure to define these symbols in linker command 
 extern void _vStackTop(void);
 static int heapBytesRemaining = -1;
 //! sbrk/_sbrk version supporting reentrant newlib (depends upon above symbols defined by linker control file).
+//__attribute__((optimize(0)))
 char * sbrk(int incr) {
     static char *currentHeapEnd = &__HeapBase;
     static char *stackBase= (char *)&_vStackTop - 4096; // (char *)__get_MSP(); // current stack
