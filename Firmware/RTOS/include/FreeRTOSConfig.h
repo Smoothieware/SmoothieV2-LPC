@@ -74,6 +74,7 @@
 #define configUSE_STATS_FORMATTING_FUNCTIONS 1
 
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H    0
+#define configTASK_RETURN_ADDRESS 0
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 		0
