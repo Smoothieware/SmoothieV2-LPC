@@ -1,0 +1,85 @@
+diff --git a/src/gdb/gdb/arm-tdep.c b/src/gdb/gdb/arm-tdep.c
+index bc83326ae7..1e3badc4eb 100644
+--- a/src/gdb/gdb/arm-tdep.c
++++ b/src/gdb/gdb/arm-tdep.c
+@@ -2943,12 +2943,32 @@ arm_m_exception_cache (struct frame_info *this_frame)
+   struct arm_prologue_cache *cache;
+   CORE_ADDR unwound_sp;
+   LONGEST xpsr;
++  CORE_ADDR exc_return;
++  int was_psp_used;
++  int is_extended_frame;
++  int stack_regnum;
+ 
+   cache = FRAME_OBSTACK_ZALLOC (struct arm_prologue_cache);
+   cache->saved_regs = trad_frame_alloc_saved_regs (this_frame);
+ 
+-  unwound_sp = get_frame_register_unsigned (this_frame,
+-					    ARM_SP_REGNUM);
++  /* Determine which stack pointer (PSP or MSP) was used to stack
++     faulting routines registers. */
++  exc_return = get_frame_register_unsigned (this_frame, ARM_LR_REGNUM);
++  was_psp_used = (exc_return & 0xf) == 0xd;
++  is_extended_frame = (exc_return & (1 << 4)) == 0;
++  stack_regnum = ARM_SP_REGNUM;
++  if (was_psp_used)
++    {
++      int psp = user_reg_map_name_to_regnum (gdbarch, "psp", -1);
++      if (psp == -1)
++	{
++	  warning (_("Interrupted code uses PSP but your target doesn't "
++		     "expose that stack pointer."));
++	}
++      else
++	stack_regnum = psp;
++    }
++  unwound_sp = get_frame_register_unsigned (this_frame, stack_regnum);
+ 
+   /* The hardware saves eight 32-bit words, comprising xPSR,
+      ReturnAddress, LR (R14), R12, R3, R2, R1, R0.  See details in
+@@ -2963,10 +2983,44 @@ arm_m_exception_cache (struct frame_info *this_frame)
+   cache->saved_regs[15].addr = unwound_sp + 24;
+   cache->saved_regs[ARM_PS_REGNUM].addr = unwound_sp + 28;
+ 
++  if (is_extended_frame)
++    {
++      LONGEST fpccr;
++
++      /* Can skip extracting floating pointer registers if the lazy stack
++         is still active. */
++      if (safe_read_memory_integer (0xE000EF34, 4, byte_order, &fpccr)
++	  && (fpccr & 1) == 0)
++	{
++	  int s0_offset = user_reg_map_name_to_regnum (gdbarch, "s0", -1);
++	  int fpscr_offset = user_reg_map_name_to_regnum (gdbarch, "fpscr", -1);;
++
++	  if (s0_offset == -1 || fpscr_offset == -1)
++	    {
++	      warning (_("Interrupted code uses FPU but your target doesn't "
++			 "expose the floating pointer registers."));
++	    }
++	  else
++	    {
++	      int i;
++	      int fpu_reg_offset = unwound_sp + 0x20;
++
++	      for (i = 0; i < 16; ++i, fpu_reg_offset += 4)
++		cache->saved_regs[s0_offset + i].addr = fpu_reg_offset;
++	      cache->saved_regs[fpscr_offset].addr = unwound_sp + 0x60;
++	    }
++	}
++      cache->prev_sp = unwound_sp + 0x68;
++    }
++  else
++    {
++      cache->prev_sp = unwound_sp + 0x20;
++    }
++
++
+   /* If bit 9 of the saved xPSR is set, then there is a four-byte
+      aligner between the top of the 32-byte stack frame and the
+      previous context's stack pointer.  */
+-  cache->prev_sp = unwound_sp + 32;
+   if (safe_read_memory_integer (unwound_sp + 28, 4, byte_order, &xpsr)
+       && (xpsr & (1 << 9)) != 0)
+     cache->prev_sp += 4;
