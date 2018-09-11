@@ -13,7 +13,9 @@ define hookpost-load
     monitor reset
 end
 
-
+define hook-load
+monitor reset
+end
 
 # Command to enable/disable catching of Cortex-M faults as soon as they occur.
 define catchfaults
@@ -52,9 +54,9 @@ define showfault
                 printf "    Forced\n"
             end
         end
-    
+
         set var $cfsr_val = *(unsigned int*)0xE000ED28
-    
+
         # Dump Memory Fault.
         set var $fault_reg = $cfsr_val & 0xFF
         if ($fault_reg != 0)
@@ -79,7 +81,7 @@ define showfault
                 printf "    Instruction Fetch\n"
             end
         end
-    
+
         # Dump Bus Fault.
         set var $fault_reg = ($cfsr_val >> 8) & 0xFF
         if ($fault_reg != 0)
@@ -107,7 +109,7 @@ define showfault
                 printf "    Instruction Prefetch\n"
             end
         end
-    
+
         # Usage Fault.
         set var $fault_reg = $cfsr_val >> 16
         if ($fault_reg != 0)
@@ -135,7 +137,7 @@ define showfault
     else
         printf "Not currently in Cortex-M fault handler!\n"
     end
-    
+
 end
 
 document showfault
@@ -239,7 +241,7 @@ end
 document gcore
 Generate core dump.
 
-The generated core dump can be used with CrashDebug 
+The generated core dump can be used with CrashDebug
 (https://github.com/adamgreen/CrashDebug) to reload into GDB at a later point
 in time or on another machine. The dump will be generated to a file named
 "crash.dump".
@@ -253,6 +255,92 @@ define hook-continue
         set var *(int*)0xE000EDFC |= 0x7F0
     end
 end
+
+
+# Command to dump the current amount of space allocated to the heap.
+define heapsize
+    set var $heap_base=(((unsigned int)&__HeapBase+7)&~7)
+    set var $heap_end=(unsigned int)&_vStackTop - (unsigned int)4096
+    printf "Used heap: %u bytes\n", (sbrk::currentHeapEnd - $heap_base)
+    printf "Unused heap: %u bytes\n", ($heap_end - (unsigned int)sbrk::currentHeapEnd)
+    printf "Total heap: %u bytes\n", ($heap_end - $heap_base)
+end
+
+document heapsize
+Displays the current heap size.
+end
+
+# Command to dump the heap allocations (in-use and free).
+define heapwalk
+    set var $chunk_curr=((unsigned int)&__HeapBase)
+    set var $chunk_number=1
+    set var $used_bytes=(unsigned int)0
+    set var $free_bytes=(unsigned int)0
+    if (sizeof(struct _reent) == 96)
+        # newlib-nano library in use.
+        set var $free_curr=(unsigned int)__malloc_free_list
+        while ($chunk_curr < sbrk::currentHeapEnd)
+            set var $chunk_size=*(unsigned int*)$chunk_curr
+            set var $chunk_next=$chunk_curr + $chunk_size
+            if ($chunk_curr == $free_curr)
+                set var $chunk_free=1
+                set var $free_curr=*(unsigned int*)($free_curr + 4)
+            else
+                set var $chunk_free=0
+            end
+            set var $chunk_orig=$chunk_curr + 4
+            set var $chunk_curr=($chunk_orig + 7) & ~7
+            set var $chunk_size=$chunk_size - 8
+            printf "Chunk: %u  Address: 0x%08X  Size: %u  ", $chunk_number, $chunk_curr, $chunk_size
+            if ($chunk_free)
+                printf "FREE CHUNK"
+                set var $free_bytes+=$chunk_size
+            else
+                set var $used_bytes+=$chunk_size
+            end
+            printf "\n"
+            set var $chunk_curr=$chunk_next
+            set var $chunk_number=$chunk_number+1
+        end
+    else
+        # full newlib library in use.
+        set var $heape= (unsigned int)sbrk::currentHeapEnd
+        while ($chunk_curr < $heape)
+            set var $chunk_size=*(unsigned int*)($chunk_curr + 4)
+            set var $chunk_size&=~1
+            set var $chunk_next=$chunk_curr + $chunk_size
+            set var $chunk_inuse=(*(unsigned int*)($chunk_next + 4)) & 1
+
+            # A 0-byte chunk at the beginning of the heap is the initial state before any allocs occur.
+            if ($chunk_size == 0)
+                loop_break
+            end
+
+            # The actual data starts past the 8 byte header.
+            set var $chunk_orig=$chunk_curr + 8
+            # The actual data is 4 bytes smaller than the total chunk since it can use the first word of the next chunk
+            # as well since that is its footer.
+            set var $chunk_size=$chunk_size - 4
+            printf "Chunk: %u  Address: 0x%08X  Size: %u  ", $chunk_number, $chunk_orig, $chunk_size
+            if ($chunk_inuse == 0)
+                printf "FREE CHUNK"
+                set var $free_bytes+=$chunk_size
+            else
+                set var $used_bytes+=$chunk_size
+            end
+            printf "\n"
+            set var $chunk_curr=$chunk_next
+            set var $chunk_number=$chunk_number+1
+        end
+    end
+    printf "  Used bytes: %u\n", $used_bytes
+    printf "  Free bytes: %u\n", $free_bytes
+end
+
+document heapwalk
+Walks the heap and dumps each chunk encountered.
+end
+
 
 
 

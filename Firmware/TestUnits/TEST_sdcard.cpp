@@ -272,9 +272,6 @@ REGISTER_TEST(SDCardTest, time_read_write)
 
     uint32_t n = 2560000/sizeof(buffer);
     for (uint32_t i = 1; i <= n; ++i) {
-        for (size_t j = 0; j < sizeof(buffer); ++j) {
-            buffer[j]= (i+j)&255;
-        }
         size_t x = fwrite(buffer, 1, sizeof(buffer), fp);
         if(x != sizeof(buffer)) {
             TEST_FAIL();
