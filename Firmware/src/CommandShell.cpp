@@ -233,6 +233,9 @@ bool CommandShell::cp_cmd(std::string& params, OutputStream& os)
 
     std::fstream fsin;
     std::fstream fsout;
+
+    fsin.rdbuf()->pubsetbuf(0,0); // set unbuffered
+    fsout.rdbuf()->pubsetbuf(0,0); // set unbuffered
     fsin.open(fn1, std::fstream::in|std::fstream::binary);
     if(!fsin.is_open()) {
         os.printf("File %s does not exist\n", fn1.c_str());

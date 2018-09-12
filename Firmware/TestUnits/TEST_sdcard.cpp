@@ -267,18 +267,19 @@ REGISTER_TEST(SDCardTest, time_read_write)
     FILE *fp;
     fp = fopen(fn, "w");
     TEST_ASSERT_NOT_NULL(fp);
+    // don't buffer it
+    setvbuf(fp, NULL, _IONBF, 0);
+    uint32_t n = 5120000/sizeof(buffer);
 
     systime_t st = clock_systimer();
-
-    uint32_t n = 2560000/sizeof(buffer);
     for (uint32_t i = 1; i <= n; ++i) {
         size_t x = fwrite(buffer, 1, sizeof(buffer), fp);
         if(x != sizeof(buffer)) {
             TEST_FAIL();
         }
     }
-
     systime_t en = clock_systimer();
+
     printf("elapsed time %lu us for writing %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * sizeof(buffer), ((float)n * sizeof(buffer)) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
@@ -286,6 +287,7 @@ REGISTER_TEST(SDCardTest, time_read_write)
     // Open file
     fp = fopen(fn, "r");
     TEST_ASSERT_NOT_NULL(fp);
+    setvbuf(fp, NULL, _IONBF, 0);
 
     // read back data
     st = clock_systimer();
@@ -296,6 +298,7 @@ REGISTER_TEST(SDCardTest, time_read_write)
         }
     }
     en = clock_systimer();
+
     printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * sizeof(buffer), ((float)n * sizeof(buffer)) / (TICK2USEC(en - st) / 1e6F));
 
     fclose(fp);
@@ -367,6 +370,8 @@ REGISTER_TEST(SDCardTest, copy_file_fstreams)
 #if 1
     std::fstream fsin;
     std::fstream fsout;
+    fsin.rdbuf()->pubsetbuf(0,0); // set be unbuffered
+    fsout.rdbuf()->pubsetbuf(0,0); // set be unbuffered
 
     fsin.open(fn1, std::fstream::in|std::fstream::binary);
     TEST_ASSERT_TRUE(fsin.is_open());

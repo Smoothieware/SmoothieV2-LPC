@@ -1,1 +1,1 @@
-/opt/jlink/JLinkGDBServer -device LPC4330_M4 -speed 1000 -rtos GDBServer/RTOSPlugin_FreeRTOS.so -timeout 10000
+/opt/jlink/JLinkGDBServer -device LPC4330_M4 -speed auto -rtos GDBServer/RTOSPlugin_FreeRTOS.so -timeout 10000
