@@ -31,6 +31,7 @@
 
 #include "chip.h"
 #include "string.h"
+#include <assert.h>
 
 /*****************************************************************************
  * Macros to enable/disable Performance Tweaks
@@ -39,6 +40,10 @@
 /* Setting to 1 will only set the SDIF clock as needed. */
 /* Setting to 0 will set it before each command is sent, usually to its current rate. */
 #define SDIF_CLOCK_OPTIMIZE 1
+
+/* Setting to 1 enables switching into 50MHz high speed SD card mode. */
+/* Setting to 0 leaves it at the default 25MHz speed mode. */
+#define ENABLE_HIGH_SPEED 1
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -173,6 +178,41 @@ static int32_t sdmmc_execute_command(LPC_SDMMC_T *pSDMMC, uint32_t cmd, uint32_t
 	return 0;
 }
 
+/* Function to extract bits from a multi-byte array, common in SD response data. */
+uint32_t extractBits(const uint8_t* p, size_t size, uint32_t lowBit, uint32_t highBit)
+{
+    uint32_t bitCount = highBit - lowBit + 1;
+    int      lowByte = (size-1) - (lowBit >> 3);
+    int      highByte = (size-1) - (highBit >> 3);
+    uint32_t val = 0;
+
+    assert ( bitCount <= 32 );
+    assert ( lowByte >= 0 );
+    assert ( highByte >= 0 );
+
+    uint32_t bitsLeft = bitCount;
+    uint32_t bitSrcOffset = lowBit & 7;
+    uint32_t bitDestOffset = 0;
+    for (int i = lowByte ; i >= highByte ; i--)
+    {
+        uint32_t bitsFromByte = 8 - bitSrcOffset;
+        if (bitsFromByte > bitsLeft)
+        {
+            bitsFromByte = bitsLeft;
+        }
+        uint32_t byteMask = (1 << bitsLeft) - 1;
+
+        val |= ((p[i] >> bitSrcOffset) & byteMask) << bitDestOffset;
+
+        bitSrcOffset = 0;
+        bitDestOffset += bitsFromByte;
+        bitsLeft -= bitsFromByte;
+    }
+    assert ( bitsLeft == 0 );
+
+    return val;
+}
+
 /* Checks whether card is acquired properly or not */
 static int32_t prv_card_acquired(void)
 {
@@ -299,10 +339,29 @@ static int32_t prv_set_trans_state(LPC_SDMMC_T *pSDMMC)
 	return 0;
 }
 
-/* Sets card data width and block size */
+/* Sets card speed, data width, and block size */
 static int32_t prv_set_card_params(LPC_SDMMC_T *pSDMMC)
 {
+    int     isHighSpeedEnabled = 0;
 	int32_t status;
+
+    /* Attempt to bump the card up to high speed. */
+	if (ENABLE_HIGH_SPEED && g_card_info->card_info.card_type & CARD_TYPE_SD) {
+        const uint32_t setMode = 1 << 31;
+        const uint32_t highSpeedAccessMode = 1 << 0;
+        uint32_t switchFunctionStatus[512 / 8 / sizeof(uint32_t)];
+
+        Chip_SDIF_SetBlkSizeByteCnt(pSDMMC, sizeof(switchFunctionStatus));
+        Chip_SDIF_DmaSetup(pSDMMC,
+                           &g_card_info->sdif_dev,
+                           (uint32_t)&switchFunctionStatus[0],
+                           sizeof(switchFunctionStatus));
+		status = sdmmc_execute_command(pSDMMC, CMD_SD_SWITCH_FUNC, setMode | highSpeedAccessMode, MCI_INT_DATA_OVER);
+		if (status == 0 && extractBits(&switchFunctionStatus[0], sizeof(switchFunctionStatus), 376, 379) == 1) {
+			/* Successfully enabled high speed mode. */
+            isHighSpeedEnabled = 1;
+		}
+	}
 
 #if SDIO_BUS_WIDTH > 1
 	if (g_card_info->card_info.card_type & CARD_TYPE_SD) {
@@ -317,6 +376,12 @@ static int32_t prv_set_card_params(LPC_SDMMC_T *pSDMMC)
 #elif SDIO_BUS_WIDTH > 4
 #error 8-bit mode not supported yet!
 #endif
+
+    /* At least 8 clocks were used to send set-width command so can switch to high speed rate for future commands. */
+    if (isHighSpeedEnabled) {
+        /* Start using a 50MHz high speed clock from now on. */
+        g_card_info->card_info.speed = 50000000;
+    }
 
 	/* set block length */
 	Chip_SDIF_SetBlkSize(pSDMMC, MMC_SECTOR_SIZE);
