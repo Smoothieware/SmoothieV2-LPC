@@ -33,6 +33,14 @@
 #include "string.h"
 
 /*****************************************************************************
+ * Macros to enable/disable Performance Tweaks
+ ****************************************************************************/
+
+/* Setting to 1 will only set the SDIF clock as needed. */
+/* Setting to 0 will set it before each command is sent, usually to its current rate. */
+#define SDIF_CLOCK_OPTIMIZE 1
+
+/*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
 
@@ -51,6 +59,26 @@ static mci_card_struct *g_card_info;
 /*****************************************************************************
  * Private functions
  ****************************************************************************/
+
+/* Function to set the SDIF Clock only when necessary. */
+static void sdmcc_set_sdif_clock(LPC_SDMMC_T *pSDMMC, uint32_t cardSpeed)
+{
+	static uint32_t sdioClockRate = 0;
+	static uint32_t lastCardSpeed = 0;
+	int             updateNeeded = 0;
+
+	/* Only calculate the SDIO speed once since we don't change it once initialized. */
+	if (!SDIF_CLOCK_OPTIMIZE || !sdioClockRate) {
+		sdioClockRate = Chip_Clock_GetBaseClocktHz(CLK_BASE_SDIO);
+		updateNeeded = 1;
+	}
+
+	/* Only update the SDIF clock rate on the first call of if the card speed setting has been changed. */
+	if (updateNeeded || cardSpeed != lastCardSpeed) {
+		Chip_SDIF_SetClock(pSDMMC, sdioClockRate, cardSpeed);
+		lastCardSpeed = cardSpeed;
+	}
+}
 
 /* Function to execute a command */
 static int32_t sdmmc_execute_command(LPC_SDMMC_T *pSDMMC, uint32_t cmd, uint32_t arg, uint32_t wait_status)
@@ -75,7 +103,7 @@ static int32_t sdmmc_execute_command(LPC_SDMMC_T *pSDMMC, uint32_t cmd, uint32_t
 	}
 
 	while (step) {
-		Chip_SDIF_SetClock(pSDMMC, Chip_Clock_GetBaseClocktHz(CLK_BASE_SDIO), g_card_info->card_info.speed);
+		sdmcc_set_sdif_clock(pSDMMC, g_card_info->card_info.speed);
 
 		/* Clear the interrupts */
 		Chip_SDIF_ClrIntStatus(pSDMMC, 0xFFFFFFFF);
@@ -590,9 +618,3 @@ int32_t Chip_SDMMC_WriteBlocks(LPC_SDMMC_T *pSDMMC, void *buffer, int32_t start_
 
 	return cbWrote;
 }
-
-
-
-
-
-
