@@ -19,7 +19,7 @@
 
 extern "C" bool setup_sdmmc();
 
-static BYTE buffer[4096];   /* File copy buffer */
+static BYTE buffer[16*1024];   /* File copy buffer */
 static FATFS fatfs; /* File system object */
 REGISTER_TEST(SDCardTest, mount)
 {
@@ -242,7 +242,7 @@ using systime_t= uint32_t;
 #define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
 #define TICK2USEC(x) ((systime_t)(((uint64_t)(x)*1000000)/timerFreq))
 
-REGISTER_TEST(SDCardTest, time_read_write)
+static void runSdPerfTest(size_t transferSize)
 {
     /* Get RIT timer peripheral clock rate */
     uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
@@ -256,7 +256,7 @@ REGISTER_TEST(SDCardTest, time_read_write)
     }
     #endif
 
-    printf("Starting timing tests....\n");
+    printf("Starting timing tests for %u byte I/O....\n", transferSize);
 
     char fn[64];
     strcpy(fn, "/sd/test_large_file.tst");
@@ -269,18 +269,19 @@ REGISTER_TEST(SDCardTest, time_read_write)
     TEST_ASSERT_NOT_NULL(fp);
     // don't buffer it
     setvbuf(fp, NULL, _IONBF, 0);
-    uint32_t n = 5120000/sizeof(buffer);
+    uint32_t n = 5120000/transferSize;
 
     systime_t st = clock_systimer();
     for (uint32_t i = 1; i <= n; ++i) {
-        size_t x = fwrite(buffer, 1, sizeof(buffer), fp);
-        if(x != sizeof(buffer)) {
+        size_t x = fwrite(buffer, 1, transferSize, fp);
+        if(x != transferSize) {
             TEST_FAIL();
         }
     }
-    systime_t en = clock_systimer();
-
-    printf("elapsed time %lu us for writing %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * sizeof(buffer), ((float)n * sizeof(buffer)) / (TICK2USEC(en - st) / 1e6F));
+    systime_t elapsed = TICK2USEC(clock_systimer() - st);
+    uint32_t fileSize = n * transferSize;
+    float speed = ((float)fileSize * 1e6F) / (float)elapsed;
+    printf("elapsed time %lu us for writing %lu bytes, %1.4f bytes/sec (%.1f MB/sec)\n", elapsed, fileSize, speed, speed / 1e6F);
 
     fclose(fp);
 
@@ -292,16 +293,33 @@ REGISTER_TEST(SDCardTest, time_read_write)
     // read back data
     st = clock_systimer();
     for (uint32_t i = 1; i <= n; ++i) {
-        size_t x = fread(buffer, 1, sizeof(buffer), fp);
-        if(x != sizeof(buffer)) {
+        size_t x = fread(buffer, 1, transferSize, fp);
+        if(x != transferSize) {
             TEST_FAIL();
         }
     }
-    en = clock_systimer();
-
-    printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec\n", TICK2USEC(en - st), n * sizeof(buffer), ((float)n * sizeof(buffer)) / (TICK2USEC(en - st) / 1e6F));
+    elapsed = TICK2USEC(clock_systimer() - st);;
+    speed = ((float)fileSize * 1e6F) / (float)elapsed;
+    printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec (%.1f MB/sec)\n", elapsed, fileSize, speed, speed / 1e6F);
 
     fclose(fp);
+}
+
+REGISTER_TEST(SDCardTest, time_read_write_1k)
+{
+    TEST_ASSERT(sizeof(buffer) >= 1024);
+    runSdPerfTest(1024);
+}
+
+REGISTER_TEST(SDCardTest, time_read_write_4k)
+{
+    TEST_ASSERT(sizeof(buffer) >= 4096);
+    runSdPerfTest(4096);
+}
+
+REGISTER_TEST(SDCardTest, time_read_write_large)
+{
+    runSdPerfTest(sizeof(buffer));
 }
 
 REGISTER_TEST(SDCardTest, copy_file_raw)
