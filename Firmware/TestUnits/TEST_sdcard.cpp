@@ -19,7 +19,6 @@
 
 extern "C" bool setup_sdmmc();
 
-static BYTE buffer[16*1024];   /* File copy buffer */
 static FATFS fatfs; /* File system object */
 REGISTER_TEST(SDCardTest, mount)
 {
@@ -242,7 +241,7 @@ using systime_t= uint32_t;
 #define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
 #define TICK2USEC(x) ((systime_t)(((uint64_t)(x)*1000000)/timerFreq))
 
-static void runSdPerfTest(size_t transferSize)
+static void runSdPerfTest(char *buf, size_t transferSize)
 {
     /* Get RIT timer peripheral clock rate */
     uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
@@ -273,7 +272,7 @@ static void runSdPerfTest(size_t transferSize)
 
     systime_t st = clock_systimer();
     for (uint32_t i = 1; i <= n; ++i) {
-        size_t x = fwrite(buffer, 1, transferSize, fp);
+        size_t x = fwrite(buf, 1, transferSize, fp);
         if(x != transferSize) {
             TEST_FAIL();
         }
@@ -293,7 +292,7 @@ static void runSdPerfTest(size_t transferSize)
     // read back data
     st = clock_systimer();
     for (uint32_t i = 1; i <= n; ++i) {
-        size_t x = fread(buffer, 1, transferSize, fp);
+        size_t x = fread(buf, 1, transferSize, fp);
         if(x != transferSize) {
             TEST_FAIL();
         }
@@ -307,21 +306,26 @@ static void runSdPerfTest(size_t transferSize)
 
 REGISTER_TEST(SDCardTest, time_read_write_1k)
 {
-    TEST_ASSERT(sizeof(buffer) >= 1024);
-    runSdPerfTest(1024);
+    char *buf= (char*)malloc(1024);
+    runSdPerfTest(buf, 1024);
+    free(buf);
 }
 
 REGISTER_TEST(SDCardTest, time_read_write_4k)
 {
-    TEST_ASSERT(sizeof(buffer) >= 4096);
-    runSdPerfTest(4096);
+    char *buf= (char*)malloc(4096);
+    runSdPerfTest(buf, 4096);
+    free(buf);
 }
 
 REGISTER_TEST(SDCardTest, time_read_write_large)
 {
-    runSdPerfTest(sizeof(buffer));
+    char *buf= (char*)malloc(1024*16);
+    runSdPerfTest(buf, 1024*16);
+    free(buf);
 }
 
+static BYTE buffer[4096];   /* File copy buffer */
 REGISTER_TEST(SDCardTest, copy_file_raw)
 {
     static MD5 w_md5;
