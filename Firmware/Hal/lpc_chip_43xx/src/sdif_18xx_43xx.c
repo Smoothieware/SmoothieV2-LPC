@@ -53,7 +53,7 @@ void Chip_SDIF_Init(LPC_SDMMC_T *pSDMMC)
 {
     /* Enable SDIO module clock */
 	Chip_Clock_EnableOpts(CLK_MX_SDIO, true, true, 1);
-	
+
     /* Software reset */
 	pSDMMC->BMOD = MCI_BMOD_SWR;
 
@@ -130,7 +130,7 @@ void Chip_SDIF_SetClock(LPC_SDMMC_T *pSDMMC, uint32_t clk_rate, uint32_t speed)
 	/* compute SD/MMC clock dividers */
 	uint32_t div;
 
-	div = ((clk_rate / speed) + 2) >> 1;
+	div = ((clk_rate / speed) + 1) >> 1;
 
 	if ((div == pSDMMC->CLKDIV) && pSDMMC->CLKENA) {
 		return;	/* Closest speed is already set */
