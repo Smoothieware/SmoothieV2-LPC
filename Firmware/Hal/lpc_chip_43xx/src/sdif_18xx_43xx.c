@@ -31,6 +31,7 @@
 
 #include "chip.h"
 #include "string.h"
+#include <assert.h>
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -176,6 +177,9 @@ void Chip_SDIF_DmaSetup(LPC_SDMMC_T *pSDMMC, sdif_device *psdif_dev, uint32_t ad
 {
 	int i = 0;
 	uint32_t ctrl, maxs;
+
+	/* DMA chain is only sized to read a maximum of 64k */
+	assert(size <= 64 * 1024);
 
 	/* Reset DMA */
 	pSDMMC->CTRL |= MCI_CTRL_DMA_RESET | MCI_CTRL_FIFO_RESET;
