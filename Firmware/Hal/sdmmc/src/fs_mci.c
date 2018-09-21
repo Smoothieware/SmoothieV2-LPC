@@ -208,7 +208,7 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, UINT count)
 		// unaligned buffer is not ok
 		int32_t cbRead = count * MMC_SECTOR_SIZE;
 		uint32_t *aligned_buffer = (uint32_t *)malloc(cbRead);
-		if (!aligned_buffer) {
+		if (aligned_buffer == NULL) {
 			return RES_ERROR;
 		}
 		int ret= FSMCI_CardReadSectors(hCard, aligned_buffer, sector, count);
@@ -254,7 +254,7 @@ DRESULT disk_write(BYTE drv, const BYTE *buff, DWORD sector, UINT count)
 		// unaligned buffer is not ok
 		int32_t cbWrite = count * MMC_SECTOR_SIZE;
 		uint32_t *aligned_buffer = (uint32_t *)malloc(cbWrite);
-		if (!aligned_buffer) {
+		if (aligned_buffer == NULL) {
 			return RES_ERROR;
 		}
 		memcpy(aligned_buffer, buff, cbWrite);
