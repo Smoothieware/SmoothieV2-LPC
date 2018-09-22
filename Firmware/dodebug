@@ -1,1 +1,1 @@
-/home/morris/work/reprap/lpcopen-smoothie2/arm-none-eabi-gdb-64bit -ex "target remote localhost:2331" smoothiev2_Bambino/smoothiev2.elf
+/home/morris/work/reprap/lpcopen-smoothie2/tools/arm-none-eabi-gdb-64bit -ex "target remote localhost:2331" smoothiev2_Bambino/smoothiev2.elf
