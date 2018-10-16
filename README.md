@@ -12,6 +12,13 @@ gcc version 7.3.1 20180622 (release) [ARM/embedded-7-branch revision 261907]
 
 (or any 7.x.x will probably work).
 
+To get the tool chain you should do the following on compatible Linuxes... (Ubuntu/Debian)
+
+    sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa
+    sudo apt-get update
+    sudo apt-get install gcc-arm-embedded
+        
+
 To build ```cd Firmware; rake target=Bambino -m```
 
 To build unit tests ```cd Firmware; rake target=Bambino testing=1 -m```
