@@ -4,6 +4,7 @@ require 'fileutils'
 
 verbose(ENV['verbose'] == '1')
 TESTING = ENV['testing'].nil? ? false : ENV['testing'] == '1'
+SPIFI = ENV['flash'].nil? ? true : false
 
 PROG = 'smoothiev2'
 if ENV['target'].nil?
@@ -212,7 +213,7 @@ CFLAGS = FFLAGS + DEPFLAGS + " -Wall -Wshadow -Wundef  -mcpu=cortex-m4 -mthumb -
 CPPFLAGS = CFLAGS + ' -Wno-psabi -fno-exceptions -fno-rtti -fno-common -std=gnu++11'
 
 # Linker script to be used.
-LSCRIPT = TARGET == 'LPC4337' ? "./v2pro4337.ld"  : "./test_cpp_Debug.ld" # "./spificonfig.ld"
+LSCRIPT = TARGET == 'LPC4337' ? "./v2pro4337.ld"  : SPIFI ? "./spifi.ld" : "./pflash.ld"
 
 LOPTIONS = ['-Xlinker --gc-sections', '-Xlinker -print-memory-usage', '-Xlinker', '--wrap=malloc', '-Xlinker', '--wrap=_malloc_r',
             '-mcpu=cortex-m4', '-mfpu=fpv4-sp-d16', '-mfloat-abi=hard', '-mthumb']
@@ -275,7 +276,7 @@ file "#{OBJDIR}/#{PROG}.bin" => ["#{OBJDIR}/#{PROG}.elf"] do |t|
 end
 
 file "#{OBJDIR}/#{PROG}.elf" => ["#{OBJDIR}/libhal.a"] + OBJ do |t|
-  puts "Linking #{t.name}"
+  puts "Linking #{t.name} to #{SPIFI ? 'SPIFI' : 'FLASH'}"
   sh "#{$using_cpp ? LDCPP : LD} #{OBJ} -L#{OBJDIR} -lhal #{LDFLAGS} -o #{t.name}"
 end
 

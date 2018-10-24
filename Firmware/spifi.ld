@@ -9,7 +9,7 @@
  */
 
 /*INCLUDE "test_cpp_Debug_library.ld"*/
-INCLUDE "test_cpp_Debug_memory.ld"
+INCLUDE "spifi_memory.ld"
 
 ENTRY(ResetISR)
 
