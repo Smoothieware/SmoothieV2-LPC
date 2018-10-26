@@ -191,13 +191,17 @@ if DEBUG
 end
 
 # Target specified #defines
-defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" -D#{TARGET}"
+defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" "
 if TARGET == 'Bambino'
-defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
+  defines << '-DBOARD_BAMBINO'
+  defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
 elsif TARGET == 'Minialpha'
-defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
+  defines << '-DBOARD_MINIALPHA'
+  defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
 elsif TARGET == 'Primealpha'
-defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
+  defines << '-DBOARD_PRIMEALPHA'
+  defines << '-DSTRING_CONFIG_H=\"string-config-primealpha.h\"'
+  defines << '-DFLASH16BIT' unless SPIFI
 else
   raise("Error unhandled target")
 end

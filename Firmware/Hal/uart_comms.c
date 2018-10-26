@@ -18,33 +18,33 @@ STATIC RINGBUFF_T txring, rxring;
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
 
 // select the UART to use
-#if defined(Bambino) && defined (USE_UART0)
+#if defined(BOARD_BAMBINO) && defined (USE_UART0)
 /* Use UART0 for Bambino boards P6.5 : UART0_TXD, P6.4 : UART0_RXD */
 #define LPC_UARTX       LPC_USART0
 #define UARTx_IRQn      USART0_IRQn
 #define UARTx_IRQHandler UART0_IRQHandler
 
 // Mini alpha also needs to be told which uart it uses as the pins are different
-#elif defined(Minialpha) && defined(USE_UART2)
+#elif defined(BOARD_MINIALPHA) && defined(USE_UART2)
 /* Use UART2 for mini alpha boards PA.1 : UART2_TXD, PA.2 : UART2_RX */
 #define LPC_UARTX       LPC_USART2
 #define UARTx_IRQn      USART2_IRQn
 #define UARTx_IRQHandler UART2_IRQHandler
 
-#elif defined(Minialpha) && defined(USE_UART0)
+#elif defined(BOARD_MINIALPHA) && defined(USE_UART0)
 /* Use UART0 for mini alpha boards P2.0 : UART0_TXD, P2.1 : UART0_RX */
 #define LPC_UARTX       LPC_USART0
 #define UARTx_IRQn      USART0_IRQn
 #define UARTx_IRQHandler UART0_IRQHandler
 
-#elif defined(Minialpha) && defined(USE_UART1)
+#elif defined(BOARD_MINIALPHA) && defined(USE_UART1)
 // Use UART1 P1.13 : UART1_TXD, P1.14 : UART1_RX
 #define LPC_UARTX       LPC_UART1
 #define UARTx_IRQn      UART1_IRQn
 #define UARTx_IRQHandler UART1_IRQHandler
 
-#elif defined(Primealpha) && defined(USE_UART0)
-/* Use UART0 for Prine alpha boards PF.10 : UART0_TXD, PF.11 : UART0_RX */
+#elif defined(BOARD_PRIMEALPHA) && defined(USE_UART0)
+/* Use UART0 for Prime alpha boards PF.10 : UART0_TXD, PF.11 : UART0_RX */
 #define LPC_UARTX       LPC_USART0
 #define UARTx_IRQn      USART0_IRQn
 #define UARTx_IRQHandler UART0_IRQHandler

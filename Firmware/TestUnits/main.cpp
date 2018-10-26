@@ -23,7 +23,7 @@
 
 extern float get_pll1_clk();
 
-#define TESTCOMMS
+//#define TESTCOMMS
 
 // // place holder
 bool dispatch_line(OutputStream& os, const char *line)
@@ -342,7 +342,10 @@ int main()   //int argc, char *argv[])
         __asm("bkpt #0");
     }
 
+#ifndef FLASH16BIT
     configureSPIFI(); // full speed ahead
+    printf("SPIFI optimization setup\n");
+#endif
 
     printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
 

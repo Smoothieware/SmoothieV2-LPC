@@ -730,7 +730,9 @@ int main(int argc, char *argv[])
         printf("FATAL: UART setup failed\n");
     }
 
+#ifndef FLASH16BIT
     configureSPIFI(); // setup the winbond SPIFI to max speed
+#endif
 
     printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
 
