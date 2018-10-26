@@ -224,6 +224,21 @@ LOPTIONS = ['-Xlinker --gc-sections', '-Xlinker -print-memory-usage', '-Xlinker'
 
 LDFLAGS = "  -Xlinker -Map=#{OBJDIR}/#{PROG}.map -T#{LSCRIPT} " + LOPTIONS.join(" ")
 
+desc "List options"
+task :help do
+  puts "options:"
+  puts " verbose=1 - turns on verbose output"
+  puts " testing=1 - compiles unit tests"
+  puts " test=test1[,test2,test3] - specifies which test(s) to build"
+  puts " exclude=test1[,test2...] - excludes the named test(s) from the build"
+  puts " flash=1 - compile for parallel flash, default is SPIFI"
+  puts " target=[Bambino|Minialpha|Primealpha] - sets target board. default is #{TARGET}"
+  puts " debug=1 - turns on debug compilation"
+  puts " debuglib=1 - turns on debugging only for the hal libs"
+  puts " ARMTOOLS=path - overides where the ARM tool chain is loaded from. default is #{TOOLSDIR}"
+  puts " ARMVERSION=version - overides the version of ARM tools to use. default is #{ARMVERSION}"
+end
+
 # tasks
 # desc "Upload via stlink"
 # task :upload do
