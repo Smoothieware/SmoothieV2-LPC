@@ -271,8 +271,7 @@ void (* const g_pfnVectors[])(void) = {
 // ResetISR() function in order to cope with MCUs with multiple banks of
 // memory.
 //*****************************************************************************
-        __attribute__((section(".after_vectors"
-)))
+__attribute__((section(".after_vectors")))
 void data_init(unsigned int romstart, unsigned int start, unsigned int len) {
     unsigned int *pulDest = (unsigned int*) start;
     unsigned int *pulSrc = (unsigned int*) romstart;
@@ -307,6 +306,7 @@ extern unsigned int __bss_section_table_end;
 // library.
 //
 //*****************************************************************************
+__attribute__ ((section(".after_vectors")))
 void ResetISR(void) {
 
 // *************************************************************

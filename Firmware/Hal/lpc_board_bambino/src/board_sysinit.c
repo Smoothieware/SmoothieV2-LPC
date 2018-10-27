@@ -88,7 +88,7 @@ STATIC const PINMUX_GRP_T emc16_pinmuxing[] = {
 	{0x5,  0,  (SCU_PINIO_FAST | SCU_MODE_FUNC2)},	// EMC_D12
 	{0x5,  1,  (SCU_PINIO_FAST | SCU_MODE_FUNC2)},	// EMC_D13
 	{0x5,  2,  (SCU_PINIO_FAST | SCU_MODE_FUNC2)},	// EMC_D14
-	{0x5,  4,  (SCU_PINIO_FAST | SCU_MODE_FUNC2)},	// EMC_D15
+	{0x5,  3,  (SCU_PINIO_FAST | SCU_MODE_FUNC2)},	// EMC_D15
 	{0x2, 10,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	// EMC_A1
 	{0x2, 11,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	// EMC_A2
 	{0x2, 12,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	// EMC_A3
@@ -111,8 +111,9 @@ STATIC const PINMUX_GRP_T emc16_pinmuxing[] = {
 	{0xe,  2,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	// EMC_A20
 	{0xe,  3,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	// EMC_A21
 	{0xe,  4,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	// EMC_A22
-	{0xa,  4,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	// EMC_A23 not used
+	//{0xa,  4,  (SCU_PINIO_FAST | SCU_MODE_FUNC3)},	// EMC_A23 not used
 
+	{0xa,  4,  (SCU_PINIO_FAST | SCU_MODE_FUNC4)},	// EMC_A23 GPIO5_19 not used
 	{0xc,  1,  (SCU_PINIO_FAST | SCU_MODE_FUNC4)},	// EMC_A24 GPIO6_0 not used
 	{0xc,  2,  (SCU_PINIO_FAST | SCU_MODE_FUNC4)},	// EMC_A25 GPIO6_1 not used
 	{0xc,  3,  (SCU_PINIO_FAST | SCU_MODE_FUNC4)},	// EMC_A26 GPIO6_2 not used
@@ -141,10 +142,6 @@ STATIC const PINMUX_GRP_T pinmuxing[] = {
 	#warning can not have both RMII and UART0_PINSET 2 as P2.0 is in conflict
 	#endif
 	#endif // NOETHERNET
-
-	// /* Board LEDs */
-	// {0x6, 11, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)},
-	// {0x2, 5,  (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC4)},
 
 	/*  I2S  */
 	#if 0
@@ -177,9 +174,18 @@ void Board_SetupMuxing(void)
 
 	/* SPIFI pin setup is done prior to setting up system clocking */
 	//Chip_SCU_SetPinMuxing(spifipinmuxing, sizeof(spifipinmuxing) / sizeof(PINMUX_GRP_T));
+
 #ifdef BOARD_PRIMEALPHA
-	// Parallel EMC flash setup
+	// EMC pins setup
 	Chip_SCU_SetPinMuxing(emc16_pinmuxing, sizeof(emc16_pinmuxing) / sizeof(PINMUX_GRP_T));
+	// set the unused addresses A23-A26 pins to low GPIO5_19, GPIO6_0 - 2
+    typedef struct pin_tuple { uint8_t port; uint8_t pin; } PIN_TUPLE;
+	PIN_TUPLE pins[4] = {{5, 19}, {6, 0}, {6, 1}, {6, 2}};
+	for (int i = 0; i < 4 ; ++i) {
+		Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, pins[i].port, pins[i].pin);
+    	Chip_GPIO_SetPinState(LPC_GPIO_PORT, pins[i].port, pins[i].pin, (bool) false);
+    }
+    // TODO initialize EMC here
 #endif
 }
 

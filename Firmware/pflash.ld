@@ -1,14 +1,3 @@
-/*
- * GENERATED FILE - DO NOT EDIT
- * (c) Code Red Technologies Ltd, 2008-2013
- * (c) NXP Semiconductors 2013-2018
- * Generated linker script file for LPC4330
- * Created from linkscript.ldt by FMCreateLinkLibraries
- * Using Freemarker v2.3.23
- * MCUXpresso IDE v10.2.1 [Build 795] [2018-07-25] on 17-Aug-2018 15:30:05
- */
-
-/*INCLUDE "test_cpp_Debug_library.ld"*/
 INCLUDE "pflash_memory.ld"
 
 ENTRY(ResetISR)
@@ -58,10 +47,20 @@ SECTIONS
 
         *(.after_vectors*)
 
-    } > SPIFI
+    } > FLASH
 
     .text : ALIGN(4)
     {
+       /* We need these early on in the Flash
+       *sysinit.o
+       *board_sysinit.o
+       *clock_18xx_43xx.o
+       *chip_18xx_43xx.o
+       *emc_18xx_43xx.o
+       *gpio_18xx_43xx.o
+       *sysinit_18xx_43xx.o
+       *sct_18xx_43xx.o */
+
        *(.text*)
        *(.rodata .rodata.* .constdata .constdata.*)
        . = ALIGN(4);
@@ -95,7 +94,7 @@ SECTIONS
             KEEP (*crtend.o(.dtors))
             . = ALIGN(4);
             /* End C++ */
-    } > SPIFI
+    } > FLASH
     /*
      * for exception handling/unwind - some Newlib functions (in common
      * with C++ and STDC++) use this.
@@ -103,14 +102,14 @@ SECTIONS
     .ARM.extab : ALIGN(4)
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } > SPIFI
+    } > FLASH
 
     __exidx_start = .;
 
     .ARM.exidx : ALIGN(4)
     {
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > SPIFI
+    } > FLASH
     __exidx_end = .;
 
     _etext = .;
@@ -127,7 +126,7 @@ SECTIONS
         *(.data.$RamLoc72*)
         . = ALIGN(4) ;
         PROVIDE(__end_data_RAM2 = .) ;
-     } > RamLoc72 AT>SPIFI
+     } > RamLoc72 AT>FLASH
     /* DATA section for RamAHB32 */
 
     .data_RAM3 : ALIGN(4)
@@ -140,7 +139,7 @@ SECTIONS
         *(.data.$RamAHB32*)
         . = ALIGN(4) ;
         PROVIDE(__end_data_RAM3 = .) ;
-     } > RamAHB32 AT>SPIFI
+     } > RamAHB32 AT>FLASH
     /* DATA section for RamAHB16 */
 
     .data_RAM4 : ALIGN(4)
@@ -153,7 +152,7 @@ SECTIONS
         *(.data.$RamAHB16*)
         . = ALIGN(4) ;
         PROVIDE(__end_data_RAM4 = .) ;
-     } > RamAHB16 AT>SPIFI
+     } > RamAHB16 AT>FLASH
     /* DATA section for RamAHB_ETB16 */
 
     .data_RAM5 : ALIGN(4)
@@ -166,7 +165,7 @@ SECTIONS
         *(.data.$RamAHB_ETB16*)
         . = ALIGN(4) ;
         PROVIDE(__end_data_RAM5 = .) ;
-     } > RamAHB_ETB16 AT>SPIFI
+     } > RamAHB_ETB16 AT>FLASH
     /* MAIN DATA SECTION */
     .uninit_RESERVED : ALIGN(4)
     {
@@ -185,7 +184,7 @@ SECTIONS
        *(.data*)
        . = ALIGN(4) ;
        _edata = . ;
-    } > RamLoc128 AT>SPIFI
+    } > RamLoc128 AT>FLASH
 
     /* BSS section for RamLoc72 */
     .bss_RAM2 : ALIGN(4)

@@ -85,27 +85,34 @@ REGISTER_TEST(MemoryTest, time_spi)
     taskEXIT_CRITICAL();
 }
 
-static const IP_EMC_STATIC_CONFIG_T SST39VF320_config = {
+// TODO move these to sys init
+/*
+     Chip select     0
+     Configuration value     EMC_STATIC_CONFIG_MEM_WIDTH_16 | EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW | EMC_STATIC_CONFIG_BLS_HIGH
+     Write Enable Wait 10ns
+     Output Enable Wait 35ns
+     Read Wait 110ns
+     Page Access Wait 70ns
+     Write Wait 110ns
+     Turn around wait 10ns
+*/
+static const IP_EMC_STATIC_CONFIG_T S29GL064N_config = {
     0,
-    EMC_STATIC_CONFIG_MEM_WIDTH_16 |
-    EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW |
-    EMC_STATIC_CONFIG_BLS_HIGH,
-
-    EMC_NANOSECOND(0),
+    EMC_STATIC_CONFIG_MEM_WIDTH_16 | EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW | EMC_STATIC_CONFIG_BLS_HIGH,
+    EMC_NANOSECOND(10),
     EMC_NANOSECOND(35),
+    EMC_NANOSECOND(110),
     EMC_NANOSECOND(70),
-    EMC_NANOSECOND(70),
-    EMC_NANOSECOND(40),
-    EMC_CLOCK(4)
+    EMC_NANOSECOND(110),
+    EMC_CLOCK(1)
 };
 
 /* EMC clock delay */
-#define CLK0_DELAY 5
+#define CLK0_DELAY 1
 
 REGISTER_TEST(MemoryTest, time_flash)
 {
     /* NorFlash timing and chip Config */
-    printf("Timing memory at 0x1C000000\n");
 
     // setup EMC first
     /* Move all clock delays together */
@@ -122,17 +129,72 @@ REGISTER_TEST(MemoryTest, time_flash)
     /* Init EMC Controller -Enable-LE mode- clock ratio 1:1 */
     Chip_EMC_Init(1, 0, 0);
     /* Init EMC Static Controller CS0 */
-    Chip_EMC_Static_Init((IP_EMC_STATIC_CONFIG_T *) &SST39VF320_config);
+    Chip_EMC_Static_Init((IP_EMC_STATIC_CONFIG_T *) &S29GL064N_config);
 
     /* Enable Buffer for External NOR Flash */
     //LPC_EMC->STATICCONFIG0 |= 1 << 19;
 
     // first try to read the CFI
-    // TODO
 
+    uint16_t *pr= (uint16_t *)0x1C000020;
+    uint16_t d;
+
+    d= *pr;
+    printf("Read %p: %04X\n", pr, d);
+
+    // Write CFI Query
+    uint16_t *pw= (uint16_t *)0x1C0000AA;
+    *pw= 0x0098;
+/*
+    CFI Read 0x1c000020: 0051 (Q)
+    CFI Read 0x1c000020: 0052 (R)
+    CFI Read 0x1c000020: 0059 (Y)
+    CFI Read 0x1c000020: 0002 ()
+    CFI Read 0x1c000020: 0000 ()
+    CFI Read 0x1c000020: 0040 (@)
+    CFI Read 0x1c000020: 0000 ()
+    CFI Read 0x1c000020: 0000 ()
+    CFI Read 0x1c000020: 0000 ()
+    CFI Read 0x1c000020: 0000 ()
+    CFI Read 0x1c000020: 0000 ()
+*/
+    uint16_t qry_data[11]= {0x51, 0x52, 0x59, 0x02, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    for (int i = 0; i < 11; ++i) {
+        d= *(pr+i);
+        TEST_ASSERT_EQUAL_INT(qry_data[i], d);
+        printf("CFI Read %p: %02X (%c)\n", pr+i, d, d);
+    }
+
+    pr= (uint16_t *)0x1C000000;
+    for (int i = 0x27; i <= 0x3C; ++i) {
+        d= *(pr+i);
+        printf("CFI GEO %p: %02X\n", pr+i, d);
+    }
+
+    for (int i = 0x40; i <= 0x50; ++i) {
+        d= *(pr+i);
+        printf("CFI VEQ %p: %02X (%c)\n", pr+i, d, d);
+    }
+
+    // reset
+    pr= (uint16_t *)0x1C000020;
+    *pw= 0x0098;
+    d= *(pr+0); TEST_ASSERT_EQUAL_INT(d, 'Q');
+    d= *(pr+1); TEST_ASSERT_EQUAL_INT(d, 'R');
+    d= *(pr+2); TEST_ASSERT_EQUAL_INT(d, 'Y');
+    *((uint16_t *)0x1C000020) = 0x00FF;
+    vTaskDelay(pdMS_TO_TICKS(1));
+    d= *pr;
+    printf("After reset Read %p: %04X\n", pr, d);
+    d= *pr;
+    printf("After reset Read %p: %04X\n", pr, d);
+
+#if 1
+    printf("Timing memory at 0x1C000000\n");
     /* Get RIT timer peripheral clock rate */
     uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
     taskENTER_CRITICAL();
     runMemoryTest(timerFreq, (void*)0x1C000000);
     taskEXIT_CRITICAL();
+#endif
 }
