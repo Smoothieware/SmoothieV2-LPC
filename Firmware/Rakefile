@@ -258,27 +258,34 @@ end
 # generate the header dependencies if they exist
 import(*DEPFILES)
 
+desc 'clean build'
 task :clean do
   FileUtils.rm_rf(OBJDIR)
 end
 
+desc 'only clean src and tests'
 task :cleansrc do
   FileUtils.rm_rf("#{OBJDIR}/src")
   FileUtils.rm_rf("#{OBJDIR}/TestUnits")
 end
 
+desc 'only clean tests'
 task :cleantests do
   FileUtils.rm_rf("#{OBJDIR}/TestUnits")
 end
 
+desc 'default is to build'
 task :default => [:build] #, :size]
 
+desc 'default is to build'
 task :build => ["#{OBJDIR}/#{PROG}.bin"]
 
+desc 'get size of build'
 task :size do
   sh "#{SIZE} #{OBJDIR}/#{PROG}.elf"
 end
 
+desc 'get disasm of build'
 task :disasm do
   sh "#{OBJDUMP} -d -f -M reg-names-std --demangle #{OBJDIR}/#{PROG}.elf > #{OBJDIR}/#{PROG}.disasm"
 end
