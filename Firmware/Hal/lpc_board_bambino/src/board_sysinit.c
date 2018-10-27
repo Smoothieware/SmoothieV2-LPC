@@ -179,6 +179,7 @@ void Board_SetupMuxing(void)
 	// EMC pins setup
 	Chip_SCU_SetPinMuxing(emc16_pinmuxing, sizeof(emc16_pinmuxing) / sizeof(PINMUX_GRP_T));
 	// set the unused addresses A23-A26 pins to low GPIO5_19, GPIO6_0 - 2
+	// NOTE Not actually needed but may as well
     typedef struct pin_tuple { uint8_t port; uint8_t pin; } PIN_TUPLE;
 	PIN_TUPLE pins[4] = {{5, 19}, {6, 0}, {6, 1}, {6, 2}};
 	for (int i = 0; i < 4 ; ++i) {

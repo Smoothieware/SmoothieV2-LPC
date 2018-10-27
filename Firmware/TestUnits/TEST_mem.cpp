@@ -130,9 +130,11 @@ REGISTER_TEST(MemoryTest, time_flash)
     Chip_EMC_Init(1, 0, 0);
     /* Init EMC Static Controller CS0 */
     Chip_EMC_Static_Init((IP_EMC_STATIC_CONFIG_T *) &S29GL064N_config);
-
     /* Enable Buffer for External NOR Flash */
     //LPC_EMC->STATICCONFIG0 |= 1 << 19;
+
+    uint32_t clk= Chip_Clock_GetEMCRate();
+    printf("EMC clock rate= %lu\n", clk);
 
     // first try to read the CFI
 
