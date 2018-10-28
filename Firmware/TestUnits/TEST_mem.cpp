@@ -89,34 +89,34 @@ REGISTER_TEST(MemoryTest, time_spi)
 /*
      Chip select     0
      Configuration value     EMC_STATIC_CONFIG_MEM_WIDTH_16 | EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW | EMC_STATIC_CONFIG_BLS_HIGH
-     Write Enable Wait 10ns
-     Output Enable Wait 35ns
-     Read Wait 110ns
-     Page Access Wait 70ns
+     Write Enable Wait 25ns
+     Output Enable Wait 25ns
+     Read Wait 90ns
+     Page Access Wait 25ns
      Write Wait 110ns
-     Turn around wait 10ns
+     Turn around wait 1ns
 */
 static const IP_EMC_STATIC_CONFIG_T S29GL064N_config = {
     0,
     EMC_STATIC_CONFIG_MEM_WIDTH_16 | EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW | EMC_STATIC_CONFIG_BLS_HIGH,
-    EMC_NANOSECOND(10),
-    EMC_NANOSECOND(35),
-    EMC_NANOSECOND(110),
-    EMC_NANOSECOND(70),
+    EMC_NANOSECOND(25),
+    EMC_NANOSECOND(25),
+    EMC_NANOSECOND(90),
+    EMC_NANOSECOND(25),
     EMC_NANOSECOND(110),
     EMC_CLOCK(1)
 };
 
 /* EMC clock delay */
-#define CLK0_DELAY 1
+//#define CLK0_DELAY 1
 
 REGISTER_TEST(MemoryTest, time_flash)
 {
     /* NorFlash timing and chip Config */
 
     // setup EMC first
-    /* Move all clock delays together */
-    LPC_SCU->EMCDELAYCLK = ((CLK0_DELAY) | (CLK0_DELAY << 4) | (CLK0_DELAY << 8) | (CLK0_DELAY << 12));
+    /* Move all clock delays together NOT needed for flash */
+    //LPC_SCU->EMCDELAYCLK = ((CLK0_DELAY) | (CLK0_DELAY << 4) | (CLK0_DELAY << 8) | (CLK0_DELAY << 12));
 
     /* Setup EMC Clock Divider for divide by 2 - this is done in both the CCU (clocking)
            and CREG. For frequencies over 120MHz, a divider of 2 must be used. For frequencies
@@ -130,41 +130,39 @@ REGISTER_TEST(MemoryTest, time_flash)
     Chip_EMC_Init(1, 0, 0);
     /* Init EMC Static Controller CS0 */
     Chip_EMC_Static_Init((IP_EMC_STATIC_CONFIG_T *) &S29GL064N_config);
-    /* Enable Buffer for External NOR Flash */
+    /* Enable Buffer for External NOR Flash NOTE seems to slow it down and cause issues */
     //LPC_EMC->STATICCONFIG0 |= 1 << 19;
 
     uint32_t clk= Chip_Clock_GetEMCRate();
     printf("EMC clock rate= %lu\n", clk);
 
-    // first try to read the CFI
+#if 1
+    printf("Timing memory at 0x1C000000\n");
+    /* Get RIT timer peripheral clock rate */
+    uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
+    taskENTER_CRITICAL();
+    runMemoryTest(timerFreq, (void*)0x1C000000);
+    taskEXIT_CRITICAL();
+#endif
+
+    // next try to read the CFI
 
     uint16_t *pr= (uint16_t *)0x1C000020;
     uint16_t d;
 
     d= *pr;
-    printf("Read %p: %04X\n", pr, d);
+    printf("Array Read %p: %04X\n", pr, d);
+    TEST_ASSERT_EQUAL_INT(d, 0xFFFF);
 
     // Write CFI Query
     uint16_t *pw= (uint16_t *)0x1C0000AA;
     *pw= 0x0098;
-/*
-    CFI Read 0x1c000020: 0051 (Q)
-    CFI Read 0x1c000020: 0052 (R)
-    CFI Read 0x1c000020: 0059 (Y)
-    CFI Read 0x1c000020: 0002 ()
-    CFI Read 0x1c000020: 0000 ()
-    CFI Read 0x1c000020: 0040 (@)
-    CFI Read 0x1c000020: 0000 ()
-    CFI Read 0x1c000020: 0000 ()
-    CFI Read 0x1c000020: 0000 ()
-    CFI Read 0x1c000020: 0000 ()
-    CFI Read 0x1c000020: 0000 ()
-*/
+
     uint16_t qry_data[11]= {0x51, 0x52, 0x59, 0x02, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00 };
     for (int i = 0; i < 11; ++i) {
         d= *(pr+i);
-        TEST_ASSERT_EQUAL_INT(qry_data[i], d);
         printf("CFI Read %p: %02X (%c)\n", pr+i, d, d);
+        TEST_ASSERT_EQUAL_INT(qry_data[i], d);
     }
 
     pr= (uint16_t *)0x1C000000;
@@ -187,16 +185,8 @@ REGISTER_TEST(MemoryTest, time_flash)
     *((uint16_t *)0x1C000020) = 0x00FF;
     vTaskDelay(pdMS_TO_TICKS(1));
     d= *pr;
-    printf("After reset Read %p: %04X\n", pr, d);
+    printf("After reset Array Read %p: %04X\n", pr, d);
     d= *pr;
     printf("After reset Read %p: %04X\n", pr, d);
 
-#if 1
-    printf("Timing memory at 0x1C000000\n");
-    /* Get RIT timer peripheral clock rate */
-    uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
-    taskENTER_CRITICAL();
-    runMemoryTest(timerFreq, (void*)0x1C000000);
-    taskEXIT_CRITICAL();
-#endif
 }
