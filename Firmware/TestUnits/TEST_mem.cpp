@@ -88,23 +88,23 @@ REGISTER_TEST(MemoryTest, time_spi)
 // TODO move these to sys init
 /*
      Chip select     0
-     Configuration value     EMC_STATIC_CONFIG_MEM_WIDTH_16 | EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW | EMC_STATIC_CONFIG_BLS_HIGH
-     Write Enable Wait 25ns
-     Output Enable Wait 25ns
+     Configuration value     EMC_STATIC_CONFIG_MEM_WIDTH_16 | EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW | EMC_STATIC_CONFIG_BLS_HIGH | EMC_STATIC_CONFIG_PAGE_MODE_ENABLE
+     Write Enable Wait 0ns
+     Output Enable Wait 0ns
      Read Wait 90ns
      Page Access Wait 25ns
-     Write Wait 110ns
-     Turn around wait 1ns
+     Write Wait 90ns
+     Turn around wait 1 clock
 */
 static const IP_EMC_STATIC_CONFIG_T S29GL064N_config = {
     0,
-    EMC_STATIC_CONFIG_MEM_WIDTH_16 | EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW | EMC_STATIC_CONFIG_BLS_HIGH,
-    EMC_NANOSECOND(25),
-    EMC_NANOSECOND(25),
-    EMC_NANOSECOND(90),
-    EMC_NANOSECOND(25),
-    EMC_NANOSECOND(110),
-    EMC_CLOCK(1)
+    EMC_STATIC_CONFIG_MEM_WIDTH_16 | EMC_STATIC_CONFIG_CS_POL_ACTIVE_LOW | EMC_STATIC_CONFIG_BLS_HIGH | EMC_STATIC_CONFIG_PAGE_MODE_ENABLE,
+    EMC_NANOSECOND(0),   // Delay from chip select assertion to write enable
+    EMC_NANOSECOND(0),   // Delay from chip select assertion to output enable.
+    EMC_NANOSECOND(90),  // Non-page mode read wait states or asynchronous page mode read firstaccess wait state.
+    EMC_NANOSECOND(25),  // Asynchronous page mode read after the first read wait states. Number of wait states for asynchronous page mode read accesses after the first read:
+    EMC_NANOSECOND(90),  // delay from the chip select to the write access
+    EMC_CLOCK(1)        // Bus turnaround cycles.
 };
 
 /* EMC clock delay */
@@ -186,6 +186,7 @@ REGISTER_TEST(MemoryTest, time_flash)
     vTaskDelay(pdMS_TO_TICKS(1));
     d= *pr;
     printf("After reset Array Read %p: %04X\n", pr, d);
+    TEST_ASSERT_EQUAL_INT(d, 0xFFFF);
     d= *pr;
     printf("After reset Read %p: %04X\n", pr, d);
 
