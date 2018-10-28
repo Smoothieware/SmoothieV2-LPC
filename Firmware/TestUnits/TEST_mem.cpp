@@ -85,6 +85,7 @@ REGISTER_TEST(MemoryTest, time_spi)
     taskEXIT_CRITICAL();
 }
 
+#ifdef BOARD_PRIMEALPHA
 // TODO move these to sys init
 /*
      Chip select     0
@@ -191,3 +192,4 @@ REGISTER_TEST(MemoryTest, time_flash)
     printf("After reset Read %p: %04X\n", pr, d);
 
 }
+#endif
