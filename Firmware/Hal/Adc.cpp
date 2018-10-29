@@ -1,4 +1,5 @@
-// Uses the lpcopen ADC driver instead of the NuttX one whioch doessn't really do what we want.
+// Only thermistor inputs are supersampled
+// TODO allow non thermistor instances to be created
 
 #include "Adc.h"
 #include "SlowTicker.h"
@@ -79,7 +80,7 @@ bool Adc::setup()
     // Set sample rate to 4.5KHz (That is as slow as it will go)
     // As this is a lot of IRQ overhead we can't use interrupts in burst mode
     // so we need to sample it from a slow timer instead
-    Chip_ADC_SetSampleRate(_LPC_ADC_ID, &ADCSetup, 4500);
+    Chip_ADC_SetSampleRate(_LPC_ADC_ID, &ADCSetup, ADC_MAX_SAMPLE_RATE);
 
     // We use burst mode so samples are always ready when we sample the ADC values
     // NOTE we would like to just trigger a sample after we sample, but that seemed to only work for the first channel
@@ -170,7 +171,7 @@ Adc* Adc::from_string(const char *name)
         if(pos == std::string::npos) return nullptr;
         uint16_t pin = strtol(str.substr(pos + 1).c_str(), nullptr, 10);
 
-        /* now map to an adc channel
+        /* now map to an adc channel (ADC0 only)
             P4_3 ADC0_0
             P4_1 ADC0_1
             PF_8 ADC0_2
@@ -191,13 +192,11 @@ Adc* Adc::from_string(const char *name)
         // now need to set to input, disable receiver with EZI bit, disable pullup EPUN=1 and disable pulldown EPD=0
         uint16_t modefunc = 1 << 4; // disable pullup,
         Chip_SCU_PinMuxSet(port, pin, modefunc);
+        Chip_SCU_ADC_Channel_Config(0, channel);
 
     } else {
         return nullptr;
     }
-
-    // TODO do not hard code ADC0
-    Chip_SCU_ADC_Channel_Config(0, channel);
 
     memset(sample_buffer, 0, sizeof(sample_buffer));
     memset(ave_buf, 0, sizeof(ave_buf));
@@ -210,6 +209,7 @@ Adc* Adc::from_string(const char *name)
     return this;
 }
 
+#ifndef NO_ADC_INTERRUPTS
 //  isr call
 extern "C" _ramfunc_ void ADC0_IRQHandler(void)
 {
@@ -217,6 +217,7 @@ extern "C" _ramfunc_ void ADC0_IRQHandler(void)
     Adc::sample_isr();
     NVIC_EnableIRQ(ADC0_IRQn);
 }
+#endif
 
 _ramfunc_ void Adc::sample_isr()
 {

@@ -10,6 +10,7 @@ REGISTER_TEST(PinTest, flashleds)
 {
 	int cnt = 0;
 	printf("defining pins...\n");
+#ifdef BOARD_BAMBINO
 	Pin myleds[] = {
 		Pin("GPIO3[12]"),
 		Pin("GPIO3[13]"),
@@ -19,12 +20,24 @@ REGISTER_TEST(PinTest, flashleds)
 		Pin("GPIO5[3]"),
 		Pin("P2_4") // Pin("GPIO5[4]")
 	};
-
-	Pin button("GPIO0_7!^");
+	Pin button("GPIO6_17!^");
 	button.as_input();
 	if(!button.connected()) {
 		printf("Button was invalid\n");
 	}
+#elif defined(BOARD_PRIMEALPHA)
+	Pin myleds[] = {
+		Pin("GPIO3[12]"),
+		Pin("GPIO3[13]"),
+		Pin("GPIO3[14]"),
+		Pin("GPIO5[26]")
+	};
+	Pin button("GPIO0_7!^"); // G1-3
+	button.as_input();
+	if(!button.connected()) {
+		printf("Button was invalid\n");
+	}
+#endif
 
 	printf("set as outputs... \n");
 	for(auto& p : myleds) {

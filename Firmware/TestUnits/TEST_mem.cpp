@@ -75,7 +75,7 @@ _ramfunc_ void runMemoryTest(uint32_t timerFreq, void *addr)
     printf("elapsed time %lu us over %lu bytes %1.4f mb/sec\n", TICK2USEC(en-st), n, (float)n/TICK2USEC(en-st));
 }
 
-REGISTER_TEST(MemoryTest, time_spi)
+REGISTER_TEST(MemoryTest, time_spifi)
 {
     printf("Timing memory at 0x14000000\n");
     /* Get RIT timer peripheral clock rate */

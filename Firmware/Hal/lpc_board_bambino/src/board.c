@@ -263,18 +263,38 @@ void Board_SDMMC_Init(void)
 
 void Board_SSP_Init(LPC_SSP_T *pSSP)
 {
+#ifdef BOARD_BAMBINO
 	if (pSSP == LPC_SSP1) {
-		/* Set up clock and power for SSP1 module */
-		/* Configure SSP1 pins*/
-		/* SCLK comes out pin CLK0 */
-		Chip_SCU_ClockPinMuxSet(0, (SCU_PINIO_FAST | SCU_MODE_FUNC6));		/* CLK0 connected to CLK	SCU_MODE_FUNC6=SSP1 CLK1  */
-		Chip_SCU_PinMuxSet(0x1, 5, (SCU_PINIO_FAST | SCU_MODE_FUNC5));			/* P1.5 connected to nCS	SCU_MODE_FUNC5=SSP1 SSEL1 */
-		Chip_SCU_PinMuxSet(0x1, 3, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC5));/* P1.3 connected to SO		SCU_MODE_FUNC5=SSP1 MISO1 */
-		Chip_SCU_PinMuxSet(0x1, 4, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC5));/* P1.4 connected to nSI	SCU_MODE_FUNC5=SSP1 MOSI1 */
+		Chip_SCU_PinMuxSet(0xf, 4, (SCU_PINIO_FAST | SCU_MODE_FUNC0)); /*  PF.4 CLK for SSP1*/
+		Chip_SCU_PinMuxSet(0x1, 5, (SCU_PINIO_FAST | SCU_MODE_FUNC5)); /* P1.5  SSEL1 */
+		Chip_SCU_PinMuxSet(0x1, 3, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC5));/* P1.3  MISO1 */
+		Chip_SCU_PinMuxSet(0x1, 4, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC5));/* P1.4  MOSI1 */
+	} else if(pSSP == LPC_SSP0) {
+		Chip_SCU_PinMuxSet(0x3, 0, (SCU_PINIO_FAST | SCU_MODE_FUNC4)); /*  P3.0 CLK for SSP0*/
+		Chip_SCU_PinMuxSet(0x1, 0, (SCU_PINIO_FAST | SCU_MODE_FUNC5)); /* P1.0  SSEL0 */
+		Chip_SCU_PinMuxSet(0x1, 1, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC5));/* P1.1 MISO0 */
+		Chip_SCU_PinMuxSet(0x1, 2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC5));/* P1.2  MOSI0 */
 	}
-	else {
-		return;
+
+#elif defined(BOARD_PRIMEALPHA)
+
+	if (pSSP == LPC_SSP1) {
+		// on G3
+		Chip_SCU_PinMuxSet(0xf, 4, (SCU_PINIO_FAST | SCU_MODE_FUNC0)); /*  PF.4 CLK for SSP1*/
+		Chip_SCU_PinMuxSet(0xf, 5, (SCU_PINIO_FAST | SCU_MODE_FUNC2)); /* PF.5  SSEL1 */
+		Chip_SCU_PinMuxSet(0xf, 6, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));/* PF.6  MISO1 */
+		Chip_SCU_PinMuxSet(0xf, 7, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));/* PF.7  MOSI1 */
+	} else if(pSSP == LPC_SSP0) {
+		// motor drivers
+		Chip_SCU_PinMuxSet(0xF, 0, (SCU_PINIO_FAST | SCU_MODE_FUNC0)); /*  PF.0 CLK for SSP0*/
+		Chip_SCU_PinMuxSet(0xF, 1, (SCU_PINIO_FAST | SCU_MODE_FUNC2)); /* PF.1  SSEL0 */
+		Chip_SCU_PinMuxSet(0xF, 2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));/* PF.2 MISO0 */
+		Chip_SCU_PinMuxSet(0xF, 3, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));/* PF.3  MOSI0 */
 	}
+
+#else
+	#error board not defined for SSP1
+#endif
 }
 
 /**
