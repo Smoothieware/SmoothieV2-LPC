@@ -726,6 +726,7 @@ int main(int argc, char *argv[])
     // Set up and initialize all required blocks and
     // functions related to the board hardware
     Board_Init();
+
     if(setup_uart() < 0) {
         printf("FATAL: UART setup failed\n");
     }

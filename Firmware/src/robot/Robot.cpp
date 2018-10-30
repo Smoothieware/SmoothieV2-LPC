@@ -55,6 +55,7 @@
 #define ms2_pin_key                     "ms2_pin"
 #define ms3_pin_key                     "ms3_pin"
 #define ms_key                          "microstepping"
+#define microsteps_key                  "microsteps"
 
 // only one of these for all the drivers
 #define common_key                      "common"
@@ -229,6 +230,7 @@ bool Robot::configure(ConfigReader& cr)
             return false;
         }
 
+#ifdef BOARD_MINIALPHA
         // set microstepping if enabled, use default x16 if not specified but pins exist
         // TODO make these pins persistent and add gcode to set microstepping
         Pin ms1_pin(cr.get_string(mm, ms1_pin_key, "nc"), Pin::AS_OUTPUT);
@@ -283,6 +285,11 @@ bool Robot::configure(ConfigReader& cr)
             printf("DEBUG:configure-robot: microstepping for %s set to %d,%d,%d\n",
                    s->first.c_str(), ms1_pin.get(), ms2_pin.get(), ms3_pin.get());
         }
+#elif defined(BOARD_PRIMEALPHA)
+        uint16_t microstep= cr.get_int(mm, microsteps_key, 32);
+        actuators[a]->set_microsteps(microstep);
+        printf("DEBUG:configure-robot: microsteps for %s set to %d\n", s->first.c_str(), microstep);
+#endif
 
         actuators[a]->change_steps_per_mm(cr.get_float(mm, steps_per_mm_key, a == Z_AXIS ? 2560.0F : 80.0F));
         actuators[a]->set_max_rate(cr.get_float(mm, max_rate_key, 30000.0F) / 60.0F); // it is in mm/min and converted to mm/sec

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Pin.h"
+class SPI;
+class TMC26X;
 
 class StepperMotor
 {
@@ -53,6 +55,7 @@ class StepperMotor
 
         #ifdef BOARD_PRIMEALPHA
         bool set_current(float c);
+        bool set_microsteps(uint16_t ms);
         #endif
 
     private:
@@ -77,5 +80,17 @@ class StepperMotor
             bool selected:1;
             bool extruder:1;
         };
+
+        #ifdef BOARD_PRIMEALPHA
+        int sendSPI(uint8_t *b, int cnt, uint8_t *r);
+        bool setup_tmc2660(const char *cs_pin);
+        bool init_tmc2660();
+
+        // SPI channel 0
+        SPI *spi;
+        Pin *spi_cs;
+        // TMC2660 driver
+        TMC26X *tmc2660;
+        #endif
 };
 

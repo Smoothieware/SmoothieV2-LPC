@@ -1,7 +1,6 @@
 #include "StepperMotor.h"
 #include "StepTicker.h"
-
-//#include "Kernel.h"
+#include "Spi.h"
 
 #include <math.h>
 
@@ -91,11 +90,52 @@ void StepperMotor::manual_step(bool dir)
 
 #ifdef BOARD_PRIMEALPHA
 // prime Alpha has TMC2660 drivers so this handles the SPI communication to those drivers
+#include "TMC26X.h"
+
+bool StepperMotor::setup_tmc2660(const char *cs_pin)
+{
+    char axis= motor_id<3?'X'+motor_id:'A'+motor_id-3;
+
+    using std::placeholders::_1;
+    using std::placeholders::_2;
+    using std::placeholders::_3;
+    tmc2660= new TMC26X(std::bind( &StepperMotor::sendSPI, this, _1, _2, _3), axis);
+    spi = new SPI(0);
+    spi->frequency(100000);
+    spi->format(8, 3); // 8bit, mode3
+    spi_cs= new Pin(cs_pin, Pin::AS_OUTPUT);
+    spi_cs->set(true);
+    return true;
+}
+
+bool StepperMotor::init_tmc2660()
+{
+
+    return false;
+}
+
 bool StepperMotor::set_current(float c)
 {
-    // TODO send current to TMC2660
-    //tmc2660->setCurrent(c*1000.0F); // sets current in milliamps
-    return false;
+    // send current to TMC2660
+    tmc2660->setCurrent(c*1000.0F); // sets current in milliamps
+    return true;
+}
+
+bool StepperMotor::set_microsteps(uint16_t ms)
+{
+    tmc2660->setMicrosteps(ms); // sets microsteps
+    return true;
+}
+
+// Called by the drivers codes to send and receive SPI data to/from the chip
+int StepperMotor::sendSPI(uint8_t *b, int cnt, uint8_t *r)
+{
+    spi_cs->set(false);
+    for (int i = 0; i < cnt; ++i) {
+        r[i]= spi->write(b[i]);
+    }
+    spi_cs->set(true);
+    return cnt;
 }
 
 #endif
