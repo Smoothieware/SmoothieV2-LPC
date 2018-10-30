@@ -19,6 +19,12 @@ SPI::SPI(int channel)
 	Chip_SSP_Enable((LPC_SSP_T*)_lpc_ssp);
 }
 
+SPI::~SPI()
+{
+	Chip_SSP_Disable((LPC_SSP_T*)_lpc_ssp);
+	Chip_SSP_DeInit((LPC_SSP_T*)_lpc_ssp);
+}
+
 void SPI::format(int bits, int mode)
 {
 	SSP_ConfigFormat ssp_format;

@@ -33,6 +33,10 @@
 #include "OutputStream.h"
 #include "Robot.h"
 #include "StepperMotor.h"
+#include "Spi.h"
+#include "Pin.h"
+#include "ConfigReader.h"
+
 
 #include <cmath>
 
@@ -145,16 +149,59 @@
 #define STATUS_STAND_STILL               0x00080ul
 #define READOUT_VALUE_PATTERN            0xFFC00ul
 
+// config keys
+#define spi_cs_pin_key                  "spi_cs_pin"
+#define resistor_key                    "sense_resistor"
+
+SPI *TMC26X::spi= nullptr;
 /*
  * Constructor
  */
-TMC26X::TMC26X(std::function<int(uint8_t *b, int cnt, uint8_t *r)> spifnc, char d) : spi(spifnc), designator(d)
+TMC26X::TMC26X(char d) : designator(d)
 {
     //we are not started yet
     started = false;
     //by default cool step is not enabled
     cool_step_enabled = false;
     error_reported.reset();
+
+    // setup singleton spi instance
+    if(spi == nullptr) {
+        spi = new SPI(0);
+        spi->frequency(100000);
+        spi->format(8, 3); // 8bit, mode3
+    }
+}
+
+bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
+{
+    ConfigReader::sub_section_map_t ssm;
+    if(!cr.get_sub_sections("tmc2660", ssm)) {
+        printf("ERROR:config_tmc2660: no tmc2660 section found\n");
+        return false;
+    }
+
+    auto s = ssm.find(actuator_name);
+    if(s == ssm.end()) {
+        printf("ERROR:config_tmc2660: no tmc2660 %s entry found\n", actuator_name);
+        return false;
+    }
+
+    auto& mm = s->second; // map of tmc2660 config values for this actuator
+
+    std::string cs_pin = cr.get_string(mm, spi_cs_pin_key, "nc");
+    spi_cs = new Pin(cs_pin.c_str(), Pin::AS_OUTPUT);
+    if(!spi_cs->connected()) {
+        delete spi_cs;
+        printf("ERROR:config_tmc2660: spi cs pin is invalid for: %s\n", actuator_name);
+        return false;
+    }
+    spi_cs->set(true);
+    printf("DEBUG:configure-tmc2660: for actuator %s spi cs pin: %s\n", actuator_name, spi_cs->to_string().c_str());
+
+    this->resistor = cr.get_int(mm, resistor_key, 75); // in milliohms
+
+    return true;
 }
 
 /*
@@ -163,8 +210,6 @@ TMC26X::TMC26X(std::function<int(uint8_t *b, int cnt, uint8_t *r)> spifnc, char 
  */
 void TMC26X::init(bool full)
 {
-    this->resistor= 75; // in milliohms
-
     if(full) {
         // setting the default register values
         driver_control_register_value = DRIVER_CONTROL_REGISTER;
@@ -174,7 +219,7 @@ void TMC26X::init(bool full)
         driver_configuration_register_value = DRIVER_CONFIG_REGISTER | READ_STALL_GUARD_READING;
     }
 
-    //set the initial values
+    // set the saved values
     send262(driver_control_register_value);
     send262(chopper_config_register_value);
     send262(cool_step_register_value);
@@ -677,10 +722,11 @@ void TMC26X::setEnabled(bool enabled)
     //delete the t_off in the chopper config to get sure
     chopper_config_register_value &= ~(T_OFF_PATTERN);
     if (enabled) {
-        //and set the t_off time
+        // and set the t_off time
         chopper_config_register_value |= this->vconstant_off_time;
     }
-    //if not enabled we don't have to do anything since we already delete t_off from the register
+    // if not enabled we don't have to do anything since we already delete t_off from the register
+
     if (started) {
         send262(chopper_config_register_value);
     }
@@ -912,7 +958,7 @@ void TMC26X::dumpStatus(OutputStream& stream, bool readable)
         else stream.printf("Ke-,");
 
         stream.printf("Kl%u,Ku%u,Kn%u,Ki%u,Km%u,",
-                       getCoolStepLowerSgThreshold(), getCoolStepUpperSgThreshold(), getCoolStepNumberOfSGReadings(), getCoolStepCurrentIncrementSize(), getCoolStepLowerCurrentLimit());
+                      getCoolStepLowerSgThreshold(), getCoolStepUpperSgThreshold(), getCoolStepNumberOfSGReadings(), getCoolStepCurrentIncrementSize(), getCoolStepLowerCurrentLimit());
 
         //detect the winding status
         if (isOpenLoadA()) {
@@ -959,54 +1005,54 @@ void TMC26X::dumpStatus(OutputStream& stream, bool readable)
 // check error bits and report, only report once
 bool TMC26X::check_error_status_bits(OutputStream& stream)
 {
-    bool error= false;
+    bool error = false;
     readStatus(TMC26X_READOUT_POSITION); // get the status bits
 
     if (this->getOverTemperature()&TMC26X_OVERTEMPERATURE_PREWARING) {
         if(!error_reported.test(0)) stream.printf("%c - WARNING: Overtemperature Prewarning!\n", designator);
         error_reported.set(0);
-    }else{
+    } else {
         error_reported.reset(0);
     }
 
     if (this->getOverTemperature()&TMC26X_OVERTEMPERATURE_SHUTDOWN) {
         if(!error_reported.test(1)) stream.printf("%c - ERROR: Overtemperature Shutdown!\n", designator);
-        error=true;
+        error = true;
         error_reported.set(1);
-    }else{
+    } else {
         error_reported.reset(1);
     }
 
     if (this->isShortToGroundA()) {
         if(!error_reported.test(2)) stream.printf("%c - ERROR: SHORT to ground on channel A!\n", designator);
-        error=true;
+        error = true;
         error_reported.set(2);
-    }else{
+    } else {
         error_reported.reset(2);
     }
 
     if (this->isShortToGroundB()) {
         if(!error_reported.test(3)) stream.printf("%c - ERROR: SHORT to ground on channel B!\n", designator);
-        error=true;
+        error = true;
         error_reported.set(3);
-    }else{
+    } else {
         error_reported.reset(3);
     }
 
     // these seem to be triggered when moving so ignore them for now
     if (this->isOpenLoadA()) {
         if(!error_reported.test(4)) stream.printf("%c - ERROR: Channel A seems to be unconnected!\n", designator);
-        error=true;
+        error = true;
         error_reported.set(4);
-    }else{
+    } else {
         error_reported.reset(4);
     }
 
     if (this->isOpenLoadB()) {
         if(!error_reported.test(5)) stream.printf("%c - ERROR: Channel B seems to be unconnected!\n", designator);
-        error=true;
+        error = true;
         error_reported.set(5);
-    }else{
+    } else {
         error_reported.reset(5);
     }
 
@@ -1066,8 +1112,8 @@ void TMC26X::send262(unsigned long datagram)
     uint8_t buf[] {(uint8_t)(datagram >> 16), (uint8_t)(datagram >>  8), (uint8_t)(datagram & 0xff)};
     uint8_t rbuf[3];
 
-    //write/read the values
-    spi(buf, 3, rbuf);
+    // write/read the values
+    sendSPI(buf, 3, rbuf);
 
     // construct reply
     unsigned long i_datagram = ((rbuf[0] << 16) | (rbuf[1] << 8) | (rbuf[2])) >> 4;
@@ -1076,6 +1122,17 @@ void TMC26X::send262(unsigned long datagram)
     driver_status_result = i_datagram;
 
     printf("sent: %02X, %02X, %02X received: %02X, %02X, %02X \n", buf[0], buf[1], buf[2], rbuf[0], rbuf[1], rbuf[2]);
+}
+
+// Called by the drivers codes to send and receive SPI data to/from the chip
+int TMC26X::sendSPI(uint8_t *b, int cnt, uint8_t *r)
+{
+    spi_cs->set(false);
+    for (int i = 0; i < cnt; ++i) {
+        r[i] = spi->write(b[i]);
+    }
+    spi_cs->set(true);
+    return cnt;
 }
 
 #define HAS(X) (options.find(X) != options.end())

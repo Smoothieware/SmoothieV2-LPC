@@ -286,9 +286,17 @@ bool Robot::configure(ConfigReader& cr)
                    s->first.c_str(), ms1_pin.get(), ms2_pin.get(), ms3_pin.get());
         }
 #elif defined(BOARD_PRIMEALPHA)
+        // setup the driver for this motor
+        if(!actuators[a]->setup_tmc2660(cr, s->first.c_str())) {
+            printf("FATAL:configure-robot: setup_tmc2660 failed for %s\n", s->first.c_str());
+            return false;
+        }
+
         uint16_t microstep= cr.get_int(mm, microsteps_key, 32);
         actuators[a]->set_microsteps(microstep);
         printf("DEBUG:configure-robot: microsteps for %s set to %d\n", s->first.c_str(), microstep);
+
+
 #endif
 
         actuators[a]->change_steps_per_mm(cr.get_float(mm, steps_per_mm_key, a == Z_AXIS ? 2560.0F : 80.0F));

@@ -66,6 +66,8 @@ bool CurrentControl::configure(ConfigReader& cr)
 #elif defined(BOARD_PRIMEALPHA)
         // SPI defined current control, we ask actuator to deal with it
         bool ok= set_current(name, c);
+#else
+        bool ok= false;
 #endif
         if(ok) {
             printf("configure-current-control: %s set to %1.5f amps\n", name.c_str(), c);
@@ -100,6 +102,8 @@ bool CurrentControl::set_current(const std::string& name, float current)
     int n= axis < 'X' ? axis-'A'+3 : axis-'X';
     if(n >= Robot::getInstance()->get_number_registered_motors()) return false;
     bool ok= Robot::getInstance()->actuators[n]->set_current(current);
+#else
+    bool ok= false;
 #endif
 
     if(ok) {

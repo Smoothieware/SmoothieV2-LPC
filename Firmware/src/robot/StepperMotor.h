@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Pin.h"
-class SPI;
+
 class TMC26X;
+class ConfigReader;
 
 class StepperMotor
 {
@@ -20,10 +21,8 @@ class StepperMotor
         // called from step ticker ISR
         inline void set_direction(bool f) { dir_pin.set(f); direction= f; }
 
-        // TODO for SPI motors, we could check the en_pin and if nc then we call the linked advanced motor driver and tell it to enable
-        // the driver can set a function pointer to the enable call it needs and set it in the appropriate actuator.
-        void enable(bool state) { en_pin.set(!state); };
-        bool is_enabled() const { return !en_pin.get(); };
+        void enable(bool state);
+        bool is_enabled() const;
         bool is_moving() const { return moving; };
         void start_moving() { moving= true; }
         void stop_moving() { moving= false; }
@@ -53,11 +52,6 @@ class StepperMotor
 
         int32_t steps_to_target(float);
 
-        #ifdef BOARD_PRIMEALPHA
-        bool set_current(float c);
-        bool set_microsteps(uint16_t ms);
-        #endif
-
     private:
 
         Pin step_pin;
@@ -82,13 +76,13 @@ class StepperMotor
         };
 
         #ifdef BOARD_PRIMEALPHA
-        int sendSPI(uint8_t *b, int cnt, uint8_t *r);
-        bool setup_tmc2660(const char *cs_pin);
+    public:
+        bool set_current(float c);
+        bool set_microsteps(uint16_t ms);
+        bool setup_tmc2660(ConfigReader& cr, const char *actuator_name);
         bool init_tmc2660();
 
-        // SPI channel 0
-        SPI *spi;
-        Pin *spi_cs;
+    private:
         // TMC2660 driver
         TMC26X *tmc2660;
         #endif

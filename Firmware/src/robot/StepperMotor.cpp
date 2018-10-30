@@ -1,6 +1,5 @@
 #include "StepperMotor.h"
 #include "StepTicker.h"
-#include "Spi.h"
 
 #include <math.h>
 
@@ -88,30 +87,28 @@ void StepperMotor::manual_step(bool dir)
     this->current_position_steps += (dir ? -1 : 1);
 }
 
+
 #ifdef BOARD_PRIMEALPHA
-// prime Alpha has TMC2660 drivers so this handles the SPI communication to those drivers
+// prime Alpha has TMC2660 drivers so this handles the setup of those drivers
 #include "TMC26X.h"
 
-bool StepperMotor::setup_tmc2660(const char *cs_pin)
+bool StepperMotor::setup_tmc2660(ConfigReader& cr, const char *actuator_name)
 {
     char axis= motor_id<3?'X'+motor_id:'A'+motor_id-3;
+    tmc2660= new TMC26X(axis);
+    if(!tmc2660->config(cr, actuator_name)) {
+        delete tmc2660;
+        return false;
+    }
+    tmc2660->init(true);
 
-    using std::placeholders::_1;
-    using std::placeholders::_2;
-    using std::placeholders::_3;
-    tmc2660= new TMC26X(std::bind( &StepperMotor::sendSPI, this, _1, _2, _3), axis);
-    spi = new SPI(0);
-    spi->frequency(100000);
-    spi->format(8, 3); // 8bit, mode3
-    spi_cs= new Pin(cs_pin, Pin::AS_OUTPUT);
-    spi_cs->set(true);
     return true;
 }
 
 bool StepperMotor::init_tmc2660()
 {
-
-    return false;
+    tmc2660->init(false);
+    return true;
 }
 
 bool StepperMotor::set_current(float c)
@@ -127,15 +124,28 @@ bool StepperMotor::set_microsteps(uint16_t ms)
     return true;
 }
 
-// Called by the drivers codes to send and receive SPI data to/from the chip
-int StepperMotor::sendSPI(uint8_t *b, int cnt, uint8_t *r)
+void StepperMotor::enable(bool state)
 {
-    spi_cs->set(false);
-    for (int i = 0; i < cnt; ++i) {
-        r[i]= spi->write(b[i]);
-    }
-    spi_cs->set(true);
-    return cnt;
+    tmc2660->setEnabled(state);
+}
+
+bool StepperMotor::is_enabled() const
+{
+    return tmc2660->isEnabled();
+}
+
+#else
+
+//Minialpha has enable pins on the drivers
+
+void StepperMotor::enable(bool state)
+{
+    en_pin.set(!state);
+}
+
+bool StepperMotor::is_enabled() const
+{
+    return !en_pin.get();
 }
 
 #endif

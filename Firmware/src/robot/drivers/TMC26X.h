@@ -35,6 +35,9 @@
 #include <bitset>
 
 class OutputStream;
+class SPI;
+class ConfigReader;
+class Pin;
 
 /*!
  * \class TMC26X
@@ -57,7 +60,7 @@ public:
      * You can select a different stepping with setMicrosteps() to aa different value.
      * \sa start(), setMicrosteps()
      */
-    TMC26X(std::function<int(uint8_t *b, int cnt, uint8_t *r)> spi, char designator);
+    TMC26X(char designator);
 
     /*!
      * \brief configures the TMC26X stepper driver. Before you called this function the stepper driver is in nonfunctional mode.
@@ -403,6 +406,7 @@ public:
     bool setRawRegister(OutputStream& stream, uint32_t reg, uint32_t val);
     bool checkAlarm();
 
+    bool config(ConfigReader& cr, const char *actuator_name);
     using options_t= std::map<char,int>;
 
     bool set_options(const options_t& options);
@@ -414,9 +418,12 @@ private:
 
     // SPI sender
     inline void send262(unsigned long datagram);
-    std::function<int(uint8_t *b, int cnt, uint8_t *r)> spi;
+    int sendSPI(uint8_t *b, int cnt, uint8_t *r);
+    // one instance of SPI is shared
+    static SPI *spi;
+    Pin *spi_cs;
 
-    unsigned int resistor{50}; // current sense resitor value in milliohm
+    unsigned int resistor{75}; // current sense resitor value in milliohm
 
     //driver control register copies to easily set & modify the registers
     unsigned long driver_control_register_value;
