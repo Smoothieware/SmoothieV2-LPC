@@ -107,12 +107,14 @@ bool StepperMotor::setup_tmc2660(ConfigReader& cr, const char *actuator_name)
 
 bool StepperMotor::init_tmc2660()
 {
+    if(tmc2660 == nullptr) return false;
     tmc2660->init();
     return true;
 }
 
 bool StepperMotor::set_current(float c)
 {
+    if(tmc2660 == nullptr) return false;
     // send current to TMC2660
     tmc2660->setCurrent(c*1000.0F); // sets current in milliamps
     return true;
@@ -120,17 +122,21 @@ bool StepperMotor::set_current(float c)
 
 bool StepperMotor::set_microsteps(uint16_t ms)
 {
+    if(tmc2660 == nullptr) return false;
     tmc2660->setMicrosteps(ms); // sets microsteps
     return true;
 }
 
 int StepperMotor::get_microsteps()
 {
+    if(tmc2660 == nullptr) return 0;
     return tmc2660->getMicrosteps();
 }
 
 void StepperMotor::enable(bool state)
 {
+    if(tmc2660 == nullptr) return;
+
     // TODO if we have lost Vbb since last time then we need to re load all the drivers configs
     if(state && vbblost) {
         tmc2660->init();
@@ -141,21 +147,25 @@ void StepperMotor::enable(bool state)
 
 bool StepperMotor::is_enabled() const
 {
+    if(tmc2660 == nullptr) return false;
     return tmc2660->isEnabled();
 }
 
 void StepperMotor::dump_status(OutputStream& os, bool flag)
 {
+    if(tmc2660 == nullptr) return;
     tmc2660->dump_status(os, flag);
 }
 
 void StepperMotor::set_raw_register(OutputStream& os, uint32_t reg, uint32_t val)
 {
+    if(tmc2660 == nullptr) return;
     tmc2660->set_raw_register(os, reg, val);
 }
 
 bool StepperMotor::set_options(GCode& gcode)
 {
+    if(tmc2660 == nullptr) return false;
     return tmc2660->set_options(gcode);
 }
 

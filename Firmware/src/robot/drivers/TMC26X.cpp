@@ -209,6 +209,7 @@ TMC26X::TMC26X(char d) : designator(d)
 
 bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
 {
+    name= actuator_name;
     ConfigReader::sub_section_map_t ssm;
     if(!cr.get_sub_sections("tmc2660", ssm)) {
         printf("ERROR:config_tmc2660: no tmc2660 section found\n");
@@ -927,7 +928,7 @@ bool TMC26X::isCurrentScalingHalfed()
 void TMC26X::dump_status(OutputStream& stream, bool readable)
 {
     if (readable) {
-        stream.printf("designator %c, Chip type TMC26X\n", designator);
+        stream.printf("designator %c, actuator %s, Chip type TMC2660\n", designator, name);
 
         check_error_status_bits(stream);
 
@@ -956,19 +957,20 @@ void TMC26X::dump_status(OutputStream& stream, bool readable)
         stream.printf(" cool step register: %08lX(%ld)\n", cool_step_register_value, cool_step_register_value);
         stream.printf(" stall guard2 current register: %08lX(%ld)\n", stall_guard2_current_register_value, stall_guard2_current_register_value);
         stream.printf(" driver configuration register: %08lX(%ld)\n", driver_configuration_register_value, driver_configuration_register_value);
-        stream.printf(" motor_driver_control.xxx.reg %05lX,%05lX,%05lX,%05lX,%05lX\n", driver_control_register_value, chopper_config_register_value, cool_step_register_value, stall_guard2_current_register_value, driver_configuration_register_value);
+        stream.printf(" %s.reg %05lX,%05lX,%05lX,%05lX,%05lX\n", name.c_str(), driver_control_register_value, chopper_config_register_value, cool_step_register_value, stall_guard2_current_register_value, driver_configuration_register_value);
 
     } else {
-        // TODO hardcoded for X need to select ABC as needed
-        bool moving = Robot::getInstance()->actuators[0]->is_moving();
+        // This is the format the [rocessing app uses for tuning TMX26X chips
+        int n= designator < 'X' ? designator-'A'+3 : designator-'X';
+        bool moving = Robot::getInstance()->actuators[n]->is_moving();
         // dump out in the format that the processing script needs
         if (moving) {
-            stream.printf("#sg%d,p%lu,k%u,r,", getCurrentStallGuardReading(), Robot::getInstance()->actuators[0]->get_current_step(), getCoolstepCurrent());
+            stream.printf("#sg%d,p%lu,k%u,r,", getCurrentStallGuardReading(), Robot::getInstance()->actuators[n]->get_current_step(), getCoolstepCurrent());
         } else {
             readStatus(TMC26X_READOUT_POSITION); // get the status bits
             stream.printf("#s,");
         }
-        stream.printf("d%d,", Robot::getInstance()->actuators[0]->which_direction() ? -1 : 1);
+        stream.printf("d%d,", Robot::getInstance()->actuators[n]->which_direction() ? -1 : 1);
         stream.printf("c%u,m%d,", getCurrent(), getMicrosteps());
         // stream.printf('S');
         // stream.printf(tmc26XStepper.getSpeed(), DEC);
@@ -1085,7 +1087,7 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
 
 bool TMC26X::checkAlarm()
 {
-    OutputStream os;
+    OutputStream os(&std::cout);
     return check_error_status_bits(os);
 }
 

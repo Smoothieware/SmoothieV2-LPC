@@ -421,6 +421,7 @@ private:
     // one instance of SPI is shared
     static SPI *spi;
     Pin *spi_cs;
+    std::string name;
 
     unsigned int resistor{75}; // current sense resitor value in milliohm
 

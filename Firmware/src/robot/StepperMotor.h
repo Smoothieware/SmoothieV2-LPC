@@ -92,7 +92,7 @@ class StepperMotor
 
     private:
         // TMC2660 driver
-        TMC26X *tmc2660;
+        TMC26X *tmc2660{nullptr};
 #endif
 };
 

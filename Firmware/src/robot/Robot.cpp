@@ -1064,6 +1064,7 @@ bool Robot::handle_M911(GCode& gcode, OutputStream& os)
             char axis= i < 3 ? 'X'+i : 'A'+i-3;
             os.printf("Motor %d (%c)...\n", i, axis);
             actuators[i]->dump_status(os);
+            os.printf("\n");
         }
         return true;
 

@@ -266,6 +266,8 @@ bool TemperatureControl::configure(ConfigReader& cr, ConfigReader::section_map_t
 void TemperatureControl::on_halt(bool flg)
 {
     if(flg) {
+        if(readonly) return;
+
         // turn off heater
         this->o = 0;
         this->heater_pin->set(0);
@@ -308,7 +310,7 @@ bool TemperatureControl::handle_autopid(GCode& gcode, OutputStream& os)
 
 bool TemperatureControl::handle_mcode(GCode & gcode, OutputStream & os)
 {
-    if( gcode.get_code() == this->get_m_code ) {
+    if( gcode.get_code() == this->get_m_code) {
         char buf[32]; // should be big enough for any status
         snprintf(buf, sizeof(buf), "%s:%3.1f /%3.1f @%d ", this->designator.c_str(), this->get_temperature(), ((target_temperature <= 0) ? 0.0 : target_temperature), this->o);
         os.set_prepend_ok();
@@ -345,6 +347,7 @@ bool TemperatureControl::handle_mcode(GCode & gcode, OutputStream & os)
                     os.printf("%s(S%d): %c %1.18f\n", this->designator.c_str(), this->tool_id, i.first, i.second);
                 }
             }
+            os.printf("\n");
 
             return true;
         }

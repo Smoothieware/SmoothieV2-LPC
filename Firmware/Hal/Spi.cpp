@@ -79,6 +79,7 @@ int SPI::write(int value)
 	xf_setup.length = n;
 	xf_setup.tx_data = tx_buf;
 	xf_setup.rx_data = rx_buf;
+	xf_setup.rx_cnt = xf_setup.tx_cnt = 0;
 
 	Chip_SSP_RWFrames_Blocking((LPC_SSP_T*)_lpc_ssp, &xf_setup);
 	int ret= rx_buf[0];
