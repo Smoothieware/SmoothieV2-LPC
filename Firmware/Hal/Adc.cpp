@@ -17,6 +17,9 @@
 #define __GNU_VISIBLE 1 // for strcasestr
 #include <string.h>
 
+// interrupts seem to not work very well
+#define NO_ADC_INTERRUPTS
+
 #define _LPC_ADC_ID LPC_ADC0
 const ADC_CHANNEL_T CHANNEL_LUT[] = {
     ADC_CH0,                /**< ADC channel 0 */
@@ -77,15 +80,20 @@ bool Adc::setup()
 
     // ADC sample rate need to be fast enough to be able to read the enabled channels within the thermistor poll time
     // even though there maybe 32 samples we only need one new one within the polling time
-    // Set sample rate to 4.5KHz (That is as slow as it will go)
+    // Set sample rate to 70KHz (That is as slow as it will go)
     // As this is a lot of IRQ overhead we can't use interrupts in burst mode
     // so we need to sample it from a slow timer instead
     Chip_ADC_SetSampleRate(_LPC_ADC_ID, &ADCSetup, ADC_MAX_SAMPLE_RATE);
 
-    // We use burst mode so samples are always ready when we sample the ADC values
     // NOTE we would like to just trigger a sample after we sample, but that seemed to only work for the first channel
     // the second channel was never ready
+
+#ifndef NO_ADC_INTERRUPTS
+    Chip_ADC_SetBurstCmd(_LPC_ADC_ID, DISABLE);
+#else
+    // We use burst mode so samples are always ready when we sample the ADC values
     Chip_ADC_SetBurstCmd(_LPC_ADC_ID, ENABLE);
+#endif
 
     // init instances array
     for (int i = 0; i < num_channels; ++i) {
@@ -94,8 +102,6 @@ bool Adc::setup()
     return true;
 }
 
-// interrupts seem to not work very well
-#define NO_ADC_INTERRUPTS
 bool Adc::start()
 {
 #ifndef NO_ADC_INTERRUPTS
@@ -219,7 +225,10 @@ extern "C" _ramfunc_ void ADC0_IRQHandler(void)
 }
 #endif
 
-_ramfunc_ void Adc::sample_isr()
+//_ramfunc_
+// As this calls non ram based funcs there is no point in it being in ram
+// in interrupt mode this will be called once for each active channel
+void Adc::sample_isr()
 {
     for (int i = 0; i < ninstances; ++i) {
         Adc *adc = Adc::getInstance(i);
@@ -228,9 +237,11 @@ _ramfunc_ void Adc::sample_isr()
         int ch = adc->channel;
         if(ch < 0) continue; // no channel assigned
         uint16_t dataADC = 0;
+        // NOTE these are not in RAM
         if(Chip_ADC_ReadStatus(_LPC_ADC_ID, CHANNEL_LUT[ch], ADC_DR_DONE_STAT) == SET && Chip_ADC_ReadValue(_LPC_ADC_ID, CHANNEL_LUT[ch], &dataADC) == SUCCESS) {
             adc->new_sample(dataADC);
         }else{
+            // NOTE in interrupt mode this is not meaningful as we get an interrupt when each channel is ready
             adc->not_ready_error++;
         }
     }
@@ -242,12 +253,15 @@ _ramfunc_ void Adc::new_sample(uint32_t value)
 {
     // Shuffle down and add new value to the end
     // FIXME memmove appears to not be inline, so in an interrupt in SPIFI it is too slow
-    memmove(&sample_buffer[0], &sample_buffer[1], sizeof(sample_buffer) - sizeof(sample_buffer[0]));
-    sample_buffer[num_samples - 1] = value; // the 12 bit ADC reading
+    // memmove(&sample_buffer[0], &sample_buffer[1], sizeof(sample_buffer) - sizeof(sample_buffer[0]));
+    for (int i = 1; i < num_samples; ++i) {
+        sample_buffer[i-1]= sample_buffer[i];
+    }
+    sample_buffer[num_samples - 1] = value; // the 10 bit ADC reading
 }
 
 //#define USE_MEDIAN_FILTER
-// Read the filtered value ( burst mode ) on a given pin
+// gets called 20 times a second from a timer
 uint32_t Adc::read()
 {
     uint16_t median_buffer[num_samples];

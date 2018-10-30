@@ -19,9 +19,10 @@ using systime_t= uint32_t;
 #ifdef BOARD_BAMBINO
 #define _ADC_CHANNEL ADC_CH1
 #else
-#define _ADC_CHANNEL ADC_CH6 // 3.3V
+#define _ADC_CHANNEL ADC_CH6 // board temp
 //#define _ADC_CHANNEL ADC_CH7 // Vbb
 #endif
+
 #define _LPC_ADC_ID LPC_ADC0
 #define _LPC_ADC_IRQ ADC0_IRQn
 
@@ -40,8 +41,8 @@ REGISTER_TEST(ADCTest, raw_polling)
     uint16_t dataADC;
 
     // Set sample rate to 400KHz
-    ADCSetup.burstMode= true;
-    Chip_ADC_SetSampleRate(_LPC_ADC_ID, &ADCSetup, ADC_MAX_SAMPLE_RATE);
+    ADCSetup.burstMode= true;;
+    Chip_ADC_SetSampleRate(_LPC_ADC_ID, &ADCSetup, 100000); // ADC_MAX_SAMPLE_RATE);
 
     // Select using burst mode
     Chip_ADC_SetBurstCmd(_LPC_ADC_ID, ENABLE);
@@ -70,6 +71,19 @@ REGISTER_TEST(ADCTest, raw_polling)
 
     printf("channel: %d, average adc= %04X, v= %10.4f\n", _ADC_CHANNEL, (int)(acc/n), 3.3F * (acc/n)/1024.0F);
     printf("elapsed time: %lu us, %10.2f us/sample\n", TICK2USEC(en-st), (float)TICK2USEC(en-st)/n);
+
+
+    // calculate temp of board thermistor
+    float adc_value= acc/n;
+    float beta= 4334;
+    float r0= 100000;
+    float r2= 4700;
+    float t0= 25;
+    float r = r2 / (((float)1024.0F / adc_value) - 1.0F);
+    float j = (1.0F / beta);
+    float k = (1.0F / (t0 + 273.15F));
+    float temp = (1.0F / (k + (j * logf(r / r0)))) - 273.15F;
+    printf("Temp= %f °C\n", temp);
 
     Chip_ADC_SetBurstCmd(_LPC_ADC_ID, DISABLE);
     Chip_ADC_EnableChannel(_LPC_ADC_ID, _ADC_CHANNEL, DISABLE);
