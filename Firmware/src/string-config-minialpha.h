@@ -68,8 +68,6 @@ delta.acceleration = 1800        # Acceleration for the stepper motor mm/sec²\n
 delta.max_rate = 3000.0           # Maximum rate in mm/min\n\
 \n\
 [current control]\n\
-alpha.control  = pwm    # type of control (pwm is default for v2 mini)\n\
-#alpha.control = spi    # type of control (spi is used for v2 pro)\n\
 alpha.current  = 0.7    # X stepper motor current Amps\n\
 alpha.pin      = P7.4   # PWM pin for alpha channel\n\
 beta.current   = 0.7    # Y stepper motor current\n\

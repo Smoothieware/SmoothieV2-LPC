@@ -51,6 +51,9 @@ class StepperMotor
 
         int32_t steps_to_target(float);
 
+        #ifdef BOARD_PRIMEALPHA
+        bool set_current(float c);
+        #endif
 
     private:
 

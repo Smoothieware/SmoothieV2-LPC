@@ -88,3 +88,14 @@ void StepperMotor::manual_step(bool dir)
     // keep track of actuators actual position in steps
     this->current_position_steps += (dir ? -1 : 1);
 }
+
+#ifdef BOARD_PRIMEALPHA
+// prime Alpha has TMC2660 drivers so this handles the SPI communication to those drivers
+bool StepperMotor::set_current(float c)
+{
+    // TODO send current to TMC2660
+    //tmc2660->setCurrent(c*1000.0F); // sets current in milliamps
+    return false;
+}
+
+#endif

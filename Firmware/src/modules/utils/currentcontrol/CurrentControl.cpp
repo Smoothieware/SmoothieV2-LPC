@@ -4,6 +4,8 @@
 #include "GCode.h"
 #include "OutputStream.h"
 #include "Dispatcher.h"
+#include "Robot.h"
+#include "StepperMotor.h"
 
 #include <string>
 #include <map>
@@ -39,13 +41,14 @@ bool CurrentControl::configure(ConfigReader& cr)
         std::string name = i.first;
         auto& m = i.second;
 
-
-        std::string ctrltype= cr.get_string(m, control_key, "pwm");
-        if(ctrltype != "pwm") {
-            printf("configure-current-control: %s - only pwm type current control currently supported\n", name.c_str());
+        // Get current settings
+        float c= cr.get_float(m, current_key, -1);
+        if(c <= 0) {
+            printf("configure-current-control: %s - invalid current\n", name.c_str());
             continue;
         }
 
+#ifdef BOARD_MINIALPHA
         // we have a PWM current control
         std::string pin= cr.get_string(m, pin_key, "nc");
         if(pin == "nc") continue;
@@ -57,19 +60,18 @@ bool CurrentControl::configure(ConfigReader& cr)
             continue;
         }
 
-        // Get current settings
-        float c= cr.get_float(m, current_key, -1);
-        if(c <= 0) {
-            delete pwm;
-            printf("configure-current-control: %s - invalid current\n", name.c_str());
-            continue;
-        }
-
-        currents[name] = c;
         pins[name]= pwm;
+        bool ok= set_current(name, c);
 
-        pwm->set(current_to_pwm(c));
-        printf("configure-current-control: %s set to %1.5f amps\n", name.c_str(), c);
+#elif defined(BOARD_PRIMEALPHA)
+        // SPI defined current control, we ask actuator to deal with it
+        bool ok= set_current(name, c);
+#endif
+        if(ok) {
+            printf("configure-current-control: %s set to %1.5f amps\n", name.c_str(), c);
+        }else{
+            printf("configure-current-control: Failed to set current for %s\n", name.c_str());
+        }
     }
 
     // register gcodes and mcodes
@@ -82,6 +84,30 @@ bool CurrentControl::configure(ConfigReader& cr)
     return currents.size() > 0;
 }
 
+bool CurrentControl::set_current(const std::string& name, float current)
+{
+#ifdef BOARD_MINIALPHA
+    auto x= pins.find(name);
+    if(x == pins.end()){
+        return false;
+    }
+    x->second->set(current_to_pwm(current));
+    bool ok= true;
+
+#elif defined(BOARD_PRIMEALPHA)
+    // ask Actuator to set its current
+    char axis= lut[name];
+    int n= axis < 'X' ? axis-'A'+3 : axis-'X';
+    if(n >= Robot::getInstance()->get_number_registered_motors()) return false;
+    bool ok= Robot::getInstance()->actuators[n]->set_current(current);
+#endif
+
+    if(ok) {
+        currents[name] = current;
+    }
+
+    return ok;
+}
 
 bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
 {
@@ -93,7 +119,7 @@ bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
             return true;
         }
 
-        // XYZ are the first 3 channels and ABCD are the next channels
+        // XYZ are the first 3 channels and ABC are the next channels
         for (int i = 0; i < 7; i++) {
             char axis= i < 3 ? 'X'+i : 'A'+i-3;
             if (gcode.has_arg(axis)) {
@@ -109,14 +135,9 @@ bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
                     default: os.printf("Unknown axis %c\n", axis); continue;
                 }
 
-                auto x= pins.find(p);
-                if(x == pins.end()){
+                if(!set_current(p, c)){
                     os.printf("axis %c is not configured for current control\n", axis);
-                    continue;
                 }
-
-                x->second->set(current_to_pwm(c));
-                currents[p]= c;
             }
         }
 

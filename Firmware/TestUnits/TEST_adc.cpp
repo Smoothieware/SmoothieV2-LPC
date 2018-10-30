@@ -163,7 +163,7 @@ REGISTER_TEST(ADCTest, adc_class_interrupts)
     printf("Max ADC= %lu\n", max_adc_value);
 
     // give it time to accumulate the 32 samples
-    vTaskDelay(pdMS_TO_TICKS(32*10 + 100));
+    vTaskDelay(pdMS_TO_TICKS(32*10*2 + 100));
     // fill up moving average buffer
     adc->read();
     adc->read();
@@ -210,7 +210,7 @@ REGISTER_TEST(ADCTest, two_adc_channels)
     printf("Max ADC= %lu\n", max_adc_value);
 
     // give it time to accumulate the 32 samples
-    vTaskDelay(pdMS_TO_TICKS(32*10 + 100));
+    vTaskDelay(pdMS_TO_TICKS(32*10*2 + 100));
 
     // fill up moving average buffer
     for (int i = 0; i < 4; ++i) {

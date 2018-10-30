@@ -404,6 +404,7 @@ void Robot::enable_all_motors(bool flg)
 {
     for(auto a : actuators) {
         // TODO how to handle the SPI motor drivers?
+        // TODO for TMC2660 drivers if the Vbb went off we need to initialize them again
         a->enable(flg);
     }
 }
