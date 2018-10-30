@@ -82,6 +82,17 @@ std::vector<float> stringutils::parse_number_list(const char *str)
     return r;
 }
 
+std::vector<uint32_t> stringutils::parse_number_list(const char *str, int radix)
+{
+    std::vector<std::string> l= stringutils::split(str, ',');
+    std::vector<uint32_t> r;
+    for(auto& s : l){
+        uint32_t x = strtoul(s.c_str(), nullptr, radix);
+        r.push_back(x);
+    }
+    return r;
+}
+
 // convert the wcs to the string Gcode version
 std::string stringutils::wcs2gcode(int wcs) {
     std::string str= "G5";

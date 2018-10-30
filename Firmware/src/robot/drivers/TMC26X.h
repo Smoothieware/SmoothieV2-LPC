@@ -38,6 +38,7 @@ class OutputStream;
 class SPI;
 class ConfigReader;
 class Pin;
+class GCode;
 
 /*!
  * \class TMC26X
@@ -71,7 +72,7 @@ public:
      * This routine configures the TMC26X stepper driver for the given values via SPI.
      * Most member functions are non functional if the driver has not been started.
      */
-    void init(bool full);
+    void init();
 
     /*!
      * \brief Set the number of microsteps in 2^i values (rounded) up to 256
@@ -402,14 +403,12 @@ public:
      * \brief Prints out all the information that can be found in the last status read out - it does not force a status readout.
      * The result is printed via Serial
      */
-    void dumpStatus(OutputStream& stream, bool readable= true);
-    bool setRawRegister(OutputStream& stream, uint32_t reg, uint32_t val);
+    bool set_raw_register(OutputStream& stream, uint32_t reg, uint32_t val);
     bool checkAlarm();
 
     bool config(ConfigReader& cr, const char *actuator_name);
-    using options_t= std::map<char,int>;
-
-    bool set_options(const options_t& options);
+    void dump_status(OutputStream& stream, bool readable= true);
+    bool set_options(const GCode& gcode);
 
 private:
     //helper routione to get the top 10 bit of the readout
@@ -448,10 +447,13 @@ private:
         int8_t h_decrement:3;
         bool cool_step_enabled:1; //we need to remember this to configure the coolstep if it si enabled
         bool started:1; //if the stepper has been started yet
+        bool halt_on_alarm:1;
+        bool check_alarm:1;
     };
+
+    uint32_t max_current{3000};
 
     uint8_t cool_step_lower_threshold; // we need to remember the threshold to enable and disable the CoolStep feature
     char designator;
-
 };
 

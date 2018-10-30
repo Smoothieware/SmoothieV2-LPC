@@ -36,9 +36,12 @@
 #include "Spi.h"
 #include "Pin.h"
 #include "ConfigReader.h"
+#include "StringUtils.h"
+#include "GCode.h"
 
 
 #include <cmath>
+#include <iostream>
 
 //! return value for TMC26X.getOverTemperature() if there is a overtemperature situation in the TMC chip
 /*!
@@ -152,6 +155,10 @@
 // config keys
 #define spi_cs_pin_key                  "spi_cs_pin"
 #define resistor_key                    "sense_resistor"
+#define check_alarm_key                 "check_alarm"
+#define halt_on_alarm_key               "halt_on_alarm"
+#define max_current_key                 "max_current"
+#define raw_register_key                "reg"
 
 SPI *TMC26X::spi= nullptr;
 /*
@@ -171,6 +178,33 @@ TMC26X::TMC26X(char d) : designator(d)
         spi->frequency(100000);
         spi->format(8, 3); // 8bit, mode3
     }
+
+    // setting the default register values
+    driver_control_register_value = DRIVER_CONTROL_REGISTER;
+    chopper_config_register_value = CHOPPER_CONFIG_REGISTER;
+    cool_step_register_value = COOL_STEP_REGISTER;
+    stall_guard2_current_register_value = STALL_GUARD2_LOAD_MEASURE_REGISTER;
+    driver_configuration_register_value = DRIVER_CONFIG_REGISTER | READ_STALL_GUARD_READING;
+    #if 1
+        //set to a conservative start value
+        setConstantOffTimeChopper(7, 54, 13, 12, 1);
+    #else
+        //void TMC26X::setSpreadCycleChopper( constant_off_time,  blank_time,  hysteresis_start,  hysteresis_end,  hysteresis_decrement);
+
+        // openbuilds high torque nema23 3amps (2.8)
+        setSpreadCycleChopper(5, 36, 6, 0, 0);
+        // for 1.5amp kysan @ 12v
+        setSpreadCycleChopper(5, 54, 5, 0, 0);
+        // for 4amp Nema24 @ 12v
+        //setSpreadCycleChopper(5, 54, 4, 0, 0);
+    #endif
+    setEnabled(false);
+
+    // set a nice microstepping value
+    setMicrosteps(DEFAULT_MICROSTEPPING_VALUE);
+
+    // set stallguard to a conservative value so it doesn't trigger immediately
+    setStallGuardThreshold(10, 1);
 }
 
 bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
@@ -201,6 +235,23 @@ bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
 
     this->resistor = cr.get_int(mm, resistor_key, 75); // in milliohms
 
+    check_alarm= cr.get_bool(mm, check_alarm_key, false);
+    halt_on_alarm= cr.get_bool(mm, halt_on_alarm_key, false);
+
+    // if raw registers are defined set them 1,2,3 etc in hex
+    std::string str= cr.get_string(mm, raw_register_key, "");
+    if(!str.empty()) {
+        std::vector<uint32_t> regs= stringutils::parse_number_list(str.c_str(), 16);
+        if(!regs.empty()) {
+            uint32_t reg= 0;
+            OutputStream os(&std::cout);
+            for(auto i : regs) {
+                // this just sets the local storage, it does not write to the chip
+                set_raw_register(os, ++reg, i);
+            }
+        }
+    }
+
     return true;
 }
 
@@ -208,17 +259,8 @@ bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
  * configure the stepper driver
  * must be called after Vbb is applied
  */
-void TMC26X::init(bool full)
+void TMC26X::init()
 {
-    if(full) {
-        // setting the default register values
-        driver_control_register_value = DRIVER_CONTROL_REGISTER;
-        chopper_config_register_value = CHOPPER_CONFIG_REGISTER;
-        cool_step_register_value = COOL_STEP_REGISTER;
-        stall_guard2_current_register_value = STALL_GUARD2_LOAD_MEASURE_REGISTER;
-        driver_configuration_register_value = DRIVER_CONFIG_REGISTER | READ_STALL_GUARD_READING;
-    }
-
     // set the saved values
     send262(driver_control_register_value);
     send262(chopper_config_register_value);
@@ -227,33 +269,12 @@ void TMC26X::init(bool full)
     send262(driver_configuration_register_value);
 
     started = true;
-
-    if(full) {
-#if 1
-        //set to a conservative start value
-        setConstantOffTimeChopper(7, 54, 13, 12, 1);
-#else
-        //void TMC26X::setSpreadCycleChopper( constant_off_time,  blank_time,  hysteresis_start,  hysteresis_end,  hysteresis_decrement);
-
-        // openbuilds high torque nema23 3amps (2.8)
-        setSpreadCycleChopper(5, 36, 6, 0, 0);
-        // for 1.5amp kysan @ 12v
-        setSpreadCycleChopper(5, 54, 5, 0, 0);
-        // for 4amp Nema24 @ 12v
-        //setSpreadCycleChopper(5, 54, 4, 0, 0);
-#endif
-        setEnabled(false);
-
-        //set a nice microstepping value
-        setMicrosteps(DEFAULT_MICROSTEPPING_VALUE);
-
-        // set stallguard to a conservative value so it doesn't trigger immediately
-        setStallGuardThreshold(10, 1);
-    }
 }
 
 void TMC26X::setCurrent(unsigned int current)
 {
+    if(current > max_current) current= max_current;
+
     uint8_t current_scaling = 0;
     //calculate the current scaling from the max current setting (in mA)
     double mASetting = (double)current;
@@ -903,7 +924,7 @@ bool TMC26X::isCurrentScalingHalfed()
     }
 }
 
-void TMC26X::dumpStatus(OutputStream& stream, bool readable)
+void TMC26X::dump_status(OutputStream& stream, bool readable)
 {
     if (readable) {
         stream.printf("designator %c, Chip type TMC26X\n", designator);
@@ -1071,7 +1092,7 @@ bool TMC26X::checkAlarm()
 // sets a raw register to the value specified, for advanced settings
 // register 255 writes them, 0 displays what registers are mapped to what
 // FIXME status registers not reading back correctly, check docs
-bool TMC26X::setRawRegister(OutputStream& stream, uint32_t reg, uint32_t val)
+bool TMC26X::set_raw_register(OutputStream& stream, uint32_t reg, uint32_t val)
 {
     switch(reg) {
         case 255:
@@ -1135,9 +1156,9 @@ int TMC26X::sendSPI(uint8_t *b, int cnt, uint8_t *r)
     return cnt;
 }
 
-#define HAS(X) (options.find(X) != options.end())
-#define GET(X) (options.at(X))
-bool TMC26X::set_options(const options_t& options)
+#define HAS(X) (gcode.has_arg(X))
+#define GET(X) (gcode.get_int_arg(X))
+bool TMC26X::set_options(const GCode& gcode)
 {
     bool set = false;
     if(HAS('O') || HAS('Q')) {

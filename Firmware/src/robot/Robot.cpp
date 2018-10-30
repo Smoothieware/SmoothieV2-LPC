@@ -332,7 +332,10 @@ bool Robot::configure(ConfigReader& cr)
     }
 
     //this->clearToolOffset();
-
+    #ifdef BOARD_PRIMEALPHA
+    // TODO we need to periodically check Vbb and if it is off we need to tell all motors to reset when it comes on again
+    //
+    #endif
     // register gcodes and mcodes
     using std::placeholders::_1;
     using std::placeholders::_2;
@@ -399,7 +402,10 @@ bool Robot::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&Robot::handle_M500, this, _1, _2));
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 665, std::bind(&Robot::handle_M665, this, _1, _2));
-
+#ifdef BOARD_PRIMEALPHA
+    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 909, std::bind(&Robot::handle_M909, this, _1, _2));
+    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 911, std::bind(&Robot::handle_M911, this, _1, _2));
+#endif
     return true;
 }
 
@@ -418,8 +424,6 @@ void Robot::on_halt(bool flg)
 void Robot::enable_all_motors(bool flg)
 {
     for(auto a : actuators) {
-        // TODO how to handle the SPI motor drivers?
-        // TODO for TMC2660 drivers if the Vbb went off we need to initialize them again
         a->enable(flg);
     }
 }
@@ -1011,6 +1015,82 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
 
     return handled;
 }
+
+#ifdef BOARD_PRIMEALPHA
+bool Robot::handle_M909(GCode& gcode, OutputStream& os)
+{
+    for (int i = 0; i < get_number_registered_motors(); i++) {
+        char axis= i < 3 ? 'X'+i : 'A'+i-3;
+        if (gcode.has_arg(axis)) {
+            uint32_t current_microsteps= actuators[i]->get_microsteps();
+            uint32_t microsteps= gcode.get_int_arg(axis);
+            actuators[i]->set_microsteps(microsteps);
+            if(gcode.get_subcode() == 1 && current_microsteps != microsteps) {
+                // also reset the steps/mm
+                float s= actuators[i]->get_steps_per_mm()*((float)microsteps/current_microsteps);
+                actuators[i]->change_steps_per_mm(s);
+                os.printf("steps/mm for %c changed to: %f\n", axis, s);
+                check_max_actuator_speeds();
+            }
+        }
+    }
+    return true;
+}
+
+/* set or get raw registers
+    M911 will dump all the registers and status of all the motors
+    M911.1 Pn will dump the registers and status of the selected motor.
+              R0 will request format in processing machine readable format
+    M911.2 Pn Rxxx Vyyy sets Register xxx to value yyy for motor n,
+               xxx == 255 writes the registers
+               xxx == 0 shows what registers are mapped to what
+
+    M911.3 Pn will set the options for motor n based on the parameters passed as below...
+
+    M911.3 Onnn Qnnn setStallGuardThreshold O=stall_guard_threshold, Q=stall_guard_filter_enabled
+    M911.3 Hnnn Innn Jnnn Knnn Lnnn setCoolStepConfiguration H=lower_SG_threshold, I=SG_hysteresis, J=current_decrement_step_size, K=current_increment_step_size, L=lower_current_limit
+    M911.3 S0 Unnn Vnnn Wnnn Xnnn Ynnn setConstantOffTimeChopper  U=constant_off_time, V=blank_time, W=fast_decay_time_setting, X=sine_wave_offset, Y=use_current_comparator
+    M911.3 S1 Unnn Vnnn Wnnn Xnnn Ynnn setSpreadCycleChopper  U=constant_off_time, V=blank_time, W=hysteresis_start, X=hysteresis_end, Y=hysteresis_decrement
+    M911.3 S2 Zn setRandomOffTime Z=on|off Z1 is on Z0 is off
+    M911.3 S3 Zn setDoubleEdge Z=on|off Z1 is on Z0 is off
+    M911.3 S4 Zn setStepInterpolation Z=on|off Z1 is on Z0 is off
+    M911.3 S5 Zn setCoolStepEnabled Z=on|off Z1 is on Z0 is off
+*/
+bool Robot::handle_M911(GCode& gcode, OutputStream& os)
+{
+    if(gcode.get_subcode() == 0 && gcode.has_no_args()) {
+        // M911 no args dump status for all drivers
+        for (int i = 0; i < get_number_registered_motors(); i++) {
+            char axis= i < 3 ? 'X'+i : 'A'+i-3;
+            os.printf("Motor %d (%c)...\n", i, axis);
+            actuators[i]->dump_status(os);
+        }
+        return true;
+
+    }else if(gcode.has_arg('P')) {
+        int p= gcode.get_int_arg('P');
+        if(p >= get_number_registered_motors()) return true;
+
+        if(gcode.get_subcode() == 1) {
+            // M911.1 Pn dump for specific driver
+            actuators[p]->dump_status(os, !gcode.has_arg('R'));
+
+        }else if(gcode.get_subcode() == 2 && gcode.has_arg('R') && gcode.has_arg('V')) {
+            actuators[p]->set_raw_register(os, gcode.get_int_arg('R'), gcode.get_int_arg('V'));
+
+        }else if(gcode.get_subcode() == 3 ) {
+            if(!actuators[p]->set_options(gcode)) {
+                os.printf("No options were recognised\n");
+            }else{
+                os.printf("options were set\n");
+            }
+        }
+        return true;
+    }
+
+    return false;
+}
+#endif
 
 bool Robot::handle_M500(GCode& gcode, OutputStream& os)
 {

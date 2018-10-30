@@ -6,7 +6,6 @@
 StepperMotor::StepperMotor(Pin &step, Pin &dir, Pin &en) : step_pin(step), dir_pin(dir), en_pin(en)
 {
     if(en.connected()) {
-        //TODO how to do enable
         //set_high_on_debug(en.port_number, en.pin);
     }
 
@@ -20,6 +19,7 @@ StepperMotor::StepperMotor(Pin &step, Pin &dir, Pin &en) : step_pin(step), dir_p
     acceleration= NAN;
     selected= true;
     extruder= false;
+    vbblost= false;
 
     enable(false);
     unstep(); // initialize step pin
@@ -100,14 +100,14 @@ bool StepperMotor::setup_tmc2660(ConfigReader& cr, const char *actuator_name)
         delete tmc2660;
         return false;
     }
-    tmc2660->init(true);
+    tmc2660->init();
 
     return true;
 }
 
 bool StepperMotor::init_tmc2660()
 {
-    tmc2660->init(false);
+    tmc2660->init();
     return true;
 }
 
@@ -124,8 +124,18 @@ bool StepperMotor::set_microsteps(uint16_t ms)
     return true;
 }
 
+int StepperMotor::get_microsteps()
+{
+    return tmc2660->getMicrosteps();
+}
+
 void StepperMotor::enable(bool state)
 {
+    // TODO if we have lost Vbb since last time then we need to re load all the drivers configs
+    if(state && vbblost) {
+        tmc2660->init();
+        vbblost= false;
+    }
     tmc2660->setEnabled(state);
 }
 
@@ -133,6 +143,22 @@ bool StepperMotor::is_enabled() const
 {
     return tmc2660->isEnabled();
 }
+
+void StepperMotor::dump_status(OutputStream& os, bool flag)
+{
+    tmc2660->dump_status(os, flag);
+}
+
+void StepperMotor::set_raw_register(OutputStream& os, uint32_t reg, uint32_t val)
+{
+    tmc2660->set_raw_register(os, reg, val);
+}
+
+bool StepperMotor::set_options(GCode& gcode)
+{
+    return tmc2660->set_options(gcode);
+}
+
 
 #else
 

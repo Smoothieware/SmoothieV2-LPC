@@ -4,6 +4,8 @@
 
 class TMC26X;
 class ConfigReader;
+class OutputStream;
+class GCode;
 
 class StepperMotor
 {
@@ -73,18 +75,24 @@ class StepperMotor
             volatile bool moving:1;
             bool selected:1;
             bool extruder:1;
+            bool vbblost:1;
         };
 
-        #ifdef BOARD_PRIMEALPHA
+#ifdef BOARD_PRIMEALPHA
     public:
         bool set_current(float c);
         bool set_microsteps(uint16_t ms);
+        int get_microsteps();
         bool setup_tmc2660(ConfigReader& cr, const char *actuator_name);
         bool init_tmc2660();
+        void dump_status(OutputStream& os, bool flag=true);
+        void set_raw_register(OutputStream& os, uint32_t reg, uint32_t val);
+        bool set_options(GCode& gcode);
+
 
     private:
         // TMC2660 driver
         TMC26X *tmc2660;
-        #endif
+#endif
 };
 
