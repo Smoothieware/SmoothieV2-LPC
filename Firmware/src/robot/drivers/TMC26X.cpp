@@ -927,8 +927,11 @@ bool TMC26X::isCurrentScalingHalfed()
 
 void TMC26X::dump_status(OutputStream& stream, bool readable)
 {
+    // always report errors
+    error_reported.reset();
+
     if (readable) {
-        stream.printf("designator %c, actuator %s, Chip type TMC2660\n", designator, name);
+        stream.printf("designator %c, actuator %s, Chip type TMC2660\n", designator, name.c_str());
 
         check_error_status_bits(stream);
 

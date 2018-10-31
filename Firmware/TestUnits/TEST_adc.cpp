@@ -19,8 +19,8 @@ using systime_t= uint32_t;
 #ifdef BOARD_BAMBINO
 #define _ADC_CHANNEL ADC_CH1
 #else
-#define _ADC_CHANNEL ADC_CH6 // board temp
-//#define _ADC_CHANNEL ADC_CH7 // Vbb
+//#define _ADC_CHANNEL ADC_CH6 // board temp
+#define _ADC_CHANNEL ADC_CH7 // Vbb
 #endif
 
 #define _LPC_ADC_ID LPC_ADC0

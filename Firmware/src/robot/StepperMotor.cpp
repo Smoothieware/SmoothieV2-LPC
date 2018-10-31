@@ -95,6 +95,7 @@ void StepperMotor::manual_step(bool dir)
 bool StepperMotor::setup_tmc2660(ConfigReader& cr, const char *actuator_name)
 {
     char axis= motor_id<3?'X'+motor_id:'A'+motor_id-3;
+    printf("DEBUG: setting up tmc2660 for %s, axis %c\n", actuator_name, axis);
     tmc2660= new TMC26X(axis);
     if(!tmc2660->config(cr, actuator_name)) {
         delete tmc2660;
