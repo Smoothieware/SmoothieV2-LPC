@@ -64,6 +64,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "$#", std::bind( &CommandShell::grblDP_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "$G", std::bind( &CommandShell::grblDG_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "$H", std::bind( &CommandShell::grblDH_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "$J", std::bind( &CommandShell::jog_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "test", std::bind( &CommandShell::test_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "version", std::bind( &CommandShell::version_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "break", std::bind( &CommandShell::break_cmd, this, _1, _2) );
@@ -1138,5 +1139,58 @@ bool CommandShell::reset_cmd(std::string& params, OutputStream& os)
     os.printf("Reset will occur in 5 seconds, make sure to disconnect before that\n");
     vTaskDelay(pdMS_TO_TICKS(5000));
     *(volatile int*)0x40053100 = 1; // reset core
+    return true;
+}
+
+bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
+{
+    HELP("instant jog: $J X|Y|Z|A|B|C 0.01 [F0.5]");
+    // $J X0.1 F0.5
+    int n_motors= Robot::getInstance()->get_number_registered_motors();
+
+    // get axis to move and amount (X0.1)
+    // for now always 1 axis
+    size_t npos= params.find_first_of("XYZABC");
+    if(npos == std::string::npos) {
+        os.printf("usage: $J X|Y|Z|A|B|C 0.01 [F0.5]\n");
+        return true;
+    }
+
+    std::string s = params.substr(npos);
+    if(s.empty() || s.size() < 2) {
+        os.printf("usage: $J X0.01 [F0.5]\n");
+        return true;
+    }
+    char ax= toupper(s[0]);
+    uint8_t a= ax >= 'X' ? ax - 'X' : ax - 'A' + 3;
+    if(a >= n_motors) {
+        os.printf("error:bad axis\n");
+        return true;
+    }
+
+    float d= strtof(s.substr(1).c_str(), NULL);
+
+    float delta[n_motors];
+    for (int i = 0; i < n_motors; ++i) {
+        delta[i]= 0;
+    }
+    delta[a]= d;
+
+    // get speed scale
+    float scale= 1.0F;
+    npos= params.find_first_of("F");
+    if(npos != std::string::npos && npos+1 < params.size()) {
+        scale= strtof(params.substr(npos+1).c_str(), NULL);
+    }
+
+    Robot::getInstance()->push_state();
+    float rate_mm_s= Robot::getInstance()->actuators[a]->get_max_rate() * scale;
+    Robot::getInstance()->delta_move(delta, rate_mm_s, n_motors);
+
+    // turn off queue delay and run it now
+    Conveyor::getInstance()->force_queue();
+    Robot::getInstance()->pop_state();
+    //os.printf("Jog: %c%f F%f\n", ax, d, scale);
+
     return true;
 }

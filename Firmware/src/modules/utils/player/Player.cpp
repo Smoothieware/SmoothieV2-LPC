@@ -729,3 +729,14 @@ bool Player::resume_command(std::string& params, OutputStream& os )
     return true;
 }
 
+void Player::on_halt(bool flg)
+{
+    if(flg && suspended) {
+       // clean up from suspend
+       suspended= false;
+       Robot::getInstance()->pop_state();
+       saved_temperatures.clear();
+       was_playing_file= false;
+       suspend_loops= 0;
+    }
+}

@@ -40,6 +40,8 @@ public:
     bool get_next_block(Block **block);
     void block_finished();
     void flush_queue(void);
+    void force_queue() { check_queue(true); }
+
     float get_current_feedrate() const { return current_feedrate; }
 
     // debug function
