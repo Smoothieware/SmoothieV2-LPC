@@ -291,7 +291,7 @@ void TMC26X::setCurrent(unsigned int current)
 
     //check if the current scaling is too low
     if (current_scaling < 16) {
-        //set the csense bit to get a use half the sense voltage (to support lower motor currents)
+        //set the vsense bit to get a use half the sense voltage (to support lower motor currents)
         this->driver_configuration_register_value |= VSENSE;
         //and recalculate the current setting
         current_scaling = (uint8_t)((resistor_value * mASetting * 32.0F / (0.165F * 1000.0F * 1000.0F)) - 0.5F); //theoretically - 1.0 for better rounding it is 0.5
@@ -955,11 +955,11 @@ void TMC26X::dump_status(OutputStream& stream, bool readable)
         stream.printf("Microsteps: 1/%d\n", microsteps);
 
         stream.printf("Register dump:\n");
-        stream.printf(" driver control register: %08lX(%ld)\n", driver_control_register_value, driver_control_register_value);
-        stream.printf(" chopper config register: %08lX(%ld)\n", chopper_config_register_value, chopper_config_register_value);
-        stream.printf(" cool step register: %08lX(%ld)\n", cool_step_register_value, cool_step_register_value);
-        stream.printf(" stall guard2 current register: %08lX(%ld)\n", stall_guard2_current_register_value, stall_guard2_current_register_value);
-        stream.printf(" driver configuration register: %08lX(%ld)\n", driver_configuration_register_value, driver_configuration_register_value);
+        stream.printf(" driver control register: %05lX(%ld)\n", driver_control_register_value, driver_control_register_value);
+        stream.printf(" chopper config register: %05lX(%ld)\n", chopper_config_register_value, chopper_config_register_value);
+        stream.printf(" cool step register: %05lX(%ld)\n", cool_step_register_value, cool_step_register_value);
+        stream.printf(" stall guard2 current register: %05lX(%ld)\n", stall_guard2_current_register_value, stall_guard2_current_register_value);
+        stream.printf(" driver configuration register: %05lX(%ld)\n", driver_configuration_register_value, driver_configuration_register_value);
         stream.printf(" %s.reg %05lX,%05lX,%05lX,%05lX,%05lX\n", name.c_str(), driver_control_register_value, chopper_config_register_value, cool_step_register_value, stall_guard2_current_register_value, driver_configuration_register_value);
 
     } else {
@@ -1110,11 +1110,11 @@ bool TMC26X::set_raw_register(OutputStream& stream, uint32_t reg, uint32_t val)
             break;
 
 
-        case 1: driver_control_register_value = val; stream.printf("driver control register set to %08lX\n", val); break;
-        case 2: chopper_config_register_value = val; stream.printf("chopper config register set to %08lX\n", val); break;
-        case 3: cool_step_register_value = val; stream.printf("cool step register set to %08lX\n", val); break;
-        case 4: stall_guard2_current_register_value = val; stream.printf("stall guard2 current register set to %08lX\n", val); break;
-        case 5: driver_configuration_register_value = val; stream.printf("driver configuration register set to %08lX\n", val); break;
+        case 1: driver_control_register_value = val; stream.printf("driver control register set to %05lX\n", val); break;
+        case 2: chopper_config_register_value = val; stream.printf("chopper config register set to %05lX\n", val); break;
+        case 3: cool_step_register_value = val; stream.printf("cool step register set to %05lX\n", val); break;
+        case 4: stall_guard2_current_register_value = val; stream.printf("stall guard2 current register set to %05lX\n", val); break;
+        case 5: driver_configuration_register_value = val; stream.printf("driver configuration register set to %05lX\n", val); break;
 
         default:
             stream.printf("1: driver control register\n");
@@ -1147,7 +1147,7 @@ void TMC26X::send262(unsigned long datagram)
     //store the datagram as status result
     driver_status_result = i_datagram;
 
-    printf("sent: %02X, %02X, %02X received: %02X, %02X, %02X \n", buf[0], buf[1], buf[2], rbuf[0], rbuf[1], rbuf[2]);
+    printf("%c: sent: %05lX received: %05lX\n", designator, datagram, i_datagram);
 }
 
 // Called by the drivers codes to send and receive SPI data to/from the chip

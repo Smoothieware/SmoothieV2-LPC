@@ -38,6 +38,7 @@ public:
 	int write(int value);
 
 protected:
+	static bool channel_init[2];
 	void *_lpc_ssp;
 	int _channel;
 	int _bits;

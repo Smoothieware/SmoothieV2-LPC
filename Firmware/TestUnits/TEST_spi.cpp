@@ -13,6 +13,7 @@
 #define LPC_SSP LPC_SSP0
 
 #ifdef BOARD_PRIMEALPHA
+#if 0
 REGISTER_TEST(SPITest, basic_lowlevel)
 {
 	/* SSP initialization */
@@ -61,6 +62,7 @@ REGISTER_TEST(SPITest, basic_lowlevel)
 
 	Chip_SSP_DeInit(LPC_SSP);
 }
+#endif
 
 #include "Pin.h"
 #include "Spi.h"
@@ -102,7 +104,7 @@ REGISTER_TEST(SPITest, Spi_class)
     	printf("testing channel with cs pin: %s\n", p.to_string().c_str());
     	int n= sendSPI(spi, p, tx_buf, 3, rx_buf);
     	TEST_ASSERT_EQUAL_INT(3, n);
-    	uint32_t tdata= ((tx_buf[0] << 16) | (tx_buf[1] << 8) | (tx_buf[2])) >> 4;
+    	uint32_t tdata= ((tx_buf[0] << 16) | (tx_buf[1] << 8) | (tx_buf[2]));
 		printf("  sent: %02X %02X %02X (%08lX)\n", tx_buf[0], tx_buf[1], tx_buf[2], tdata);
 		uint32_t rdata= ((rx_buf[0] << 16) | (rx_buf[1] << 8) | (rx_buf[2])) >> 4;
 		printf("  rcvd: %02X %02X %02X (%08lX)\n", rx_buf[0], rx_buf[1], rx_buf[2], rdata);

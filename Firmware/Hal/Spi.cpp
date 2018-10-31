@@ -2,6 +2,7 @@
 
 #include "board.h"
 
+bool SPI::channel_init[2]{false, false};
 SPI::SPI(int channel)
 {
     /* SSP initialization */
@@ -9,6 +10,14 @@ SPI::SPI(int channel)
     	_lpc_ssp= LPC_SSP0;
     }else{
     	_lpc_ssp= LPC_SSP1;
+    }
+
+    if(channel_init[channel]) {
+    	printf("WARNING: SPI channel %d, already inited\n", channel);
+    }else{
+    	// need to init board once
+    	Board_SSP_Init((LPC_SSP_T*)_lpc_ssp);
+    	channel_init[channel]= true;
     }
 
     _channel= channel;

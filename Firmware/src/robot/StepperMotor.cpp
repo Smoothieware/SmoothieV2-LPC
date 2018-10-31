@@ -142,8 +142,15 @@ void StepperMotor::enable(bool state)
     if(state && vbblost) {
         tmc2660->init();
         vbblost= false;
+        tmc2660->setEnabled(state);
+        return;
     }
-    tmc2660->setEnabled(state);
+
+    // we don't want to enable/disable it if it is already in that state to avoid sending SPI all the time
+    bool en= is_enabled();
+    if((!en && state) || (en && !state)) {
+        tmc2660->setEnabled(state);
+    }
 }
 
 bool StepperMotor::is_enabled() const

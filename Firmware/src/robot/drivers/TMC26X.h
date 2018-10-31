@@ -452,7 +452,7 @@ private:
         bool check_alarm:1;
     };
 
-    uint32_t max_current{3000};
+    uint32_t max_current{2800};
 
     uint8_t cool_step_lower_threshold; // we need to remember the threshold to enable and disable the CoolStep feature
     char designator;
