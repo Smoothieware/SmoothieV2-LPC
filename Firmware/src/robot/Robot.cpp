@@ -9,6 +9,7 @@
 #include "ConfigReader.h"
 #include "StringUtils.h"
 #include "main.h"
+#include "TemperatureControl.h"
 
 #include "BaseSolution.h"
 #include "CartesianSolution.h"
@@ -1947,52 +1948,44 @@ void Robot::get_query_string(std::string& str) const
         // machine position
         size_t n = snprintf(buf, sizeof(buf), "%1.4f,%1.4f,%1.4f", from_millimeters(mpos[0]), from_millimeters(mpos[1]), from_millimeters(mpos[2]));
 
-        if(new_status_format) {
-            str.append("|MPos:").append(buf, n);
+        str.append("|MPos:").append(buf, n);
 
 #if MAX_ROBOT_ACTUATORS > 3
-            // deal with the ABC axis (E will be A)
-            for (int i = A_AXIS; i < get_number_registered_motors(); ++i) {
-                // current actuator position
-                n = snprintf(buf, sizeof(buf), ",%1.4f", from_millimeters(actuators[i]->get_current_position()));
-                str.append(buf, n);
-            }
-#endif
-
-        } else {
-            str.append(",MPos:").append(buf, n);
+        // deal with the ABC axis (E will be A)
+        for (int i = A_AXIS; i < get_number_registered_motors(); ++i) {
+            // current actuator position
+            n = snprintf(buf, sizeof(buf), ",%1.4f", from_millimeters(actuators[i]->get_current_position()));
+            str.append(buf, n);
         }
+#endif
 
         // work space position
         Robot::wcs_t pos = mcs2wcs(mpos);
         n = snprintf(buf, sizeof(buf), "%1.4f,%1.4f,%1.4f", from_millimeters(std::get<X_AXIS>(pos)), from_millimeters(std::get<Y_AXIS>(pos)), from_millimeters(std::get<Z_AXIS>(pos)));
+        str.append("|WPos:").append(buf, n);
 
-        if(new_status_format) {
-            str.append("|WPos:").append(buf, n);
-            // current feedrate
-            float fr = from_millimeters(Conveyor::getInstance()->get_current_feedrate() * 60.0F);
-            n = snprintf(buf, sizeof(buf), "|F:%1.4f", fr);
-            str.append(buf, n);
-            float sr = get_s_value();
-            n = snprintf(buf, sizeof(buf), "|S:%1.4f", sr);
-            str.append(buf, n);
+        // current feedrate
+        float fr = from_millimeters(Conveyor::getInstance()->get_current_feedrate() * 60.0F);
+        float frr= from_millimeters(get_feed_rate());
+        float fro= 6000.0F / get_seconds_per_minute();
+        n = snprintf(buf, sizeof(buf), "|F:%1.1f,%1.1f,%1.1f", fr, frr, fro);
+        if(n > sizeof(buf)) n= sizeof(buf);
+        str.append(buf, n);
 
-            // current Laser power
-            m = Module::lookup("laser");
-            if(m != nullptr) {
-                float lp;
-                bool ok = m->request("get_current_power", &lp);
-                if(ok) {
-                    n = snprintf(buf, sizeof(buf), "|L:%1.4f", lp);
-                    str.append(buf, n);
-                }
+        // current Laser power
+        float sr = get_s_value();
+        n = snprintf(buf, sizeof(buf), "|S:%1.4f", sr);
+        str.append(buf, n);
+
+        m = Module::lookup("laser");
+        if(m != nullptr) {
+            float lp;
+            bool ok = m->request("get_current_power", &lp);
+            if(ok) {
+                n = snprintf(buf, sizeof(buf), "|L:%1.4f", lp);
+                str.append(buf, n);
             }
-
-        } else {
-            str.append(",WPos:").append(buf, n);
         }
-
-        str.append(">\n");
 
     } else {
         // return the last milestone if idle
@@ -2000,37 +1993,44 @@ void Robot::get_query_string(std::string& str) const
         // machine position
         Robot::wcs_t mpos = get_axis_position();
         size_t n = snprintf(buf, sizeof(buf), "%1.4f,%1.4f,%1.4f", from_millimeters(std::get<X_AXIS>(mpos)), from_millimeters(std::get<Y_AXIS>(mpos)), from_millimeters(std::get<Z_AXIS>(mpos)));
-        if(new_status_format) {
-            str.append("|MPos:").append(buf, n);
-#if MAX_ROBOT_ACTUATORS > 3
-            // deal with the ABC axis (E will be A)
-            for (int i = A_AXIS; i < get_number_registered_motors(); ++i) {
-                // current actuator position
-                n = snprintf(buf, sizeof(buf), ",%1.4f", from_millimeters(actuators[i]->get_current_position()));
-                str.append(buf, n);
-            }
-#endif
 
-        } else {
-            str.append(",MPos:").append(buf, n);
+        str.append("|MPos:").append(buf, n);
+#if MAX_ROBOT_ACTUATORS > 3
+        // deal with the ABC axis (E will be A)
+        for (int i = A_AXIS; i < get_number_registered_motors(); ++i) {
+            // current actuator position
+            n = snprintf(buf, sizeof(buf), ",%1.4f", from_millimeters(actuators[i]->get_current_position()));
+            str.append(buf, n);
         }
+#endif
 
         // work space position
         Robot::wcs_t pos = mcs2wcs(mpos);
         n = snprintf(buf, sizeof(buf), "%1.4f,%1.4f,%1.4f", from_millimeters(std::get<X_AXIS>(pos)), from_millimeters(std::get<Y_AXIS>(pos)), from_millimeters(std::get<Z_AXIS>(pos)));
-        if(new_status_format) {
-            str.append("|WPos:").append(buf, n);
-        } else {
-            str.append(",WPos:").append(buf, n);
-        }
+        str.append("|WPos:").append(buf, n);
 
-        if(new_status_format) {
-            float fr = from_millimeters(get_feed_rate());
-            n = snprintf(buf, sizeof(buf), "|F:%1.4f", fr);
-            str.append(buf, n);
-        }
-
-        str.append(">\n");
+        // requested framerate, and override
+        float fr= from_millimeters(get_feed_rate());
+        float fro= 6000.0F / get_seconds_per_minute();
+        n = snprintf(buf, sizeof(buf), "|F:%1.1f,%1.1f", fr, fro);
+        if(n > sizeof(buf)) n= sizeof(buf);
+        str.append(buf, n);
     }
+
+    // if not grbl mode get temperatures
+    if(!is_grbl_mode()) {
+        std::vector<Module*> controllers = Module::lookup_group("temperature control");
+        for(auto c : controllers) {
+            TemperatureControl::pad_temperature_t temp;
+            if(c->request("get_current_temperature", &temp)) {
+                char buf[32];
+                size_t n= snprintf(buf, sizeof(buf), "|%s:%1.1f,%1.1f", temp.designator.c_str(), temp.current_temperature, temp.target_temperature);
+                if(n > sizeof(buf)) n= sizeof(buf);
+                str.append(buf, n);
+            }
+        }
+    }
+
+    str.append(">\n");
 }
 
