@@ -206,6 +206,16 @@ else
   raise("Error unhandled target")
 end
 
+# define the maximum number of axis compiled in
+unless ENV['axis'].nil?
+  defines << "-DMAX_ROBOT_ACTUATORS=#{ENV['axis']}"
+end
+
+# define the number of primary (cartesian) axis must be >= MAX_ROBOT_ACTUATORS
+unless ENV['paxis'].nil?
+  defines << "-DN_PRIMARY_AXIS=#{ENV['paxis']}"
+end
+
 defines += target_defines
 
 DEFINES= defines.join(' ')
@@ -237,6 +247,8 @@ task :help do
   puts " debuglib=1 - turns on debugging only for the hal libs"
   puts " ARMTOOLS=path - overides where the ARM tool chain is loaded from. default is #{TOOLSDIR}"
   puts " ARMVERSION=version - overides the version of ARM tools to use. default is #{ARMVERSION}"
+  puts " axis=nnn - overrides the number of axis compiled in. default is 4"
+  puts " paxis=nnn - overrides the number of primary axis. default is 3"
 end
 
 # tasks

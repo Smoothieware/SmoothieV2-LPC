@@ -185,16 +185,18 @@ TMC26X::TMC26X(char d) : designator(d)
     cool_step_register_value = COOL_STEP_REGISTER;
     stall_guard2_current_register_value = STALL_GUARD2_LOAD_MEASURE_REGISTER;
     driver_configuration_register_value = DRIVER_CONFIG_REGISTER | READ_STALL_GUARD_READING;
-    #if 1
+    #if 0
         //set to a conservative start value
         setConstantOffTimeChopper(7, 54, 13, 12, 1);
     #else
         //void TMC26X::setSpreadCycleChopper( constant_off_time,  blank_time,  hysteresis_start,  hysteresis_end,  hysteresis_decrement);
 
         // openbuilds high torque nema23 3amps (2.8)
-        setSpreadCycleChopper(5, 36, 6, 0, 0);
+        //setSpreadCycleChopper(5, 36, 6, 0, 0);
+
         // for 1.5amp kysan @ 12v
         setSpreadCycleChopper(5, 54, 5, 0, 0);
+
         // for 4amp Nema24 @ 12v
         //setSpreadCycleChopper(5, 54, 4, 0, 0);
     #endif
@@ -1147,7 +1149,7 @@ void TMC26X::send262(unsigned long datagram)
     //store the datagram as status result
     driver_status_result = i_datagram;
 
-    printf("%c: sent: %05lX received: %05lX\n", designator, datagram, i_datagram);
+    //printf("%c: sent: %05lX received: %05lX\n", designator, datagram, i_datagram);
 }
 
 // Called by the drivers codes to send and receive SPI data to/from the chip

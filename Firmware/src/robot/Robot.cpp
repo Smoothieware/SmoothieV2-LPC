@@ -50,12 +50,13 @@
 #define max_rate_key                    "max_rate"
 #define acceleration_key                "acceleration"
 
-// optional pins for microstepping used on v2mini
+// optional pins for microstepping used on smoothiev2 boards
 #define ms1_pin_key                     "ms1_pin"
 #define ms2_pin_key                     "ms2_pin"
 #define ms3_pin_key                     "ms3_pin"
 #define ms_key                          "microstepping"
 #define microsteps_key                  "microsteps"
+#define external_driver_key             "external_driver"
 
 // only one of these for all the drivers
 #define common_key                      "common"
@@ -201,7 +202,7 @@ bool Robot::configure(ConfigReader& cr)
     // make each motor
     for (size_t a = 0; a < MAX_ROBOT_ACTUATORS; a++) {
         auto s = ssm.find(actuator_keys[a]);
-        if(s == ssm.end()) break; //actuator not found and they must be in contiguous order
+        if(s == ssm.end()) break; // actuator not found and they must be in contiguous order
 
         auto& mm = s->second; // map of actuator config values for this actuator
         Pin step_pin(cr.get_string(mm, step_pin_key, "nc"), Pin::AS_OUTPUT);
@@ -286,17 +287,22 @@ bool Robot::configure(ConfigReader& cr)
                    s->first.c_str(), ms1_pin.get(), ms2_pin.get(), ms3_pin.get());
         }
 #elif defined(BOARD_PRIMEALPHA)
-        // setup the driver for this motor
-        if(!actuators[a]->setup_tmc2660(cr, s->first.c_str())) {
-            printf("FATAL:configure-robot: setup_tmc2660 failed for %s\n", s->first.c_str());
-            return false;
+        // drivers by default for XYZA are internal TMC2660, BC are by default external
+        bool external= cr.get_bool(m, external_driver_key, a >= 4 ? true : false);
+        if(!external) {
+            // setup the TMC2660 driver for this motor
+            if(!actuators[a]->setup_tmc2660(cr, s->first.c_str())) {
+                printf("FATAL:configure-robot: setup_tmc2660 failed for %s\n", s->first.c_str());
+                return false;
+            }
+
+            uint16_t microstep= cr.get_int(mm, microsteps_key, 32);
+            actuators[a]->set_microsteps(microstep);
+            printf("DEBUG:configure-robot: microsteps for %s set to %d\n", s->first.c_str(), microstep);
+
+        } else {
+            printf("DEBUG:configure-robot: %s is set as an external driver\n", s->first.c_str());
         }
-
-        uint16_t microstep= cr.get_int(mm, microsteps_key, 32);
-        actuators[a]->set_microsteps(microstep);
-        printf("DEBUG:configure-robot: microsteps for %s set to %d\n", s->first.c_str(), microstep);
-
-
 #endif
 
         actuators[a]->change_steps_per_mm(cr.get_float(mm, steps_per_mm_key, a == Z_AXIS ? 2560.0F : 80.0F));
@@ -1025,11 +1031,12 @@ bool Robot::handle_M909(GCode& gcode, OutputStream& os)
             uint32_t current_microsteps= actuators[i]->get_microsteps();
             uint32_t microsteps= gcode.get_int_arg(axis);
             actuators[i]->set_microsteps(microsteps);
+            os.printf("microsteps for %c temporarily changed to: 1/%d\n", axis, microsteps);
             if(gcode.get_subcode() == 1 && current_microsteps != microsteps) {
                 // also reset the steps/mm
                 float s= actuators[i]->get_steps_per_mm()*((float)microsteps/current_microsteps);
                 actuators[i]->change_steps_per_mm(s);
-                os.printf("steps/mm for %c changed to: %f\n", axis, s);
+                os.printf("steps/mm for %c temporarily changed to: %f\n", axis, s);
                 check_max_actuator_speeds();
             }
         }
@@ -1047,14 +1054,22 @@ bool Robot::handle_M909(GCode& gcode, OutputStream& os)
 
     M911.3 Pn will set the options for motor n based on the parameters passed as below...
 
-    M911.3 Onnn Qnnn setStallGuardThreshold O=stall_guard_threshold, Q=stall_guard_filter_enabled
-    M911.3 Hnnn Innn Jnnn Knnn Lnnn setCoolStepConfiguration H=lower_SG_threshold, I=SG_hysteresis, J=current_decrement_step_size, K=current_increment_step_size, L=lower_current_limit
-    M911.3 S0 Unnn Vnnn Wnnn Xnnn Ynnn setConstantOffTimeChopper  U=constant_off_time, V=blank_time, W=fast_decay_time_setting, X=sine_wave_offset, Y=use_current_comparator
-    M911.3 S1 Unnn Vnnn Wnnn Xnnn Ynnn setSpreadCycleChopper  U=constant_off_time, V=blank_time, W=hysteresis_start, X=hysteresis_end, Y=hysteresis_decrement
-    M911.3 S2 Zn setRandomOffTime Z=on|off Z1 is on Z0 is off
-    M911.3 S3 Zn setDoubleEdge Z=on|off Z1 is on Z0 is off
-    M911.3 S4 Zn setStepInterpolation Z=on|off Z1 is on Z0 is off
-    M911.3 S5 Zn setCoolStepEnabled Z=on|off Z1 is on Z0 is off
+    M911.3 Onnn Qnnn setStallGuardThreshold
+           O=stall_guard_threshold, Q=stall_guard_filter_enabled
+    M911.3 Hnnn Innn Jnnn Knnn Lnnn setCoolStepConfiguration
+           H=lower_SG_threshold, I=SG_hysteresis, J=current_decrement_step_size, K=current_increment_step_size, L=lower_current_limit
+    M911.3 S0 Unnn Vnnn Wnnn Xnnn Ynnn setConstantOffTimeChopper
+              U=constant_off_time, V=blank_time, W=fast_decay_time_setting, X=sine_wave_offset, Y=use_current_comparator
+    M911.3 S1 Unnn Vnnn Wnnn Xnnn Ynnn setSpreadCycleChopper
+              U=constant_off_time, V=blank_time, W=hysteresis_start, X=hysteresis_end, Y=hysteresis_decrement
+    M911.3 S2 Zn setRandomOffTime
+              Z=on|off Z1 is on Z0 is off
+    M911.3 S3 Zn setDoubleEdge
+              Z=on|off Z1 is on Z0 is off
+    M911.3 S4 Zn setStepInterpolation
+              Z=on|off Z1 is on Z0 is off
+    M911.3 S5 Zn setCoolStepEnabled
+              Z=on|off Z1 is on Z0 is off
 */
 bool Robot::handle_M911(GCode& gcode, OutputStream& os)
 {
@@ -1083,7 +1098,7 @@ bool Robot::handle_M911(GCode& gcode, OutputStream& os)
             if(!actuators[p]->set_options(gcode)) {
                 os.printf("No options were recognised\n");
             }else{
-                os.printf("options were set\n");
+                os.printf("options were set temporarily\n");
             }
         }
         return true;

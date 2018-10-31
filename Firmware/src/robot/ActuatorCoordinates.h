@@ -10,8 +10,8 @@
 #include <array>
 
 #ifndef MAX_ROBOT_ACTUATORS
-    // includes 2 extruders or A and B axis
-    #define MAX_ROBOT_ACTUATORS 5
+    // includes 1 extruder or A
+    #define MAX_ROBOT_ACTUATORS 4
 #endif
 
 #if MAX_ROBOT_ACTUATORS < 3 || MAX_ROBOT_ACTUATORS > 6
