@@ -581,6 +581,12 @@ void Player::suspend_part2()
     // wait for queue to empty
     Conveyor::getInstance()->wait_for_idle();
 
+    if(Module::is_halted()) {
+        print_to_all_consoles("Suspend aborted by kill\n");
+        suspended= false;
+        return;
+    }
+
     print_to_all_consoles("// Saving current state...\n");
 
     // save current XYZ position
@@ -625,7 +631,7 @@ void Player::suspend_part2()
 
     }
 
-    printf("// Print Suspended, enter resume to continue printing\n");
+    print_to_all_consoles("// Print Suspended, enter resume to continue printing\n");
 }
 
 /**
@@ -684,6 +690,18 @@ bool Player::resume_command(std::string& params, OutputStream& os )
         }
     }
 
+    // clean up
+    this->saved_temperatures.clear();
+    suspended = false;
+
+    if(Module::is_halted()) {
+        // abort temp wait and rest of resume
+        os.printf("Resume aborted by kill\n");
+        Robot::getInstance()->pop_state();
+        suspended = false;
+        return true;
+    }
+
     // execute optional gcode if defined
     if(!before_resume_gcode.empty()) {
         os.printf("Executing before resume gcode...\n");
@@ -711,6 +729,12 @@ bool Player::resume_command(std::string& params, OutputStream& os )
         m->request("restore_state", nullptr);
     }
 
+    if(Module::is_halted()) {
+        os.printf("Resume aborted by kill\n");
+        suspended = false;
+        return true;
+    }
+
     os.printf("Resuming print\n");
 
     if(this->was_playing_file) {
@@ -721,10 +745,6 @@ bool Player::resume_command(std::string& params, OutputStream& os )
         // Send resume to host
         os.printf("// action:resume\n");
     }
-
-    // clean up
-    this->saved_temperatures.clear();
-    suspended = false;
 
     return true;
 }
@@ -738,5 +758,6 @@ void Player::on_halt(bool flg)
        saved_temperatures.clear();
        was_playing_file= false;
        suspend_loops= 0;
+       print_to_all_consoles("// Suspend cleared\n");
     }
 }
