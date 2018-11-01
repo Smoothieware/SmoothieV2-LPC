@@ -653,9 +653,9 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
     } else if (what == "volts") {
         std::string type = stringutils::shift_parameter( params );
         if(type.empty()) {
-            print_voltage_monitors(os);
+            print_voltage_monitors(os, 11);
         }else{
-            os.printf("%s: %f v\n", type.c_str(), get_voltage_monitor(type.c_str()));
+            os.printf("%s: %f v\n", type.c_str(), get_voltage_monitor(type.c_str())*11);
         }
 
     } else {

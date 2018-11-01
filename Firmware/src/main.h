@@ -15,6 +15,6 @@ void print_to_all_consoles(const char *);
 void safe_sleep(uint32_t ms);
 // get the vmotor and vfet voltages
 float get_voltage_monitor(const char* name);
-void print_voltage_monitors(OutputStream& os);
+void print_voltage_monitors(OutputStream& os, float scale=1.0F);
 
-#define RAMFUNC __attribute__ (section (".ramfunctions"))
+#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))

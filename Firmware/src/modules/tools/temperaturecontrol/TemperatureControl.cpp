@@ -124,12 +124,12 @@ bool TemperatureControl::configure(ConfigReader& cr, ConfigReader::section_map_t
     this->sensor_settings = false; // set to true if sensor settings have been overriden
 
     // General config
-    this->set_m_code          = cr.get_int(m, set_m_code_key, 104);
-    this->set_and_wait_m_code = cr.get_int(m, set_and_wait_m_code_key, 109);
+    this->tool_id             = cr.get_int(m, tool_id_key, 255); // set to 255 by default which is a bed and not controlled by Tx, other extruders should be 0 or 1 etc
+    this->set_m_code          = cr.get_int(m, set_m_code_key, tool_id < 100 ? 104 : 140); // hotend vs bed
+    this->set_and_wait_m_code = cr.get_int(m, set_and_wait_m_code_key, tool_id < 100 ? 109 : 190); // hotend vs bed
     this->get_m_code          = cr.get_int(m, get_m_code_key, 105);
     this->readings_per_second = cr.get_int(m, readings_per_second_key, 20);
     this->designator          = cr.get_string(m, designator_key, "T");
-    this->tool_id             = cr.get_int(m, tool_id_key, 255); // set to 255 by default which is a bed and not controlled by Tx, other extruders should be 0 or 1 etc
 
     // Runaway parameters
     uint32_t n = cr.get_int(m, runaway_range_key, 20);
@@ -203,7 +203,7 @@ bool TemperatureControl::configure(ConfigReader& cr, ConfigReader::section_map_t
         this->heater_pin->max_pwm( cr.get_float(m, max_pwm_key, 255) );
         this->heater_pin->set(0);
         //set_low_on_debug(heater_pin->port_number, heater_pin->pin);
-        // TODO use single slowtimer for all sigma delta
+        // TODO use single fasttimer for all sigma delta
         float freq= cr.get_float(m, pwm_frequency_key, 2000);
         if(freq >= FastTicker::get_min_frequency()) { // if >= 1KHz use FastTicker
             if(FastTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin)) < 0) {

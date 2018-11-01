@@ -455,10 +455,10 @@ float get_voltage_monitor(const char* name)
     return p->second->read_voltage();
 }
 
-void print_voltage_monitors(OutputStream& os)
+void print_voltage_monitors(OutputStream& os, float scale)
 {
     for(auto& p : voltage_monitors) {
-        os.printf("%s: %f\n", p.first.c_str(), p.second->read_voltage());
+        os.printf("%s: %f\n", p.first.c_str(), p.second->read_voltage()*scale);
     }
 }
 
