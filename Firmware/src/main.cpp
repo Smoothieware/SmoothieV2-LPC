@@ -446,19 +446,20 @@ extern "C" bool setup_sdmmc();
 #endif
 
 // voltage monitors
-static Adc *vmotor= nullptr;
-static Adc *vfet= nullptr;
+static std::map<std::string, Adc*> voltage_monitors;
 
-float get_vmotor()
+float get_voltage_monitor(const char* name)
 {
-    if(vmotor == nullptr) return 0;
-    return vmotor->read_voltage();
+    auto p= voltage_monitors.find(name);
+    if(p == voltage_monitors.end()) return 0;
+    return p->second->read_voltage();
 }
 
-float get_vfet()
+void print_voltage_monitors(OutputStream& os)
 {
-    if(vfet == nullptr) return 0;
-    return vfet->read_voltage();
+    for(auto& p : voltage_monitors) {
+        os.printf("%s: %f\n", p.first.c_str(), p.second->read_voltage());
+    }
 }
 
 static void smoothie_startup(void *)
@@ -659,22 +660,17 @@ static void smoothie_startup(void *)
             // configure voltage monitors if any
             ConfigReader::section_map_t m;
             if(cr.get_section("voltage monitor", m)) {
-                std::string p = cr.get_string(m, "vmotor", "");
-                if(!p.empty()) {
-                    vmotor= new Adc;
-                    if(vmotor->from_string(p.c_str()) == nullptr) {
-                        printf("WARNING: Failed to create vmotor voltage monitor\n");
-                        delete vmotor;
-                        vmotor= nullptr;
-                    }
-                }
-                p = cr.get_string(m, "vfet", "");
-                if(!p.empty()) {
-                    vfet= new Adc;
-                    if(vfet->from_string(p.c_str()) == nullptr) {
-                        printf("WARNING: Failed to create vfet voltage monitor\n");
-                        delete vfet;
-                        vfet= nullptr;
+                for(auto& s : m) {
+                    std::string k = s.first;
+                    std::string v = s.second;
+
+                    Adc *padc= new Adc;
+                    if(padc->from_string(v.c_str()) == nullptr) {
+                        printf("WARNING: Failed to create %s voltage monitor\n", k.c_str());
+                        delete padc;
+                    }else{
+                        voltage_monitors[k]= padc;
+                        printf("DEBUG: added voltage monitor %s: %s\n", k.c_str(), v.c_str());
                     }
                 }
             }

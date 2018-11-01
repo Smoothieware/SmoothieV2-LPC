@@ -651,11 +651,12 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
         os.printf("%s\n", str.c_str());
 
     } else if (what == "volts") {
-        float v;
-        v= get_vmotor();
-        os.printf("vmotor= %f\n", v*11);
-        v= get_vfet();
-        os.printf("vfet= %f\n", v*11);
+        std::string type = stringutils::shift_parameter( params );
+        if(type.empty()) {
+            print_voltage_monitors(os);
+        }else{
+            os.printf("%s: %f v\n", type.c_str(), get_voltage_monitor(type.c_str()));
+        }
 
     } else {
 
