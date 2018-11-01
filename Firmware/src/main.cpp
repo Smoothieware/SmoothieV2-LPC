@@ -229,7 +229,7 @@ extern "C" int setup_cdc(void *taskhandle);
 
 static void usb_comms(void *)
 {
-    printf("USB Comms thread running\n");
+    printf("DEBUG: USB Comms thread running\n");
 
     if(!setup_cdc(xTaskGetCurrentTaskHandle())) {
         printf("FATAL: CDC setup failed\n");
@@ -285,7 +285,7 @@ static void usb_comms(void *)
 
 static void uart_comms(void *)
 {
-    printf("UART Comms thread running\n");
+    printf("DEBUG: UART Comms thread running\n");
     set_notification_uart(xTaskGetCurrentTaskHandle());
 
     // create an output stream that writes to the uart
@@ -337,7 +337,7 @@ static Pin *play_led = nullptr;
  */
 static void command_handler()
 {
-    printf("Command thread running\n");
+    printf("DEBUG: Command thread running\n");
     // {
     //     // Manual unlocking is done before notifying, to avoid waking up
     //     // the waiting thread only to block again (see notify_one for details)
@@ -464,7 +464,7 @@ void print_voltage_monitors(OutputStream& os)
 
 static void smoothie_startup(void *)
 {
-    printf("Smoothie V2.alpha Build for %s - starting up\n", BUILD_TARGET);
+    printf("INFO: Smoothie V2.alpha Build for %s - starting up\n", BUILD_TARGET);
     //get_pll1_clk();
 
     // create the SlowTicker here as it is used by some modules
@@ -493,19 +493,19 @@ static void smoothie_startup(void *)
 #ifdef SD_CONFIG
         static FATFS fatfs; /* File system object */
         if(!setup_sdmmc()) {
-            std::cout << "Error setting up sdmmc\n";
+            std::cout << "Error: setting up sdmmc\n";
             break;
         }
         int ret = f_mount(&fatfs, "sd", 1);
         if(FR_OK != ret) {
-            std::cout << "Error mounting: " << "/sd: " << ret << "\n";
+            std::cout << "Error: mounting: " << "/sd: " << ret << "\n";
             break;
         }
 
         std::fstream fs;
         fs.open("/sd/config.ini", std::fstream::in);
         if(!fs.is_open()) {
-            std::cout << "Error opening file: " << "/sd/config.ini" << "\n";
+            std::cout << "Error: opening file: " << "/sd/config.ini" << "\n";
             // unmount sdcard
             f_unmount("sd");
             break;
@@ -513,10 +513,10 @@ static void smoothie_startup(void *)
 
 
         ConfigReader cr(fs);
-        printf("Starting configuration of modules from sdcard...\n");
+        printf("DEBUG: Starting configuration of modules from sdcard...\n");
 #else
         ConfigReader cr(ss);
-        printf("Starting configuration of modules from memory...\n");
+        printf("DEBUG: Starting configuration of modules from memory...\n");
 #endif
         {
             // configure system leds (if any)
@@ -543,19 +543,19 @@ static void smoothie_startup(void *)
             if(cr.get_section("general", m)) {
                 bool f = cr.get_bool(m, "grbl_mode", false);
                 THEDISPATCHER->set_grbl_mode(f);
-                printf("grbl mode %s\n", f ? "set" : "not set");
+                printf("INFO: grbl mode %s\n", f ? "set" : "not set");
             }
         }
 
-        printf("configure the planner\n");
+        printf("DEBUG: configure the planner\n");
         Planner *planner = new Planner();
         planner->configure(cr);
 
-        printf("configure the conveyor\n");
+        printf("DEBUG: configure the conveyor\n");
         Conveyor *conveyor = new Conveyor();
         conveyor->configure(cr);
 
-        printf("configure the robot\n");
+        printf("DEBUG: configure the robot\n");
         Robot *robot = new Robot();
         if(!robot->configure(cr)) {
             printf("ERROR: Configuring robot failed\n");
@@ -577,7 +577,7 @@ static void smoothie_startup(void *)
         }
 
         {
-            printf("configure switches\n");
+            printf("DEBUG: configure switches\n");
             // this creates any configured switches then we can remove it
             Switch switches("switch loader");
             if(!switches.configure(cr)) {
@@ -586,7 +586,7 @@ static void smoothie_startup(void *)
         }
 
         {
-            printf("configure extruder\n");
+            printf("DEBUG: configure extruder\n");
             // this creates any configured extruders then we can remove it
             Extruder ex("extruder loader");
             if(!ex.configure(cr)) {
@@ -595,7 +595,7 @@ static void smoothie_startup(void *)
         }
 
         {
-            printf("configure temperature control\n");
+            printf("DEBUG: configure temperature control\n");
             if(Adc::setup()) {
                 // this creates any configured temperature controls then we can remove it
                 TemperatureControl tc("temperature control loader");
@@ -607,7 +607,7 @@ static void smoothie_startup(void *)
             }
         }
 
-        printf("configure endstops\n");
+        printf("DEBUG: configure endstops\n");
         Endstops *endstops = new Endstops();
         if(!endstops->configure(cr)) {
             printf("INFO: No endstops enabled\n");
@@ -615,7 +615,7 @@ static void smoothie_startup(void *)
             endstops = nullptr;
         }
 
-        printf("configure kill button\n");
+        printf("DEBUG: configure kill button\n");
         KillButton *kill_button = new KillButton();
         if(!kill_button->configure(cr)) {
             printf("INFO: No kill button enabled\n");
@@ -623,7 +623,7 @@ static void smoothie_startup(void *)
             kill_button = nullptr;
         }
 
-        printf("configure current control\n");
+        printf("DEBUG: configure current control\n");
         CurrentControl *current_control = new CurrentControl();
         if(!current_control->configure(cr)) {
             printf("INFO: No current controls configured\n");
@@ -631,7 +631,7 @@ static void smoothie_startup(void *)
             current_control = nullptr;
         }
 
-        printf("configure laser\n");
+        printf("DEBUG: configure laser\n");
         Laser *laser = new Laser();
         if(!laser->configure(cr)) {
             printf("INFO: No laser configured\n");
@@ -639,7 +639,7 @@ static void smoothie_startup(void *)
             laser = nullptr;
         }
 
-        printf("configure zprobe\n");
+        printf("DEBUG: configure zprobe\n");
         ZProbe *zprobe = new ZProbe();
         if(!zprobe->configure(cr)) {
             printf("INFO: No ZProbe configured\n");
@@ -647,7 +647,7 @@ static void smoothie_startup(void *)
             zprobe = nullptr;
         }
 
-        printf("configure player\n");
+        printf("DEBUG: configure player\n");
         Player *player = new Player();
         if(!player->configure(cr)) {
             printf("WARNING: Failed to configure Player\n");
@@ -693,7 +693,7 @@ static void smoothie_startup(void *)
         // start conveyor last
         conveyor->start();
 
-        printf("...Ending configuration of modules\n");
+        printf("DEBUG: ...Ending configuration of modules\n");
         ok = true;
     } while(0);
 
@@ -720,7 +720,7 @@ static void smoothie_startup(void *)
         }
 
     } else {
-        puts("Configure failed\n");
+        puts("ERROR: Configure failed\n");
         __asm("bkpt #0");
     }
 
@@ -741,7 +741,7 @@ static void smoothie_startup(void *)
     // printf("Command thread started\n");
 
     struct mallinfo mi = mallinfo();
-    printf("Initial: free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
+    printf("DEBUG: Initial: free malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
 
     // indicate we are up and running
     system_running= true;
