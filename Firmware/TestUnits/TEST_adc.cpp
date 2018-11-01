@@ -158,6 +158,12 @@ REGISTER_TEST(ADCTest, adc_class_interrupts)
     TEST_ASSERT_TRUE(adc->from_string("ADC0_1") == adc); // ADC0_1/T1
     TEST_ASSERT_TRUE(adc->connected());
     TEST_ASSERT_EQUAL_INT(1, adc->get_channel());
+
+    // check it won't let us create a duplicate
+    Adc *dummy= new Adc();
+    TEST_ASSERT_TRUE(dummy->from_string("ADC0_1") == nullptr);
+    delete dummy;
+
     TEST_ASSERT_TRUE(Adc::start());
 
     const uint32_t max_adc_value = Adc::get_max_value();
@@ -179,19 +185,15 @@ REGISTER_TEST(ADCTest, adc_class_interrupts)
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 
-    // check it won't let us create a duplicate
-    Adc *dummy= new Adc();
-    TEST_ASSERT_TRUE(dummy->from_string("ADC0_1") == nullptr);
-    delete dummy;
+    printf("read_voltage() = %10.4f\n", adc->read_voltage());
 
     delete adc;
+    TEST_ASSERT_TRUE(Adc::stop());
 
     // should be able to create it now
     dummy= new Adc();
     TEST_ASSERT_TRUE(dummy->from_string("ADC0_1") == dummy);
     delete dummy;
-
-    TEST_ASSERT_TRUE(Adc::stop());
 }
 
 REGISTER_TEST(ADCTest, two_adc_channels)

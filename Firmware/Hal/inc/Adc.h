@@ -25,6 +25,7 @@ public:
     // specific to each instance
     Adc* from_string(const char *name);
     uint32_t read();
+    float read_voltage();
     int get_channel() const { return channel; }
     bool connected() const { return enabled; }
     uint32_t get_errors() const { return not_ready_error; }

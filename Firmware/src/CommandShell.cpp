@@ -651,17 +651,10 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
         os.printf("%s\n", str.c_str());
 
     } else if (what == "volts") {
-        const uint32_t max_adc_value = Adc::get_max_value();
         float v;
-        for (int i = 0; i < 4; ++i) {
-            v= get_vmotor();
-        }
-        v= 3.3F * (v / (float)max_adc_value);
+        v= get_vmotor();
         os.printf("vmotor= %f\n", v*11);
-        for (int i = 0; i < 4; ++i) {
-            v= get_vfet();
-        }
-        v= 3.3F * (v / (float)max_adc_value);
+        v= get_vfet();
         os.printf("vfet= %f\n", v*11);
 
     } else {

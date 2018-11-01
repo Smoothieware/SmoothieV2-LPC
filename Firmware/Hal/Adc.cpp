@@ -35,15 +35,15 @@ const ADC_CHANNEL_T CHANNEL_LUT[] = {
 Adc *Adc::instances[Adc::num_channels] = {nullptr};
 std::set<int> Adc::allocated_channels;
 int Adc::ninstances = 0;
-bool Adc::running= false;
-int Adc::slowticker_n= -1;
+bool Adc::running = false;
+int Adc::slowticker_n = -1;
 
 static ADC_CLOCK_SETUP_T ADCSetup;
 
-// warning we cannot create these once ADC is running
+// NOTE we cannot create these once ADC is running
 Adc::Adc()
 {
-    if(ninstances < Adc::num_channels) {
+    if(ninstances < Adc::num_channels && !running) {
         instance_idx = ninstances++;
         instances[instance_idx] = this;
     }
@@ -71,7 +71,7 @@ Adc::~Adc()
     if(ninstances == 0) {
         if(slowticker_n >= 0) {
             SlowTicker::getInstance()->detach(slowticker_n);
-            slowticker_n= -1;
+            slowticker_n = -1;
         }
     }
 }
@@ -115,15 +115,15 @@ bool Adc::start()
     NVIC_ClearPendingIRQ(ADC0_IRQn);
     // kick start it
     Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
-    running= true;
+    running = true;
     // start conversion every 10ms
-    slowticker_n= SlowTicker::getInstance()->attach(100, Adc::on_tick);
+    slowticker_n = SlowTicker::getInstance()->attach(100, Adc::on_tick);
 #else
     // No need to start it as we are in BURST mode
     //Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
-    running= true;
+    running = true;
     // read conversion every 10ms
-    slowticker_n= SlowTicker::getInstance()->attach(100, Adc::on_tick);
+    slowticker_n = SlowTicker::getInstance()->attach(100, Adc::on_tick);
 #endif
     return true;
 }
@@ -131,7 +131,7 @@ bool Adc::start()
 void Adc::on_tick()
 {
 #ifndef NO_ADC_INTERRUPTS
-    if(running){
+    if(running) {
         Chip_ADC_SetStartMode(_LPC_ADC_ID, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
     }
 #else
@@ -146,10 +146,10 @@ void Adc::on_tick()
 
 bool Adc::stop()
 {
-    running= false;
-    #ifndef NO_ADC_INTERRUPTS
+    running = false;
+#ifndef NO_ADC_INTERRUPTS
     NVIC_DisableIRQ(ADC0_IRQn);
-    #endif
+#endif
     Chip_ADC_SetBurstCmd(_LPC_ADC_ID, DISABLE);
     Chip_ADC_DeInit(_LPC_ADC_ID);
 
@@ -176,7 +176,7 @@ Adc* Adc::from_string(const char *name)
         // make sure it is not already in use
         if(allocated_channels.count(channel) != 0) {
             // already allocated
-            channel= -1;
+            channel = -1;
             return nullptr;
         }
 
@@ -209,7 +209,7 @@ Adc* Adc::from_string(const char *name)
         // make sure it is not already in use
         if(allocated_channels.count(channel) != 0) {
             // already allocated
-            channel= -1;
+            channel = -1;
             return nullptr;
         }
 
@@ -227,9 +227,9 @@ Adc* Adc::from_string(const char *name)
     memset(sample_buffer, 0, sizeof(sample_buffer));
     memset(ave_buf, 0, sizeof(ave_buf));
     Chip_ADC_EnableChannel(_LPC_ADC_ID, CHANNEL_LUT[channel], ENABLE);
-    #ifndef NO_ADC_INTERRUPTS
+#ifndef NO_ADC_INTERRUPTS
     Chip_ADC_Int_SetChannelCmd(_LPC_ADC_ID, CHANNEL_LUT[channel], ENABLE);
-    #endif
+#endif
     enabled = true;
 
     return this;
@@ -260,7 +260,7 @@ void Adc::sample_isr()
         // NOTE these are not in RAM
         if(Chip_ADC_ReadStatus(_LPC_ADC_ID, CHANNEL_LUT[ch], ADC_DR_DONE_STAT) == SET && Chip_ADC_ReadValue(_LPC_ADC_ID, CHANNEL_LUT[ch], &dataADC) == SUCCESS) {
             adc->new_sample(dataADC);
-        }else{
+        } else {
             // NOTE in interrupt mode this is not meaningful as we get an interrupt when each channel is ready
             adc->not_ready_error++;
         }
@@ -276,7 +276,7 @@ void Adc::new_sample(uint32_t value)
     // FIXME memmove appears to not be inline, so in an interrupt in SPIFI it is too slow
     // memmove(&sample_buffer[0], &sample_buffer[1], sizeof(sample_buffer) - sizeof(sample_buffer[0]));
     for (int i = 1; i < num_samples; ++i) {
-        sample_buffer[i-1]= sample_buffer[i];
+        sample_buffer[i - 1] = sample_buffer[i];
     }
     sample_buffer[num_samples - 1] = value; // the 10 bit ADC reading
 }
@@ -323,4 +323,51 @@ uint32_t Adc::read()
     return sum / (num_samples / 2);
 
 #endif
+}
+
+static void split(uint16_t data[], unsigned int n, uint16_t x, unsigned int& i, unsigned int& j)
+{
+    do {
+        while (data[i] < x) i++;
+        while (x < data[j]) j--;
+
+        if (i <= j) {
+            uint16_t ii = data[i];
+            data[i] = data[j];
+            data[j] = ii;
+            i++; j--;
+        }
+    } while (i <= j);
+}
+
+// C.A.R. Hoare's Quick Median
+static unsigned int quick_median(uint16_t data[], unsigned int n)
+{
+    unsigned int l = 0, r = n - 1, k = n / 2;
+    while (l < r) {
+        uint16_t x = data[k];
+        unsigned int i = l, j = r;
+        split(data, n, x, i, j);
+        if (j < k) l = i;
+        if (k < i) r = j;
+    }
+    return k;
+}
+
+float Adc::read_voltage()
+{
+    // just return the voltage on the pin
+    uint16_t median_buffer[num_samples];
+
+    // needs atomic access TODO maybe be able to use std::atomic here or some lockless mutex
+    taskENTER_CRITICAL();
+    memcpy(median_buffer, sample_buffer, sizeof(median_buffer));
+    taskEXIT_CRITICAL();
+
+    // take the median value
+    unsigned int i= quick_median(median_buffer, num_samples);
+    uint16_t adc= median_buffer[i];
+
+    float v= 3.3F * (adc / 1024.0F); // 10 bit adc values
+    return v;
 }

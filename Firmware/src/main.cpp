@@ -452,13 +452,13 @@ static Adc *vfet= nullptr;
 float get_vmotor()
 {
     if(vmotor == nullptr) return 0;
-    return vmotor->read();
+    return vmotor->read_voltage();
 }
 
 float get_vfet()
 {
     if(vfet == nullptr) return 0;
-    return vfet->read();
+    return vfet->read_voltage();
 }
 
 static void smoothie_startup(void *)
