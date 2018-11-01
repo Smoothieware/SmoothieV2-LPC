@@ -445,6 +445,22 @@ static std::stringstream ss(str);
 extern "C" bool setup_sdmmc();
 #endif
 
+// voltage monitors
+static Adc *vmotor= nullptr;
+static Adc *vfet= nullptr;
+
+float get_vmotor()
+{
+    if(vmotor == nullptr) return 0;
+    return vmotor->read();
+}
+
+float get_vfet()
+{
+    if(vfet == nullptr) return 0;
+    return vfet->read();
+}
+
 static void smoothie_startup(void *)
 {
     printf("Smoothie V2.alpha Build for %s - starting up\n", BUILD_TARGET);
@@ -639,6 +655,30 @@ static void smoothie_startup(void *)
         // end of module creation and configuration
         ////////////////////////////////////////////////////////////////
 
+        {
+            // configure voltage monitors if any
+            ConfigReader::section_map_t m;
+            if(cr.get_section("voltage monitor", m)) {
+                std::string p = cr.get_string(m, "vmotor", "");
+                if(!p.empty()) {
+                    vmotor= new Adc;
+                    if(vmotor->from_string(p.c_str()) == nullptr) {
+                        printf("WARNING: Failed to create vmotor voltage monitor\n");
+                        delete vmotor;
+                        vmotor= nullptr;
+                    }
+                }
+                p = cr.get_string(m, "vfet", "");
+                if(!p.empty()) {
+                    vfet= new Adc;
+                    if(vfet->from_string(p.c_str()) == nullptr) {
+                        printf("WARNING: Failed to create vfet voltage monitor\n");
+                        delete vfet;
+                        vfet= nullptr;
+                    }
+                }
+            }
+        }
 #ifdef SD_CONFIG
         // close the file stream
         fs.close();

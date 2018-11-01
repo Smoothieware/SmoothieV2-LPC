@@ -12,6 +12,8 @@
 #include "Conveyor.h"
 #include "version.h"
 #include "xmodem.h"
+#include "Adc.h"
+
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -536,7 +538,7 @@ bool CommandShell::modules_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::get_cmd(std::string& params, OutputStream& os)
 {
-    HELP("get pos|wcs|state|status|temp")
+    HELP("get pos|wcs|state|status|temp|volts")
     std::string what = stringutils::shift_parameter( params );
     bool handled = true;
     if (what == "temp") {
@@ -647,6 +649,20 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
         std::string str;
         Robot::getInstance()->get_query_string(str);
         os.printf("%s\n", str.c_str());
+
+    } else if (what == "volts") {
+        const uint32_t max_adc_value = Adc::get_max_value();
+        float v;
+        for (int i = 0; i < 4; ++i) {
+            v= get_vmotor();
+        }
+        v= 3.3F * (v / (float)max_adc_value);
+        os.printf("vmotor= %f\n", v*11);
+        for (int i = 0; i < 4; ++i) {
+            v= get_vfet();
+        }
+        v= 3.3F * (v / (float)max_adc_value);
+        os.printf("vfet= %f\n", v*11);
 
     } else {
 

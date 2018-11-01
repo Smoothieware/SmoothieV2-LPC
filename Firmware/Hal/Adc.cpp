@@ -162,6 +162,7 @@ bool Adc::stop()
 Adc* Adc::from_string(const char *name)
 {
     if(enabled) return nullptr; // aready setup
+    if(instance_idx < 0) return nullptr; // too many instances
 
     const char *p = strcasestr(name, "adc");
     if (p != nullptr) {

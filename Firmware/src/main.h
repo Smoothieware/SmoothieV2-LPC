@@ -13,4 +13,8 @@ bool dispatch_line(OutputStream& os, const char *line);
 void print_to_all_consoles(const char *);
 // sleep for given ms, but don't block things like ?
 void safe_sleep(uint32_t ms);
+// get the vmotor and vfet voltages
+float get_vmotor();
+float get_vfet();
+
 #define RAMFUNC __attribute__ (section (".ramfunctions"))
