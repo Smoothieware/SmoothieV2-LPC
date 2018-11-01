@@ -686,7 +686,7 @@ static void smoothie_startup(void *)
         // initialize planner before conveyor this is when block queue is created
         // which needs to know how many actuators there are, which it gets from robot
         if(!planner->initialize(robot->get_number_registered_motors())) {
-            printf("ERROR: planner failed to initialize, out of memory?\n");
+            printf("FATAL: planner failed to initialize, out of memory?\n");
             break;
         }
 
