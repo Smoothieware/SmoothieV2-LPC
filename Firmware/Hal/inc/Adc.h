@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <cmath>
+#include <set>
 
 class Pin;
 
@@ -27,6 +28,7 @@ public:
     int get_channel() const { return channel; }
     bool connected() const { return enabled; }
     uint32_t get_errors() const { return not_ready_error; }
+    bool is_created() const { return instance_idx >= 0; }
 
     // return the maximum ADC value, base is 10bits 1024.
 #ifdef OVERSAMPLE
@@ -41,6 +43,7 @@ private:
     static const int num_channels= 8;
     static Adc* instances[num_channels];
     static int ninstances;
+    static std::set<int> allocated_channels;
 
 #ifdef OVERSAMPLE
     // we need 4^n sample to oversample and we get double that to filter out spikes

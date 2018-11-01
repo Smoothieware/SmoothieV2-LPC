@@ -33,31 +33,28 @@ const ADC_CHANNEL_T CHANNEL_LUT[] = {
 };
 
 Adc *Adc::instances[Adc::num_channels] = {nullptr};
+std::set<int> Adc::allocated_channels;
 int Adc::ninstances = 0;
 bool Adc::running= false;
 int Adc::slowticker_n= -1;
-
-// TODO move ramfunc define to a utils.h
-#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
 
 static ADC_CLOCK_SETUP_T ADCSetup;
 
 // warning we cannot create these once ADC is running
 Adc::Adc()
 {
-    instance_idx = ninstances++;
-    instances[instance_idx] = this;
+    if(ninstances < Adc::num_channels) {
+        instance_idx = ninstances++;
+        instances[instance_idx] = this;
+    }
     channel = -1;
     enabled = false;
 }
 
 Adc::~Adc()
 {
-    if(slowticker_n >= 0) {
-        SlowTicker::getInstance()->detach(slowticker_n);
-        slowticker_n= -1;
-    }
-
+    if(channel == -1 || instance_idx < 0) return;
+    allocated_channels.erase(channel);
     Chip_ADC_Int_SetChannelCmd(_LPC_ADC_ID, CHANNEL_LUT[channel], DISABLE);
     Chip_ADC_EnableChannel(_LPC_ADC_ID, CHANNEL_LUT[channel], DISABLE);
 
@@ -71,6 +68,12 @@ Adc::~Adc()
     }
     --ninstances;
     taskEXIT_CRITICAL();
+    if(ninstances == 0) {
+        if(slowticker_n >= 0) {
+            SlowTicker::getInstance()->detach(slowticker_n);
+            slowticker_n= -1;
+        }
+    }
 }
 
 bool Adc::setup()
@@ -169,6 +172,13 @@ Adc* Adc::from_string(const char *name)
         channel = strtol(p, nullptr, 10);
         if(channel < 0 || channel >= num_channels) return nullptr;
 
+        // make sure it is not already in use
+        if(allocated_channels.count(channel) != 0) {
+            // already allocated
+            channel= -1;
+            return nullptr;
+        }
+
     } else if(tolower(name[0]) == 'p') {
         // pin specification
         std::string str(name);
@@ -195,6 +205,13 @@ Adc* Adc::from_string(const char *name)
         else if(port == 11 && pin ==  6) channel = 6;
         else return nullptr; // not a valid ADC pin
 
+        // make sure it is not already in use
+        if(allocated_channels.count(channel) != 0) {
+            // already allocated
+            channel= -1;
+            return nullptr;
+        }
+
         // now need to set to input, disable receiver with EZI bit, disable pullup EPUN=1 and disable pulldown EPD=0
         uint16_t modefunc = 1 << 4; // disable pullup,
         Chip_SCU_PinMuxSet(port, pin, modefunc);
@@ -203,6 +220,8 @@ Adc* Adc::from_string(const char *name)
     } else {
         return nullptr;
     }
+
+    allocated_channels.insert(channel);
 
     memset(sample_buffer, 0, sizeof(sample_buffer));
     memset(ave_buf, 0, sizeof(ave_buf));
@@ -249,7 +268,8 @@ void Adc::sample_isr()
 
 // Keeps the last 32 values for each channel
 // This is called in an ISR, so sample_buffer needs to be accessed atomically
-_ramfunc_ void Adc::new_sample(uint32_t value)
+//_ramfunc_
+void Adc::new_sample(uint32_t value)
 {
     // Shuffle down and add new value to the end
     // FIXME memmove appears to not be inline, so in an interrupt in SPIFI it is too slow

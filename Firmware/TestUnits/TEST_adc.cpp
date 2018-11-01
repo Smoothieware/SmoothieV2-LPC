@@ -151,6 +151,7 @@ REGISTER_TEST(ADCTest, adc_class_interrupts)
     TEST_ASSERT_TRUE(Adc::setup());
 
     Adc *adc = new Adc;
+    TEST_ASSERT_TRUE(adc->is_created());
     TEST_ASSERT_FALSE(adc->connected());
     TEST_ASSERT_FALSE(adc->from_string("nc") == adc);
     TEST_ASSERT_FALSE(adc->connected());
@@ -178,7 +179,17 @@ REGISTER_TEST(ADCTest, adc_class_interrupts)
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 
+    // check it won't let us create a duplicate
+    Adc *dummy= new Adc();
+    TEST_ASSERT_TRUE(dummy->from_string("ADC0_1") == nullptr);
+    delete dummy;
+
     delete adc;
+
+    // should be able to create it now
+    dummy= new Adc();
+    TEST_ASSERT_TRUE(dummy->from_string("ADC0_1") == dummy);
+    delete dummy;
 
     TEST_ASSERT_TRUE(Adc::stop());
 }
@@ -188,6 +199,7 @@ REGISTER_TEST(ADCTest, two_adc_channels)
     TEST_ASSERT_TRUE(Adc::setup());
 
     Adc *adc1 = new Adc;
+    TEST_ASSERT_TRUE(adc1->is_created());
 #ifdef BOARD_BAMBINO
     TEST_ASSERT_TRUE(adc1->from_string("PB.6") == adc1); // ADC0_6
     TEST_ASSERT_EQUAL_INT(6, adc1->get_channel());
@@ -197,6 +209,7 @@ REGISTER_TEST(ADCTest, two_adc_channels)
 #endif
 
     Adc *adc2 = new Adc;
+    TEST_ASSERT_TRUE(adc2->is_created());
 #ifdef BOARD_BAMBINO
     TEST_ASSERT_TRUE(adc2->from_string("ADC0_1") == adc2);
     TEST_ASSERT_EQUAL_INT(1, adc2->get_channel());
