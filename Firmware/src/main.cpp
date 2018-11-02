@@ -96,7 +96,7 @@ bool dispatch_line(OutputStream& os, const char *cl)
             }
 
         }else{
-            os.puts("ok\n");
+            os.puts("done\n");
         }
 
         return true;
@@ -455,11 +455,15 @@ float get_voltage_monitor(const char* name)
     return p->second->read_voltage();
 }
 
-void print_voltage_monitors(OutputStream& os, float scale)
+int get_voltage_monitor_names(const char *names[])
 {
+    int i= 0;
     for(auto& p : voltage_monitors) {
-        os.printf("%s: %f\n", p.first.c_str(), p.second->read_voltage()*scale);
+        if(names != nullptr)
+            names[i]= p.first.c_str();
+        ++i;
     }
+    return i;
 }
 
 static void smoothie_startup(void *)

@@ -23,6 +23,7 @@ private:
     bool mv_cmd(std::string& params, OutputStream& os);
     bool cp_cmd(std::string& params, OutputStream& os);
     bool config_set_cmd(std::string& params, OutputStream& os);
+    bool config_get_cmd(std::string& params, OutputStream& os);
     bool mem_cmd(std::string& params, OutputStream& os);
     //bool mount_cmd(std::string& params, OutputStream& os);
     bool cat_cmd(std::string& params, OutputStream& os);

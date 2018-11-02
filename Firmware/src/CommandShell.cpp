@@ -53,6 +53,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "md5sum", std::bind( &CommandShell::md5sum_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler( "config-set", std::bind( &CommandShell::config_set_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "config-get", std::bind( &CommandShell::config_get_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "download", std::bind( &CommandShell::download_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "rx", std::bind( &CommandShell::rx_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "ry", std::bind( &CommandShell::ry_cmd, this, _1, _2) );
@@ -653,7 +654,16 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
     } else if (what == "volts") {
         std::string type = stringutils::shift_parameter( params );
         if(type.empty()) {
-            print_voltage_monitors(os, 11);
+            int n= get_voltage_monitor_names(nullptr);
+            if(n > 0) {
+                const char *names[n];
+                get_voltage_monitor_names(names);
+                for (int i = 0; i < n; ++i) {
+                    os.printf("%s: %f v\n", names[i], get_voltage_monitor(names[i])*11);
+                }
+            }else{
+                os.printf("No voltage monitors configured\n");
+            }
         }else{
             os.printf("%s: %f v\n", type.c_str(), get_voltage_monitor(type.c_str())*11);
         }
@@ -912,13 +922,51 @@ bool CommandShell::m115_cmd(GCode& gcode, OutputStream& os)
     return true;
 }
 
+bool CommandShell::config_get_cmd(std::string& params, OutputStream& os)
+{
+    HELP("config-get \"section name\"");
+    std::string sectionstr = stringutils::shift_parameter( params );
+    if(sectionstr.empty()) {
+        os.printf("Usage: config-get section\n");
+        return true;
+    }
+
+    std::fstream fsin;
+    fsin.open("/sd/config.ini", std::fstream::in);
+    if(!fsin.is_open()) {
+        os.printf("Error opening file /sd/config.ini\n");
+        return true;
+    }
+
+    ConfigReader cr(fsin);
+    ConfigReader::section_map_t m;
+    bool b= cr.get_section(sectionstr.c_str(), m);
+    if(b) {
+        for(auto& s : m) {
+            std::string k = s.first;
+            std::string v = s.second;
+            os.printf("%s = %s\n", k.c_str(), v.c_str());
+        }
+    }else{
+        os.printf("No section named %s\n", sectionstr.c_str());
+    }
+
+    fsin.close();
+
+    return true;
+}
+
 bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
 {
-    HELP("config-set \"section name\" key value");
+    HELP("config-set \"section name\" key [=] value");
 
     std::string sectionstr = stringutils::shift_parameter( params );
     std::string keystr = stringutils::shift_parameter( params );
     std::string valuestr = stringutils::shift_parameter( params );
+    if(valuestr == "=") {
+        // ignore optional =
+        valuestr = stringutils::shift_parameter( params );
+    }
 
     if(sectionstr.empty() || keystr.empty() || valuestr.empty()) {
         os.printf("Usage: config-set section key value\n");
