@@ -27,15 +27,15 @@ Modules that have been ported so far...
 * killbutton
 * player
 
-*NOTE* for the smooothiev2 mini alpha replace Bambino above with Minialpha...
+*NOTE* for the smooothiev2 Prime Alpha replace Bambino above with Primealpha...
 
-```rake target=Minialpha -m```
+```rake target=Primealpha -m```
 
 builtin config would be called string-config-minialpha.h (but the default is to read the config.ini on sdcard).
 
-The Mini Alpha is currently working quite well.
+The Prime Alpha is currently working quite well.
 
-on the Mini Alpha there are 4 leds..
+on the Prime Alpha there are 4 leds..
 
 1. led3 - smoothie led, flashes slowly when idle, does not flash when busy
 2. led4 - smoothie led, on when executing moves, flashes when in HALT

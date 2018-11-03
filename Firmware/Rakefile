@@ -8,7 +8,7 @@ SPIFI = ENV['flash'].nil? ? true : false
 
 PROG = 'smoothiev2'
 if ENV['target'].nil?
-  TARGET = 'Bambino'
+  TARGET = 'Primealpha'
 elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Minialpha' && ENV['target'] != 'Primealpha')
   puts "ERROR: Must specify target=[Bambino|Minialpha|Primealpha]"
   exit 0
