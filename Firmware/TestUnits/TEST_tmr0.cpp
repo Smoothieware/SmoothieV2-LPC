@@ -32,9 +32,9 @@ static _ramfunc_ void unstep_timer_handler()
     unstep_stop= clock_systimer();
 }
 
-#define FREQUENCY 100000 // 100KHz
+#define FREQUENCY 200000 // 200KHz
 #define PULSE     1 // 1us
-REGISTER_TEST(TMR0Test, test_10000_hz)
+REGISTER_TEST(TMR0Test, test_200Khz)
 {
     uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
 
@@ -50,7 +50,7 @@ REGISTER_TEST(TMR0Test, test_10000_hz)
         printf("Warning: stepticker is not accurate: %d\n", permod);
     }
 
-    // wait for 100,000 ticks
+    // wait for 200,000 ticks
     timer_cnt= 0;
     systime_t t1= clock_systimer();
     while(timer_cnt < FREQUENCY) ;
