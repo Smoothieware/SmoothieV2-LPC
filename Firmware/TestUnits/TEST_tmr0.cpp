@@ -66,7 +66,7 @@ REGISTER_TEST(TMR0Test, test_200Khz)
     printf("elapsed time %lu us, period %f, unstep time %lu us, timer cnt %d\n", elapsed, (float)elapsed/timer_cnt, unstep_time, timer_cnt);
 
     TEST_ASSERT_TRUE(unstep_stop != 0);
-    TEST_ASSERT_INT_WITHIN(1, 1000000/FREQUENCY, elapsed/timer_cnt); // 50us period
+    TEST_ASSERT_INT_WITHIN(1, 1000000/FREQUENCY, elapsed/timer_cnt); // 5us period
     TEST_ASSERT_INT_WITHIN(1, PULSE, unstep_time);
     taskEXIT_CRITICAL();
 }
