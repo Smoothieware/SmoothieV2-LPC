@@ -10,6 +10,7 @@ SECTIONS
         FILL(0xff)
         __vectors_start__ = ABSOLUTE(.) ;
         KEEP(*(.isr_vector))
+        __vectors_end__ = ABSOLUTE(.) ;
         /* Global Section Table */
         . = ALIGN(4) ;
         __section_table_start = .;

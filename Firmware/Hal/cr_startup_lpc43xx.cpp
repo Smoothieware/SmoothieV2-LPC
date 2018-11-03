@@ -361,6 +361,19 @@ void ResetISR(void) {
 
 #if defined (__USE_LPCOPEN)
     SystemInit();
+
+    // We want to copy the IRQ vector table from SPIFI to RAM for speed
+    extern unsigned int __base_ram_vectors;
+    extern unsigned int __vectors_start__;
+    extern unsigned int __vectors_end__;
+    // copy IRQ vector table to RAM
+    data_init((unsigned int)g_pfnVectors, (unsigned int)&__base_ram_vectors, ((unsigned int)&__vectors_end__ - (unsigned int)&__vectors_start__) + 8);
+    // Disable interrupts
+    __asm volatile ("cpsid i");
+    unsigned int *pSCB_VTOR = (unsigned int *) 0xE000ED08;
+    *pSCB_VTOR = (unsigned int) &__base_ram_vectors;
+    // Reenable interrupts
+    __asm volatile ("cpsie i");
 #endif
 
     //

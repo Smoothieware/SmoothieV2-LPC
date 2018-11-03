@@ -2,7 +2,8 @@ MEMORY
 {
   /* Define each memory region */
   SPIFI (rx) : ORIGIN = 0x14000000, LENGTH = 0x100000 /* 1M bytes (alias Flash) */
-  RamLoc128 (rwx) : ORIGIN = 0x10000000, LENGTH = 0x20000 /* 128K bytes (alias RAM) */
+  RamVectors (rwx) : ORIGIN = 0x10000000, LENGTH = 0x200 /* 512 bytes */
+  RamLoc128 (rwx) : ORIGIN = 0x10000200, LENGTH = 0x20000-0x200 /* 127K bytes (alias RAM) */
   RamLoc72 (rwx) : ORIGIN = 0x10080000, LENGTH = 0x12000 /* 72K bytes (alias RAM2) */
   RamAHB32 (rwx) : ORIGIN = 0x20000000, LENGTH = 0x8000 /* 32K bytes (alias RAM3) */
   RamAHB16 (rwx) : ORIGIN = 0x20008000, LENGTH = 0x4000 /* 16K bytes (alias RAM4) */
@@ -14,8 +15,9 @@ MEMORY
   __base_Flash = 0x14000000 ; /* Flash */
   __top_SPIFI = 0x14000000 + 0x100000 ; /* 1M bytes */
   __top_Flash = 0x14000000 + 0x100000 ; /* 1M bytes */
-  __base_RamLoc128 = 0x10000000  ; /* RamLoc128 */
-  __base_RAM = 0x10000000 ; /* RAM */
+  __base_ram_vectors = 0x10000000  ; /* RamLoc128 */
+  __base_RamLoc128 = 0x10000200  ; /* RamLoc128 */
+  __base_RAM = 0x10000200 ; /* RAM */
   __top_RamLoc128 = 0x10000000 + 0x20000 ; /* 128K bytes */
   __top_RAM = 0x10000000 + 0x20000 ; /* 128K bytes */
   __base_RamLoc72 = 0x10080000  ; /* RamLoc72 */
