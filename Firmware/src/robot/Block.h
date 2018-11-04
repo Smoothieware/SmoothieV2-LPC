@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ActuatorCoordinates.h"
-#include "StepTicker.h"
 
 #include <array>
 #include <bitset>
@@ -12,17 +11,10 @@ class Block {
 
         static void init(uint8_t);
 
+        float get_trapezoid_rate(int i) const;
         void debug() const;
         void ready() { is_ready= true; }
         void clear();
-        // returns current rate (steps/sec) for the given actuator
-        inline float get_trapezoid_rate(int i) const
-        {
-            // convert steps per tick from fixed point to float and convert to steps/sec
-            // FIXME steps_per_tick can change at any time, potential race condition if it changes while being read here
-            return STEPTICKER_FROMFP(tick_info[i].steps_per_tick) * STEP_TICKER_FREQUENCY;
-        }
-
     public:
         std::array<uint32_t, k_max_actuators> steps; // Number of steps for each axis for this block
         uint32_t steps_event_count;  // Steps for the longest axis
