@@ -24,7 +24,9 @@
 #define maximum_s_value_key "maximum_s_value"
 #define default_power_key "default_power"
 
-#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
+// as long as we only update at 100Hz we do not need to put stuff in ramfunc
+//#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
+#define _ramfunc_
 
 Laser::Laser() : Module("laser")
 {
@@ -89,10 +91,12 @@ bool Laser::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler( "fire", std::bind( &Laser::handle_fire_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 221, std::bind(&Laser::handle_M221, this, _1, _2));
 
-    // no point in updating the power more than the PWM frequency, but no more than 1KHz
+    // no point in updating the power more than the PWM frequency, but no more than 100Hz
     uint32_t pwm_freq= Pwm::get_frequency();
-    uint32_t f= std::min(1000UL, pwm_freq);
+    uint32_t f= std::min(100UL, pwm_freq);
     if(f >= FastTicker::get_min_frequency()) {
+        printf("configure-temperature: WARNING update frequency is fast enough that ramfunc needs to be used\n");
+
         if(FastTicker::getInstance()->attach(f, std::bind(&Laser::set_proportional_power, this)) < 0) {
             printf("configure-temperature: ERROR Fast Ticker was not set (Too slow?)\n");
             return false;
@@ -164,7 +168,7 @@ bool Laser::handle_M221(GCode& gcode, OutputStream& os)
 }
 
 // calculates the current speed ratio from the currently executing block
-float Laser::current_speed_ratio(const Block *block) const
+_ramfunc_ float Laser::current_speed_ratio(const Block *block) const
 {
     // find the primary moving actuator (the one with the most steps)
     size_t pm= 0;

@@ -8,7 +8,6 @@
 
 #include "Block.h"
 #include "AxisDefns.h"
-#include "StepTicker.h"
 
 uint8_t Block::n_actuators = 0;
 
@@ -105,12 +104,4 @@ void Block::debug() const
           );
 
     // TODO dump tickinfo
-}
-
-// returns current rate (steps/sec) for the given actuator
-float Block::get_trapezoid_rate(int i) const
-{
-    // convert steps per tick from fixed point to float and convert to steps/sec
-    // FIXME steps_per_tick can change at any time, potential race condition if it changes while being read here
-    return STEPTICKER_FROMFP(tick_info[i].steps_per_tick) * STEP_TICKER_FREQUENCY;
 }

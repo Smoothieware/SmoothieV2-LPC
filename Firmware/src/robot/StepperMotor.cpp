@@ -136,7 +136,12 @@ int StepperMotor::get_microsteps()
 
 void StepperMotor::enable(bool state)
 {
-    if(tmc2660 == nullptr) return;
+    if(tmc2660 == nullptr) {
+        if(en_pin.connected()) {
+            en_pin.set(!state);
+        }
+        return;
+    }
 
     // TODO if we have lost Vbb since last time then we need to re load all the drivers configs
     if(state && vbblost) {
@@ -155,7 +160,13 @@ void StepperMotor::enable(bool state)
 
 bool StepperMotor::is_enabled() const
 {
-    if(tmc2660 == nullptr) return false;
+    if(tmc2660 == nullptr) {
+        if(en_pin.connected()) {
+            return !en_pin.get();
+        }
+        // presume always enabled
+        return true;
+    }
     return tmc2660->isEnabled();
 }
 
