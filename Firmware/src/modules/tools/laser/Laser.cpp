@@ -167,6 +167,8 @@ bool Laser::handle_M221(GCode& gcode, OutputStream& os)
     return true;
 }
 
+// NOTE if we need to put this in RAMFUNC then note that some of these calcs cause calls
+// to internal math functions that are not in RAM (ltof etc) and tracking them all down is a rabbit hole
 // calculates the current speed ratio from the currently executing block
 _ramfunc_ float Laser::current_speed_ratio(const Block *block) const
 {
