@@ -29,19 +29,27 @@ public:
     Pin* as_output();
     Pin* as_input();
 
-    // we need to do this inline without calling lpc43_gpio_read due to ISR being in SRAM not FLASH
+    // we need to do this inline due to ISR being in SRAM not FLASH
     inline bool get() const
     {
         if (!this->valid) return false;
         return (LPC_GPIO_PORT->B[this->gpioport][this->gpiopin]) ^ this->inverting;
     }
 
-    // we need to do this inline without calling lpc43_gpio_write due to ISR being in SRAM not FLASH
+    // we need to do this inline due to ISR being in SRAM not FLASH
     inline void set(bool value)
     {
         if (!this->valid) return;
         uint8_t v= (this->inverting ^ value) ? 1 : 0;
         LPC_GPIO_PORT->B[this->gpioport][this->gpiopin] = v;
+        if(open_drain) {
+            // simulates open drain
+            if(value){
+                Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, gpioport, gpiopin);
+            } else {
+                Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, gpioport, gpiopin);
+            }
+        }
     }
 
     inline uint16_t get_gpioport() const { return this->gpioport; }
@@ -62,6 +70,7 @@ private:
         uint8_t gpioport:8;
         uint8_t gpiopin:8;
         bool inverting: 1;
+        bool open_drain: 1;
         bool valid: 1;
         bool adc_only: 1;   //true if adc only pin
         int adc_channel: 8;   //adc channel

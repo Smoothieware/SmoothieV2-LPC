@@ -287,12 +287,14 @@
 Pin::Pin()
 {
     this->inverting = false;
+    this->open_drain = false;
     this->valid = false;
 }
 
 Pin::Pin(const char *s)
 {
     this->inverting = false;
+    this->open_drain = false;
     this->valid = false;
     from_string(s);
 }
@@ -301,6 +303,7 @@ Pin::Pin(const char *s, TYPE_T t)
 {
     this->inverting = false;
     this->valid = false;
+    this->open_drain = false;
     if(from_string(s) != nullptr) {
         switch(t) {
             case AS_INPUT: as_input(); break;
@@ -424,6 +427,7 @@ Pin* Pin::from_string(std::string value)
 {
     valid = false;
     inverting = false;
+    open_drain = false;
 
     if(value == "nc") return nullptr;
 
@@ -468,13 +472,15 @@ Pin* Pin::from_string(std::string value)
     // ^ = set pin to pull up
     // v = set pin to pull down
     // - = set pin to no pull up or down
+    // default to pull up for input pins, neither for output
+    gpio |= PINCONF_PULLUP;
     for(char c : value.substr(pos + 1)) {
         switch(c) {
             case '!':
                 this->inverting = true;
                 break;
             case 'o':
-                gpio |= PINCONF_FLOAT;
+                this->open_drain= true; // we need to set pin to input when off for simulated opendrain
                 break;
             case '^':
                 gpio |= PINCONF_PULLUP;
@@ -483,6 +489,7 @@ Pin* Pin::from_string(std::string value)
                 gpio |= PINCONF_PULLDOWN;
                 break;
             case '-':
+            	gpio &= ~(PINCONF_PULLUP|PINCONF_PULLDOWN); // clear both bits
                 break;
         }
     }
@@ -510,10 +517,12 @@ std::string Pin::to_string() const
         s.push_back(digits[port]);
         s.push_back('_');
         s.append(std::to_string(pin)).append(")");
+        if(open_drain) s.push_back('o');
+        if(inverting) s.push_back('!');
         return s;
 
     } else {
-        return "invalid";
+        return "nc";
     }
 }
 
@@ -558,11 +567,11 @@ bool Pin::config_pin(uint32_t pinconf)
     /* Enable/disable pull-down resistor */
 
     if (PINCONF_IS_PULLDOWN(pinconf)) {
-        regval |= SCU_MODE_PULLUP;  /* Set bit to enable */
+        regval |= SCU_MODE_PULLDOWN;  /* Set bits to enable */
     }
 
     if (!PINCONF_IS_PULLUP(pinconf)) {
-        regval |= SCU_MODE_PULLUP; /* Set bit to disable */
+        regval |= SCU_MODE_INACT; /* Set bit to disable */
     }
 
     /* Enable/disable input buffering */
