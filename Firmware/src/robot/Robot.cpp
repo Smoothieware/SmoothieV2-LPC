@@ -10,6 +10,7 @@
 #include "StringUtils.h"
 #include "main.h"
 #include "TemperatureControl.h"
+#include "SlowTicker.h"
 
 #include "BaseSolution.h"
 #include "CartesianSolution.h"
@@ -62,6 +63,8 @@
 // only one of these for all the drivers
 #define common_key                      "common"
 #define motor_reset_pin_key             "motor_reset_pin"
+#define check_driver_errors_key          "check_driver_errors"
+#define halt_on_driver_alarm_key        "halt_on_driver_alarm"
 
 // arm solutions
 #define  arm_solution_key               "arm_solution"
@@ -108,6 +111,8 @@ Robot::Robot() : Module("robot")
     this->disable_segmentation = false;
     this->disable_arm_solution = false;
     this->n_motors = 0;
+    this->halt_on_driver_alarm= false;
+    this->check_driver_errors= false;
 }
 
 // Make keys for the Primary XYZ StepperMotors, and potentially A B C
@@ -317,12 +322,18 @@ bool Robot::configure(ConfigReader& cr)
     auto s = ssm.find(common_key);
     if(s != ssm.end()) {
         auto& mm = s->second; // map of general actuator config settings
+        #ifdef BOARD_MINIALPHA
         // driver reset pin, mini alpha is GPIO3_5
         Pin motor_reset_pin(cr.get_string(mm, motor_reset_pin_key, "nc"), Pin::AS_OUTPUT);
         if(motor_reset_pin.connected()) {
             // set high, leaves it high
             motor_reset_pin.set(true);
         }
+
+        #elif defined(BOARD_PRIMEALPHA)
+        check_driver_errors= cr.get_bool(mm, check_driver_errors_key, false);
+        halt_on_driver_alarm= cr.get_bool(mm, halt_on_driver_alarm_key, false);
+        #endif
     }
 
     // initialise actuator positions to current cartesian position (X0 Y0 Z0)
@@ -340,8 +351,9 @@ bool Robot::configure(ConfigReader& cr)
 
     //this->clearToolOffset();
     #ifdef BOARD_PRIMEALPHA
-    // TODO we need to periodically check Vbb and if it is off we need to tell all motors to reset when it comes on again
-    //
+    // setup a timer to periodically check Vbb and if it is off we need to tell all motors to reset when it comes on again
+    // also will check driver errors if enabled
+    SlowTicker::getInstance()->attach(1, std::bind(&Robot::periodic_checks, this));
     #endif
     // register gcodes and mcodes
     using std::placeholders::_1;
@@ -416,12 +428,51 @@ bool Robot::configure(ConfigReader& cr)
     return true;
 }
 
+#ifdef BOARD_PRIMEALPHA
+void Robot::periodic_checks()
+{
+    // check vmot
+    bool vmot;
+    float v= get_voltage_monitor("vmot");
+    if(v < 6) {
+        // it is off
+        vmot= false;
+    }else{
+        // it is on
+        vmot= true;
+    }
+
+    // get last vmot state
+    bool last= StepperMotor::set_vmot(vmot);
+
+    if(last && !vmot) {
+        // we had a state change to off so set vmot lost
+        for(auto a : actuators) {
+            a->set_vmot_lost();
+        }
+    }
+
+    // don't check if we do not have vmot
+    if(vmot && check_driver_errors) {
+        for(auto a : actuators) {
+            if(a->check_driver_error()) {
+                if(halt_on_driver_alarm_key) {
+                    if(!is_halted()) {
+                        broadcast_halt(true);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
+
 void Robot::on_halt(bool flg)
 {
     halted = flg;
     if(flg) {
         for(auto a : actuators) {
-            // TODO how to handle the SPI motor drivers?
             a->enable(false);
             a->stop_moving();
         }

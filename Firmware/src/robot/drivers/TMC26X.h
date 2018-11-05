@@ -404,7 +404,7 @@ public:
      * The result is printed via Serial
      */
     bool set_raw_register(OutputStream& stream, uint32_t reg, uint32_t val);
-    bool checkAlarm();
+    bool check_errors();
 
     bool config(ConfigReader& cr, const char *actuator_name);
     void dump_status(OutputStream& stream, bool readable= true);
@@ -418,6 +418,10 @@ private:
     // SPI sender
     inline void send262(unsigned long datagram);
     int sendSPI(uint8_t *b, int cnt, uint8_t *r);
+
+    // one set of common settings
+    static bool common_setup;
+
     // one instance of SPI is shared
     static SPI *spi;
     Pin *spi_cs;
@@ -448,11 +452,9 @@ private:
         int8_t h_decrement:3;
         bool cool_step_enabled:1; //we need to remember this to configure the coolstep if it si enabled
         bool started:1; //if the stepper has been started yet
-        bool halt_on_alarm:1;
-        bool check_alarm:1;
     };
 
-    uint32_t max_current{2800};
+    static uint32_t max_current;
 
     uint8_t cool_step_lower_threshold; // we need to remember the threshold to enable and disable the CoolStep feature
     char designator;

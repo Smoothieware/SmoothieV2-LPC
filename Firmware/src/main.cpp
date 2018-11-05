@@ -483,7 +483,7 @@ static void smoothie_startup(void *)
     // when debug is enabled we cannot run stepticker at full speed
     step_ticker->set_frequency(10000); // 10KHz
 #else
-    step_ticker->set_frequency(200000); // 100KHz
+    step_ticker->set_frequency(100000); // 100KHz
 #endif
     step_ticker->set_unstep_time(1); // 1us step pulse by default
 
@@ -601,9 +601,8 @@ static void smoothie_startup(void *)
         {
             printf("DEBUG: configure temperature control\n");
             if(Adc::setup()) {
-                // this creates any configured temperature controls then we can remove it
-                TemperatureControl tc("temperature control loader");
-                if(!tc.configure(cr)) {
+                // this creates any configured temperature controls
+                if(!TemperatureControl::load_controls(cr)) {
                     printf("INFO: no Temperature Controls loaded\n");
                 }
             } else {

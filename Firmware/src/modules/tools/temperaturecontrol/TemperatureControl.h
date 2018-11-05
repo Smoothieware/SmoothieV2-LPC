@@ -9,6 +9,7 @@ class TempSensor;
 class SigmaDeltaPwm;
 class GCode;
 class OutputStream;
+class Pin;
 
 class TemperatureControl : public Module
 {
@@ -17,10 +18,9 @@ public:
     TemperatureControl(const char *name);
     ~TemperatureControl();
 
-    bool configure(ConfigReader& cr);
+    static bool load_controls(ConfigReader& cr);
     void on_halt(bool flg);
     bool request(const char *key, void *value);
-    void in_command_ctx(bool);
 
     void set_desired_temperature(float desired_temperature);
     float get_temperature();
@@ -38,7 +38,6 @@ public:
     friend class PID_Autotuner;
 
 private:
-    bool load_controls(ConfigReader& cr);
     bool configure(ConfigReader& cr, ConfigReader::section_map_t& m);
 
     void thermistor_read_tick(void);
@@ -64,7 +63,9 @@ private:
     float readings_per_second;
 
     SigmaDeltaPwm *heater_pin{nullptr};
-
+#ifdef BOARD_PRIMEALPHA
+    static Pin *vfet_enable_pin;
+#endif
     std::string designator;
 
     float hysteresis;
@@ -77,8 +78,6 @@ private:
     float PIDdt;
 
     float runaway_error_range;
-
-    char error_msg[132]{0};
 
     enum RUNAWAY_TYPE {NOT_HEATING, HEATING_UP, COOLING_DOWN, TARGET_TEMPERATURE_REACHED};
 

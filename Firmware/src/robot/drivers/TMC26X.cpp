@@ -155,12 +155,13 @@
 // config keys
 #define spi_cs_pin_key                  "spi_cs_pin"
 #define resistor_key                    "sense_resistor"
-#define check_alarm_key                 "check_alarm"
-#define halt_on_alarm_key               "halt_on_alarm"
 #define max_current_key                 "max_current"
 #define raw_register_key                "reg"
 
+//statics common to all instances
 SPI *TMC26X::spi= nullptr;
+bool TMC26X::common_setup= false;
+uint32_t TMC26X::max_current= 2800; // 2.8 amps
 /*
  * Constructor
  */
@@ -238,9 +239,6 @@ bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
 
     this->resistor = cr.get_int(mm, resistor_key, 75); // in milliohms
 
-    check_alarm= cr.get_bool(mm, check_alarm_key, false);
-    halt_on_alarm= cr.get_bool(mm, halt_on_alarm_key, false);
-
     // if raw registers are defined set them 1,2,3 etc in hex
     std::string str= cr.get_string(mm, raw_register_key, "");
     if(!str.empty()) {
@@ -255,6 +253,15 @@ bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
         }
     }
 
+    // if this is the first instance then get any common settings
+    if(!common_setup) {
+        auto c = ssm.find("common");
+        if(c != ssm.end()) {
+            auto& cm = c->second; // map of common tmc2660 config values
+            max_current= cr.get_bool(cm, max_current_key, 2800);
+        }
+        common_setup= true;
+    }
     return true;
 }
 
@@ -1090,7 +1097,7 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
     return error;
 }
 
-bool TMC26X::checkAlarm()
+bool TMC26X::check_errors()
 {
     OutputStream os(&std::cout);
     return check_error_status_bits(os);

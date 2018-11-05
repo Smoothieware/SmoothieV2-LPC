@@ -19,7 +19,8 @@ StepperMotor::StepperMotor(Pin &step, Pin &dir, Pin &en) : step_pin(step), dir_p
     acceleration= NAN;
     selected= true;
     extruder= false;
-    vbblost= false;
+    vmot_lost= true;
+    vmot= false;
 
     enable(false);
     unstep(); // initialize step pin
@@ -92,6 +93,7 @@ void StepperMotor::manual_step(bool dir)
 // prime Alpha has TMC2660 drivers so this handles the setup of those drivers
 #include "TMC26X.h"
 
+bool StepperMotor::vmot= false;
 bool StepperMotor::setup_tmc2660(ConfigReader& cr, const char *actuator_name)
 {
     char axis= motor_id<3?'X'+motor_id:'A'+motor_id-3;
@@ -143,11 +145,15 @@ void StepperMotor::enable(bool state)
         return;
     }
 
-    // TODO if we have lost Vbb since last time then we need to re load all the drivers configs
-    if(state && vbblost) {
-        tmc2660->init();
-        vbblost= false;
-        tmc2660->setEnabled(state);
+    // if we have lost Vmot since last time then we need to re load all the drivers configs
+    if(state && vmot_lost) {
+        if(vmot) {
+            tmc2660->init();
+            tmc2660->setEnabled(true);
+            vmot_lost= false;
+        }else{
+            tmc2660->setEnabled(false);
+        }
         return;
     }
 
@@ -188,6 +194,11 @@ bool StepperMotor::set_options(GCode& gcode)
     return tmc2660->set_options(gcode);
 }
 
+bool StepperMotor::check_driver_error()
+{
+    if(tmc2660 == nullptr) return false;
+    return tmc2660->check_errors();
+}
 
 #else
 

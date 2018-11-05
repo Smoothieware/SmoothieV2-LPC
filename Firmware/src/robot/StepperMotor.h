@@ -75,7 +75,6 @@ class StepperMotor
             volatile bool moving:1;
             bool selected:1;
             bool extruder:1;
-            bool vbblost:1;
         };
 
 #ifdef BOARD_PRIMEALPHA
@@ -88,11 +87,15 @@ class StepperMotor
         void dump_status(OutputStream& os, bool flag=true);
         void set_raw_register(OutputStream& os, uint32_t reg, uint32_t val);
         bool set_options(GCode& gcode);
-
+        bool check_driver_error();
+        static bool set_vmot(bool state) { bool last= vmot; vmot= state; return last; }
+        void set_vmot_lost() { vmot_lost= true; }
 
     private:
         // TMC2660 driver
         TMC26X *tmc2660{nullptr};
+        static bool vmot;
+        bool vmot_lost{true};
 #endif
 };
 

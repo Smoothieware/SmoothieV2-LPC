@@ -54,6 +54,10 @@
 #define runaway_cooling_timeout_key "runaway_cooling_timeout"
 #define runaway_error_range_key "runaway_error_range"
 
+#ifdef BOARD_PRIMEALPHA
+Pin *TemperatureControl::vfet_enable_pin{nullptr};
+#endif
+
 TemperatureControl::TemperatureControl(const char *name) : Module("temperature control", name)
 {
     temp_violated = false;
@@ -67,14 +71,6 @@ TemperatureControl::~TemperatureControl()
 {
     delete sensor;
     delete heater_pin;
-}
-
-
-// this is called by the initial startup
-bool TemperatureControl::configure(ConfigReader& cr)
-{
-    bool ok = load_controls(cr);
-    return ok;
 }
 
 bool TemperatureControl::load_controls(ConfigReader& cr)
@@ -113,6 +109,14 @@ bool TemperatureControl::load_controls(ConfigReader& cr)
     } else {
         printf("configure-temperature control: NOTE: no TemperatureControl(s) configured\n");
     }
+
+#ifdef BOARD_PRIMEALPHA
+    if(cnt > 0) {
+        // turn on the vfet enable
+        vfet_enable_pin= new Pin("GPIO4_10", Pin::AS_OUTPUT);
+        vfet_enable_pin->set(true);
+    }
+#endif
 
     return cnt > 0;
 }
@@ -526,7 +530,6 @@ float TemperatureControl::get_temperature()
     return last_reading;
 }
 
-// called in an ISR, be nice!
 void TemperatureControl::thermistor_read_tick()
 {
     float temperature = sensor->get_temperature();
@@ -536,8 +539,9 @@ void TemperatureControl::thermistor_read_tick()
             heater_pin->set((this->o = 0));
 
             // we schedule a call back in command context to print the errors
+            char error_msg[132];
             snprintf(error_msg, sizeof(error_msg), "ERROR: MINTEMP or MAXTEMP triggered on %s. Check your temperature sensors!\nHALT asserted - reset or M999 required\n", designator.c_str());
-            want_command_ctx = true;
+            print_to_all_consoles(error_msg);
 
             // force into ALARM state
             broadcast_halt(true);
@@ -602,7 +606,7 @@ void TemperatureControl::pid_process(float temperature)
     this->lastInput = temperature;
 }
 
-// this will be an ISR, called every second (becuase that is the lowest frequency we can issue)
+// called every second
 void TemperatureControl::check_runaway()
 {
     if(is_halted()) return;
@@ -642,8 +646,9 @@ void TemperatureControl::check_runaway()
                     // we are still heating up see if we have hit the max time allowed
                     if(t > 0 && ++this->runaway_timer > t) {
                         // this needs to go to any connected terminal, so do it in command thread context
+                        char error_msg[132];
                         snprintf(error_msg, sizeof(error_msg), "ERROR: Temperature took too long to be reached on %s, HALT asserted, TURN POWER OFF IMMEDIATELY - reset or M999 required\n", designator.c_str());
-                        want_command_ctx = true; // request a callback in command thread context
+                        print_to_all_consoles(error_msg);
 
                         broadcast_halt(true);
                         this->runaway_state = NOT_HEATING;
@@ -660,12 +665,18 @@ void TemperatureControl::check_runaway()
                     // If the temperature is outside the acceptable range for 8 seconds, this allows for some noise spikes without halting
                     if(fabsf(delta) > this->runaway_range) {
                         if(this->runaway_timer++ >= 1) { // this being 8 seconds
+                            char error_msg[132];
                             snprintf(error_msg, sizeof(error_msg), "ERROR: Temperature runaway on %s (delta temp %f), HALT asserted, TURN POWER OFF IMMEDIATELY - reset or M999 required\n", designator.c_str(), delta);
-                            want_command_ctx = true;
+                            print_to_all_consoles(error_msg);
 
                             broadcast_halt(true);
                             this->runaway_state = NOT_HEATING;
                             this->runaway_timer = 0;
+                            #ifdef BOARD_PRIMEALPHA
+                            // as this is a potential mosfet failing on we shut off all mosfets
+                            vfet_enable_pin->set(false);
+                            print_to_all_consoles("WARNING: All mosfets have been turned off until reset\n");
+                            #endif
                         }
 
                     } else {
@@ -691,14 +702,4 @@ void TemperatureControl::setPIDi(float i)
 void TemperatureControl::setPIDd(float d)
 {
     this->d_factor = d / this->PIDdt;
-}
-
-// called in command context
-void TemperatureControl::in_command_ctx(bool)
-{
-    if(error_msg[0] != 0) {
-        print_to_all_consoles(error_msg);
-        error_msg[0] = 0;
-    }
-    want_command_ctx = false;
 }
