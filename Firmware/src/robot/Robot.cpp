@@ -433,7 +433,7 @@ void Robot::periodic_checks()
 {
     // check vmot
     bool vmot;
-    float v= get_voltage_monitor("vmot");
+    float v= get_voltage_monitor("vmotor") * 11;
     if(v < 6) {
         // it is off
         vmot= false;
@@ -450,6 +450,7 @@ void Robot::periodic_checks()
         for(auto a : actuators) {
             a->set_vmot_lost();
         }
+        printf("DEBUG: vmot went off\n");
     }
 
     // don't check if we do not have vmot

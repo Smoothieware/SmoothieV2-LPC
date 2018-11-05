@@ -145,12 +145,19 @@ void StepperMotor::enable(bool state)
         return;
     }
 
-    // if we have lost Vmot since last time then we need to re load all the drivers configs
+    if(state && !vmot){
+        printf("WARNING: %d: trying to enable motors when vmotor is off\n", motor_id);
+        tmc2660->setEnabled(false);
+        return;
+    }
+
+    // if we have lost Vmotor since last time then we need to re load all the drivers configs
     if(state && vmot_lost) {
         if(vmot) {
             tmc2660->init();
             tmc2660->setEnabled(true);
             vmot_lost= false;
+            printf("DEBUG: tmc2660: %d inited\n", motor_id);
         }else{
             tmc2660->setEnabled(false);
         }
