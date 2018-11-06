@@ -28,7 +28,7 @@
 static bool system_running= false;
 
 //set in uart thread to signal command_thread to print a query response
-static bool do_query = false;
+static volatile bool do_query = false;
 static OutputStream *query_os = nullptr;
 
 // set to true when M28 is in effect

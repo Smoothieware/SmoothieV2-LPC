@@ -87,6 +87,7 @@ void Conveyor::wait_for_idle(bool wait_for_motors)
     // wait for the job queue to empty, forcing stepticker to run them
     while (!PQUEUE->empty()) {
         check_queue(true); // forces queue to be made available to stepticker
+        safe_sleep(10); // is 10ms ok?
     }
 
     if(wait_for_motors) {

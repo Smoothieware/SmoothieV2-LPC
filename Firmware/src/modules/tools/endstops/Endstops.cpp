@@ -557,6 +557,11 @@ void Endstops::home(axis_bitmap_t a)
         }
     }
 
+    if(Module::is_halted()) {
+        Robot::getInstance()->disable_segmentation= false;
+        return;
+    }
+
     // check that the endstops were hit and it did not stop short for some reason
     // if the endstop is not triggered then enter ALARM state
     // with deltas we check all three axis were triggered, but at least one of XYZ must be set to home
