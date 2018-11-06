@@ -243,7 +243,7 @@ bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
     std::string str= cr.get_string(mm, raw_register_key, "");
     if(!str.empty()) {
         std::vector<uint32_t> regs= stringutils::parse_number_list(str.c_str(), 16);
-        if(!regs.empty()) {
+        if(regs.size() == 5) {
             uint32_t reg= 0;
             OutputStream os(&std::cout);
             for(auto i : regs) {
@@ -258,7 +258,7 @@ bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
         auto c = ssm.find("common");
         if(c != ssm.end()) {
             auto& cm = c->second; // map of common tmc2660 config values
-            max_current= cr.get_bool(cm, max_current_key, 2800);
+            max_current= cr.get_int(cm, max_current_key, 2800);
         }
         common_setup= true;
     }
@@ -329,7 +329,7 @@ unsigned int TMC26X::getCurrent(void)
     double resistor_value = (double)this->resistor;
     double voltage = (driver_configuration_register_value & VSENSE) ? 0.165F : 0.31F;
     result = (result + 1.0F) / 32.0F * voltage / resistor_value * 1000.0F * 1000.0F;
-    return (unsigned int)result;
+    return (unsigned int)round(result);
 }
 
 void TMC26X::setStallGuardThreshold(int8_t stall_guard_threshold, int8_t stall_guard_filter_enabled)
@@ -1074,21 +1074,23 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
         error_reported.reset(3);
     }
 
-    // these seem to be triggered when moving so ignore them for now
-    if (this->isOpenLoadA()) {
-        if(!error_reported.test(4)) stream.printf("%c - ERROR: Channel A seems to be unconnected!\n", designator);
-        error = true;
-        error_reported.set(4);
-    } else {
-        error_reported.reset(4);
-    }
+    if(this->isStandStill()) {
+        // these seem to be triggered when moving so ignore them when moving
+        if (this->isOpenLoadA()) {
+            if(!error_reported.test(4)) stream.printf("%c - ERROR: Channel A seems to be unconnected!\n", designator);
+            error = false;
+            error_reported.set(4);
+        } else {
+            error_reported.reset(4);
+        }
 
-    if (this->isOpenLoadB()) {
-        if(!error_reported.test(5)) stream.printf("%c - ERROR: Channel B seems to be unconnected!\n", designator);
-        error = true;
-        error_reported.set(5);
-    } else {
-        error_reported.reset(5);
+        if (this->isOpenLoadB()) {
+            if(!error_reported.test(5)) stream.printf("%c - ERROR: Channel B seems to be unconnected!\n", designator);
+            error = false;
+            error_reported.set(5);
+        } else {
+            error_reported.reset(5);
+        }
     }
 
     // if(error) {

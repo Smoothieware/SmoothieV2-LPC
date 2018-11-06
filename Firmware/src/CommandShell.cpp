@@ -789,7 +789,6 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
             if(Module::is_halted()) break;
             toggle = !toggle;
         }
-        os.printf("done\n");
 
     } else if (what == "circle") {
         // draws a circle around origin. usage: radius iterations [feedrate]
@@ -821,8 +820,6 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
             Robot::getInstance()->absolute_mode = true;
         }
 
-        os.printf("done\n");
-
     } else if (what == "square") {
         // draws a square usage: size iterations [feedrate]
         std::string size = stringutils::shift_parameter( params );
@@ -845,7 +842,6 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
             THEDISPATCHER->dispatch(nullos, 'G', 0, 'Y', -d, 0);
             if(Module::is_halted()) break;
         }
-        os.printf("done\n");
 
     } else if (what == "raw") {
 
@@ -888,8 +884,6 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
 
         // reset the position based on current actuator position
         Robot::getInstance()->reset_position_from_current_actuator_position();
-
-        os.printf("done\n");
 
     } else {
         os.printf("usage:\n test jog axis distance iterations [feedrate]\n");

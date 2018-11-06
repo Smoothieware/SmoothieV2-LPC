@@ -124,8 +124,11 @@ private:
     bool handle_G92(GCode&, OutputStream&);
     bool handle_M500(GCode&, OutputStream&);
     bool handle_M665(GCode&, OutputStream&);
+    #ifdef BOARD_PRIMEALPHA
     bool handle_M909(GCode&, OutputStream&);
     bool handle_M911(GCode&, OutputStream&);
+    bool handle_setregs_cmd( std::string& params, OutputStream& os );
+    #endif
 
     bool append_milestone(const float target[], float rate_mm_s);
     bool append_line(GCode& gcode, const float target[], float rate_mm_s, float delta_e);

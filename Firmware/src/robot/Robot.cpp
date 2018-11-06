@@ -424,6 +424,7 @@ bool Robot::configure(ConfigReader& cr)
 #ifdef BOARD_PRIMEALPHA
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 909, std::bind(&Robot::handle_M909, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 911, std::bind(&Robot::handle_M911, this, _1, _2));
+    THEDISPATCHER->add_handler( "setregs", std::bind( &Robot::handle_setregs_cmd, this, _1, _2) );
 #endif
     return true;
 }
@@ -457,7 +458,7 @@ void Robot::periodic_checks()
     if(vmot && check_driver_errors) {
         for(auto a : actuators) {
             if(a->check_driver_error()) {
-                if(halt_on_driver_alarm_key) {
+                if(halt_on_driver_alarm) {
                     if(!is_halted()) {
                         broadcast_halt(true);
                         return;
@@ -1159,7 +1160,41 @@ bool Robot::handle_M911(GCode& gcode, OutputStream& os)
 
     return false;
 }
-#endif
+
+#define HELP(m) if(params == "-h") { os.printf("%s\n", m); return true; }
+bool Robot::handle_setregs_cmd( std::string& params, OutputStream& os )
+{
+    HELP("setregs 0 00204,981C0,A0000,C000E,E0060");
+    std::string str= stringutils::shift_parameter( params );
+    int m= strtol(str.c_str(), NULL, 10);
+    if(m >= get_number_registered_motors()) {
+        os.printf("invalid motor number\n");
+        return true;
+    }
+
+    if(!params.empty()) {
+        std::vector<uint32_t> regs= stringutils::parse_number_list(params.c_str(), 16);
+        if(regs.size() == 5) {
+            uint32_t reg= 0;
+            for(auto i : regs) {
+                // this just sets the local storage, it does not write to the chip
+                actuators[m]->set_raw_register(os, ++reg, i);
+            }
+            // writes the registers to the chip
+            actuators[m]->set_raw_register(os, 255, 0);
+            os.printf("registers set for motor %d\n", m);
+
+        }else{
+            os.printf("invalid - 5 registers required\n");
+        }
+    }else{
+        os.printf("invalid no registers\n");
+    }
+
+    return true;
+}
+
+#endif // ifdef BOARD_PRIMEALPHA
 
 bool Robot::handle_M500(GCode& gcode, OutputStream& os)
 {
