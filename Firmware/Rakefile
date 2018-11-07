@@ -115,7 +115,6 @@ load 'rakefile.defaults' if File.exists?('rakefile.defaults')
 
 # add lpcopen HAL files
 hal_src = FileList['Hal/**/*.{c,cpp,s}']
-#hal_src.exclude(/Adc/) # TODO
 
 # RTOS
 rtos_src = FileList['RTOS/**/*.{c,cpp,s}']
@@ -148,7 +147,6 @@ if TESTING
 
 else
   src = FileList['src/**/*.{c,cpp,s}'] #, 'staging/**/*.cpp' ]
-  #src.exclude(/\/arm_solutions\/*/) # we don't want to look at these yet
   src.exclude(/max31855/) # TODO these are not ready yet
   puts "Building Firmware debug: #{DEBUG}"
 end

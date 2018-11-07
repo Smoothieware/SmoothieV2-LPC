@@ -1182,7 +1182,7 @@ bool Robot::handle_setregs_cmd( std::string& params, OutputStream& os )
             }
             // writes the registers to the chip
             actuators[m]->set_raw_register(os, 255, 0);
-            os.printf("registers set for motor %d\n", m);
+            os.printf("registers temporarily set for motor %d\n", m);
 
         }else{
             os.printf("invalid - 5 registers required\n");
