@@ -13,7 +13,9 @@
 #include "version.h"
 #include "xmodem.h"
 #include "Adc.h"
-
+#include "FastTicker.h"
+#include "StepTicker.h"
+#include "Adc.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -72,6 +74,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "version", std::bind( &CommandShell::version_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "break", std::bind( &CommandShell::break_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "reset", std::bind( &CommandShell::reset_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "flash", std::bind( &CommandShell::flash_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 20, std::bind(&CommandShell::m20_cmd, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 115, std::bind(&CommandShell::m115_cmd, this, _1, _2));
@@ -1191,6 +1194,41 @@ bool CommandShell::reset_cmd(std::string& params, OutputStream& os)
     os.printf("Reset will occur in 5 seconds, make sure to disconnect before that\n");
     vTaskDelay(pdMS_TO_TICKS(5000));
     *(volatile int*)0x40053100 = 1; // reset core
+    return true;
+}
+
+#include "uart_comms.h"
+extern "C" void shutdown_sdmmc();
+bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
+{
+    HELP("flash image - flash flashme.bin");
+    uint32_t magic= *(uint32_t*)0x14700000;
+    if(magic != 0x5555AAAAUL) {
+        os.printf("No magic flashloader: %08X\n", magic);
+        return true;
+    }
+
+    // stop stuff
+    vTaskSuspendAll();
+    FastTicker::getInstance()->stop();
+    StepTicker::getInstance()->stop();
+    Adc::stop();
+    f_unmount("sd");
+    shutdown_sdmmc();
+    __disable_irq();
+    NVIC_DisableIRQ(USB0_IRQn);
+    //NVIC_DisableIRQ(SysTick_IRQn);
+
+    // get start address of the flash loader
+    uint32_t p= *(uint32_t*)0x14700004;
+    void (*runat)(void)= *(void (*)())p;
+    os.printf("Executing at %p\n", runat);
+    stop_uart();
+
+    runat();
+
+    // should never get here
+    __asm("bkpt #0");
     return true;
 }
 

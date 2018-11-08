@@ -70,6 +70,14 @@ bool StepTicker::start()
     return true;
 }
 
+bool StepTicker::stop()
+{
+    if(started) {
+        tmr0_stop();
+    }
+    return true;
+}
+
 // Set the base stepping frequency
 // can only be set before it is started
 void StepTicker::set_frequency( float freq )

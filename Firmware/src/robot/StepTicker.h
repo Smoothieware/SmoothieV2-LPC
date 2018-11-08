@@ -34,6 +34,7 @@ public:
     const Block *get_current_block() const { return current_block; }
 
     bool start();
+    bool stop();
 
     // whatever setup the block should register this to know when it is done
     std::function<void()> finished_fnc{nullptr};

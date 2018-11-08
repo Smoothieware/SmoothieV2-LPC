@@ -117,3 +117,9 @@ bool setup_sdmmc()
 
     return true;
 }
+
+void shutdown_sdmmc()
+{
+    NVIC_DisableIRQ(SDIO_IRQn);
+    Chip_SDIF_DeInit(LPC_SDMMC);
+}

@@ -110,6 +110,12 @@ int setup_uart()
 	return 1;
 }
 
+void stop_uart()
+{
+	NVIC_DisableIRQ(UARTx_IRQn);
+	Chip_UART_IntDisable(LPC_UARTX, (UART_IER_RBRINT | UART_IER_RLSINT));
+}
+
 size_t read_uart(char * buf, size_t length)
 {
 	int bytes = Chip_UART_ReadRB(LPC_UARTX, &rxring, buf, length);

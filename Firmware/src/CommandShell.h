@@ -45,6 +45,7 @@ private:
     bool truncate_cmd(std::string& params, OutputStream& os);
     bool break_cmd(std::string& params, OutputStream& os);
     bool reset_cmd(std::string& params, OutputStream& os);
+    bool flash_cmd(std::string& params, OutputStream& os);
     bool jog_cmd(std::string& params, OutputStream& os);
 
     bool mounted;

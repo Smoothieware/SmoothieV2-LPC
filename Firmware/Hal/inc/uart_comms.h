@@ -11,6 +11,7 @@ extern "C" {
 
 void set_notification_uart(xTaskHandle h);
 int setup_uart();
+void stop_uart();
 size_t read_uart(char * buf, size_t length);
 size_t write_uart(const char * buf, size_t length);
 
