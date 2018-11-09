@@ -19,9 +19,21 @@ To get the tool chain you should do the following on compatible Linuxes... (Ubun
     sudo apt-get install gcc-arm-embedded
         
 
+<<<<<<< HEAD
 To build ```cd Firmware; rake target=Primealpha -m```
 
 To build unit tests ```cd Firmware; rake target=Primealpha testing=1 -m```
+=======
+To build the Firmware
+
+    cd Firmware
+    rake target=Bambino -m
+
+To build unit tests 
+     
+    cd Firmware
+    rake target=Bambino testing=1 -m
+>>>>>>> upstream/master
 
 To compile only some unit tests in Firmware:
 
@@ -37,4 +49,4 @@ You need to install ruby (and rake) to build.
 
 ```> sudo apt-get install ruby```
 
-
+Replace Bambino with Primealpha or Minialpha if you have those boards.
