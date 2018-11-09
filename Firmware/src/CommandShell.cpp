@@ -1208,6 +1208,8 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
+    // TODO probably should check the flashme.bin is on the disk first
+
     // stop stuff
     vTaskSuspendAll();
     FastTicker::getInstance()->stop();
