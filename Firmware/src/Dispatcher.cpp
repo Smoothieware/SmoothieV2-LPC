@@ -9,11 +9,14 @@
 #include <cmath>
 #include <string.h>
 #include <cstdarg>
+#include <fstream>
 
 using namespace std;
 
 //#define DEBUG_WARNING printf
 #define DEBUG_WARNING(...)
+
+const char *OVERRIDE_FILE= "/sd/config-override";
 
 Dispatcher *Dispatcher::instance= nullptr;
 
@@ -43,11 +46,6 @@ static bool is_allowed_mcode(int m) {
 // Must be called from the command thread context
 bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 {
-	// if(gc.has_m() && gc.get_code() == 503) {
-	// 	// alias M503 to M500.3
-	// 	gc.set_command('M', 500, 3);
-	// }
-
 	if(Module::is_halted()) {
 		// If we are halted then we reject most g/m codes unless in exception list
 		if(gc.has_m() && gc.get_code() == 999) {
@@ -70,20 +68,59 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 	auto& handler = gc.has_g() ? gcode_handlers : mcode_handlers;
 	const auto& f = handler.equal_range(gc.get_code());
 	bool ret = false;
+	OutputStream *pos= &os;
+	std::fstream *fsout= nullptr;
 
-	for (auto it = f.first; it != f.second; ++it) {
-		if(it->second(gc, os)) {
-			ret = true;
-		} else {
-			// not really useful as many handlers will only process if certain params are set, so not an error unless no handler deals with it.
-			DEBUG_WARNING("handler did not handle %c%d\n", gc.has_g() ? 'G' : 'M', gc.get_code());
+	if(gc.has_m() && (gc.get_code() >= 500 && gc.get_code() <= 503)) {
+		if(gc.get_code() == 500) {
+			// we have M500 so write direct to a config-override file
+			fsout= new std::fstream(OVERRIDE_FILE, std::fstream::out | std::fstream::trunc);
+		    if(!fsout->is_open()) {
+		        os.printf("ERROR: opening file: %s\n", OVERRIDE_FILE);
+		        delete fsout;
+		        return true;
+		    }
+		    pos= new OutputStream(fsout);
+
+		} else if(gc.get_code() == 501) {
+			if(load_configuration(os)) {
+				os.printf("configuration override loaded\nok\n");
+			}else{
+				os.printf("failed to load configuration override\nok\n");
+			}
+			return true;
+
+		} else if(gc.get_code() == 502) {
+			remove(OVERRIDE_FILE);
+			os.printf("configuration override file deleted\nok\n");
+			return true;
+
+		} else if(gc.get_code() == 503) {
+			if(loaded_configuration) {
+				os.printf("; config override loaded\n");
+			}else{
+				os.printf("; config override NOT loaded\n");
+			}
 		}
 	}
 
-	// special case is M500 - M503
-	// if(gc.has_m() && gc.get_code() >= 500 && gc.get_code() <= 503) {
-	// 	ret = handle_configuration_commands(gc, os);
-	// }
+	for (auto it = f.first; it != f.second; ++it) {
+		if(it->second(gc, *pos)) {
+			ret = true;
+		} else {
+			// not really useful as many handlers will only process if certain params are set, so not an error unless no handler deals with it.
+			DEBUG_WARNING("//INFO: handler did not handle %c%d\n", gc.has_g() ? 'G' : 'M', gc.get_code());
+		}
+	}
+
+	if(fsout != nullptr) {
+		// clean up after M500
+		fsout->close();
+		delete fsout;
+		delete pos; // this would be the file output stream
+		os.printf("Settings Stored to %s\nok\n", OVERRIDE_FILE);
+		return true;
+	}
 
 	if(ret) {
 		bool send_ok = true;
@@ -212,110 +249,36 @@ void Dispatcher::clear_handlers()
 	command_handlers.clear();
 }
 
-bool Dispatcher::handle_configuration_commands(GCode& gc, OutputStream& os) const
+bool Dispatcher::load_configuration(OutputStream& os) const
 {
-	// if(gc.get_code() == 500) {
-	// 	if(gc.getSubcode() == 3) {
-	// 		if(loaded_configuration)
-	// 			gc.getOS().printf("// Saved configuration is active\n");
-	// 		// just print it
-	// 		return true;
+	// load configuration from override file
+	std::fstream fsin(OVERRIDE_FILE, std::fstream::in);
+	if(fsin.is_open()) {
+		std::string s;
+		GCodeProcessor gp;
+		OutputStream nullos;
+		// foreach line dispatch it
+	    while (std::getline(fsin, s)) {
+	    	if(s[0] == ';') continue;
+			// Parse the Gcode
+			GCodeProcessor::GCodes_t gcodes;
+			gp.parse(s.c_str(), gcodes);
+			// dispatch it
+			for(auto& i : gcodes) {
+				if(i.get_code() >= 500 && i.get_code() <= 503) continue; // avoid recursion death
+				if(!dispatch(i, nullos)) {
+					os.printf("WARNING: this line was not handled: %s\n", s.c_str());
+				}
+			}
+		}
+		loaded_configuration= true;
+		fsin.close();
 
-	// 	}else if(gc.getSubcode() == 0){
-	// 		return writeConfiguration(gc.getOS());
-	// 	}
+	}else{
+		os.printf("// No saved configuration\n");
+		loaded_configuration= false;
+		return false;
+	}
 
-	// }else if(gc.get_code() == 501) {
-	// 	return loadConfiguration(gc.getOS());
-
-	// }else if(gc.get_code() == 502) {
-	// 	// delete the saved configuration
-	// 	uint32_t zero= 0xFFFFFFFFUL;
-	// 	if(THEKERNEL.nonVolatileWrite(&zero, 4, 0) == 4) {
-	// 		gc.getOS().printf("// Saved configuration deleted - reset to restore defaults\n");
-	// 	}else{
-	// 		gc.getOS().printf("// Failed to delete saved configuration\n");
-	// 	}
-	// 	return true;
-	// }
-
-	return false;
-}
-
-bool Dispatcher::write_configuration(OutputStream& output_stream) const
-{
-	// write stream to non volatile memory
-	// prepend magic number so we know there is a valid configuration saved
-	// std::string str= "CONF";
-	// str.append(output_stream.str());
-	// str.append(4, 0); // terminate with 4 nuls
-	// output_stream.clear(); // clear to save some memory
-	// size_t n= str.size();
-	// size_t r= THEKERNEL.nonVolatileWrite((void *)str.data(), n, 0);
-	// if(r == n) {
-	// 	output_stream.printf("// Configuration saved\n");
-	// }else{
-	// 	output_stream.printf("// Failed to save configuration, needed to write %d, wrote %d\n", n, r);
-	// }
-	return true;
-}
-
-bool Dispatcher::load_configuration() const
-{
-	// OutputStream os;
-	// return load_configuration(os);
-	return false;
-}
-
-bool Dispatcher::load_configuration(OutputStream& output_stream) const
-{
-	// load configuration from non volatile memory
-	// char buf[64];
-	// size_t r= THEKERNEL.nonVolatileRead(buf, 4, 0);
-	// if(r == 4) {
-	// 	if(strncmp(buf, "CONF", 4) == 0) {
-	// 		size_t off= 4;
-	// 		// read everything until we get some nulls
-	// 		std::string str;
-	// 		do {
-	// 			r= THEKERNEL.nonVolatileRead(buf, sizeof(buf), off);
-	// 			if(r != sizeof(buf)) {
-	// 				output_stream.printf("// Read failed\n");
-	// 				return true;
-	// 			}
-	// 			str.append(buf, r);
-	// 			off += r;
-	// 		}while(str.find('\0') == string::npos);
-
-	// 		// foreach line dispatch it
-	// 		std::stringstream ss(str);
-	// 		std::string line;
-	// 		std::vector<string> lines;
-	// 		GCodeProcessor& gp= THEKERNEL.getGCodeProcessor();
-	// 	    while(std::getline(ss, line, '\n')){
-//  				if(line.find('\0') != string::npos) break; // hit the end
-//  				lines.push_back(line);
-//  				// Parse the Gcode
-	// 			GCodeProcessor::GCodes_t gcodes;
-	// 			gp.parse(line.c_str(), gcodes);
-	// 			// dispatch it
-	// 			for(auto& i : gcodes) {
-	// 				if(i.get_code() >= 500 && i.get_code() <= 503) continue; // avoid recursion death
-	// 				dispatch(i);
-	// 			}
-	// 		}
-	// 		for(auto& s : lines) {
-	// 			output_stream.printf("// Loaded %s\n", s.c_str());
-	// 		}
-	// 		loaded_configuration= true;
-
-	// 	}else{
-	// 		output_stream.printf("// No saved configuration\n");
-	// 		loaded_configuration= false;
-	// 	}
-
-	// }else{
-	// 	output_stream.printf("// Failed to read saved configuration\n");
-	// }
 	return true;
 }

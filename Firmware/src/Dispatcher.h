@@ -44,8 +44,6 @@ public:
 private:
     static Dispatcher *instance;
 
-    bool handle_configuration_commands(GCode& gc, OutputStream& os) const;
-    bool write_configuration(OutputStream& output_stream) const;
     bool load_configuration(OutputStream& output_stream) const;
 
     // use multimap as multiple handlers may be needed per gcode
