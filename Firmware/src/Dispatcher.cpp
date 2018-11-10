@@ -118,6 +118,9 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 		fsout->close();
 		delete fsout;
 		delete pos; // this would be the file output stream
+		if(!config_override) {
+			os.printf("WARNING: override will NOT be loaded on boot\n", OVERRIDE_FILE);
+		}
 		os.printf("Settings Stored to %s\nok\n", OVERRIDE_FILE);
 		return true;
 	}
