@@ -83,7 +83,7 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 		    pos= new OutputStream(fsout);
 
 		} else if(gc.get_code() == 501) {
-			if(load_configuration(os)) {
+			if(load_config_override(os)) {
 				os.printf("configuration override loaded\nok\n");
 			}else{
 				os.printf("failed to load configuration override\nok\n");
@@ -249,7 +249,7 @@ void Dispatcher::clear_handlers()
 	command_handlers.clear();
 }
 
-bool Dispatcher::load_configuration(OutputStream& os) const
+bool Dispatcher::load_config_override(OutputStream& os) const
 {
 	// load configuration from override file
 	std::fstream fsin(OVERRIDE_FILE, std::fstream::in);
@@ -267,7 +267,7 @@ bool Dispatcher::load_configuration(OutputStream& os) const
 			for(auto& i : gcodes) {
 				if(i.get_code() >= 500 && i.get_code() <= 503) continue; // avoid recursion death
 				if(!dispatch(i, nullos)) {
-					os.printf("WARNING: this line was not handled: %s\n", s.c_str());
+					os.printf("WARNING: load_config_override: this line was not handled: %s\n", s.c_str());
 				}
 			}
 		}
@@ -275,7 +275,6 @@ bool Dispatcher::load_configuration(OutputStream& os) const
 		fsin.close();
 
 	}else{
-		os.printf("// No saved configuration\n");
 		loaded_configuration= false;
 		return false;
 	}

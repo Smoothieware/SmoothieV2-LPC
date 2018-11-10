@@ -548,6 +548,9 @@ static void smoothie_startup(void *)
                 bool f = cr.get_bool(m, "grbl_mode", false);
                 THEDISPATCHER->set_grbl_mode(f);
                 printf("INFO: grbl mode %s\n", f ? "set" : "not set");
+                f= cr.get_bool(m, "config-override", false);
+                THEDISPATCHER->set_config_override(f);
+                printf("INFO: use config override is %s\n", f ? "set" : "not set");
             }
         }
 
@@ -748,6 +751,17 @@ static void smoothie_startup(void *)
 
     // indicate we are up and running
     system_running= true;
+
+    // load config override if set
+    if(THEDISPATCHER->is_config_override()) {
+        OutputStream os(&std::cout);
+        if(THEDISPATCHER->load_config_override(os)) {
+            os.printf("INFO: configuration override loaded\n");
+
+        }else{
+            os.printf("INFO: No saved configuration override\n");
+        }
+    }
 
     // run the command handler in this thread
     command_handler();
