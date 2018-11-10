@@ -99,7 +99,7 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 			if(loaded_configuration) {
 				os.printf("; config override loaded\n");
 			}else{
-				os.printf("; config override NOT loaded\n");
+				os.printf("; No config override loaded\n");
 			}
 		}
 	}
