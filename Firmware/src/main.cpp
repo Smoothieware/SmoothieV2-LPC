@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <malloc.h>
+#include <fstream>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -40,6 +41,41 @@ static FILE *upload_fp = nullptr;
 
 // TODO maybe move to Dispatcher
 static GCodeProcessor gp;
+static bool loaded_configuration= false;
+static bool config_override= false;
+const char *OVERRIDE_FILE= "/sd/config-override";
+
+// load configuration from override file
+static bool load_config_override(OutputStream& os)
+{
+    std::fstream fsin(OVERRIDE_FILE, std::fstream::in);
+    if(fsin.is_open()) {
+        std::string s;
+        OutputStream nullos;
+        // foreach line dispatch it
+        while (std::getline(fsin, s)) {
+            if(s[0] == ';') continue;
+            // Parse the Gcode
+            GCodeProcessor::GCodes_t gcodes;
+            gp.parse(s.c_str(), gcodes);
+            // dispatch it
+            for(auto& i : gcodes) {
+                if(i.get_code() >= 500 && i.get_code() <= 503) continue; // avoid recursion death
+                if(!THEDISPATCHER->dispatch(i, nullos)) {
+                    os.printf("WARNING: load_config_override: this line was not handled: %s\n", s.c_str());
+                }
+            }
+        }
+        loaded_configuration= true;
+        fsin.close();
+
+    }else{
+        loaded_configuration= false;
+        return false;
+    }
+
+    return true;
+}
 
 // can be called by modules when in command thread context
 bool dispatch_line(OutputStream& os, const char *cl)
@@ -130,7 +166,6 @@ bool dispatch_line(OutputStream& os, const char *cl)
         return true;
     }
 
-
     // dispatch gcodes
     // NOTE return one ok per line instead of per GCode only works for regular gcodes like G0-G3, G92 etc
     // gcodes returning data like M114 should NOT be put on multi gcode lines.
@@ -150,10 +185,62 @@ bool dispatch_line(OutputStream& os, const char *cl)
                 return true;
             }
 
+            // potentially handle M500 - M503 here
+            OutputStream *pos= &os;
+            std::fstream *fsout= nullptr;
+            bool m500= false;
+
+            if(i.has_m() && (i.get_code() >= 500 && i.get_code() <= 503)) {
+                if(i.get_code() == 500) {
+                    // we have M500 so redirect os to a config-override file
+                    fsout= new std::fstream(OVERRIDE_FILE, std::fstream::out | std::fstream::trunc);
+                    if(!fsout->is_open()) {
+                        os.printf("ERROR: opening file: %s\n", OVERRIDE_FILE);
+                        delete fsout;
+                        return true;
+                    }
+                    pos= new OutputStream(fsout);
+                    m500= true;
+
+                } else if(i.get_code() == 501) {
+                    if(load_config_override(os)) {
+                        os.printf("configuration override loaded\nok\n");
+                    }else{
+                        os.printf("failed to load configuration override\nok\n");
+                    }
+                    return true;
+
+                } else if(i.get_code() == 502) {
+                    remove(OVERRIDE_FILE);
+                    os.printf("configuration override file deleted\nok\n");
+                    return true;
+
+                } else if(i.get_code() == 503) {
+                    if(loaded_configuration) {
+                        os.printf("// NOTE: config override loaded\n");
+                    }else{
+                        os.printf("// NOTE: No config override loaded\n");
+                    }
+                    i.set_command('M', 500, 3); // change gcode to be M500.3
+                }
+            }
+
             // if this is a multi gcode line then dispatch must not send ok unless this is the last one
-            if(!THEDISPATCHER->dispatch(i, os, ngcodes == 1)) {
+            if(!THEDISPATCHER->dispatch(i, *pos, ngcodes == 1 && !m500)) {
                 // no handler processed this gcode, return ok - ignored
                 if(ngcodes == 1) os.puts("ok - ignored\n");
+            }
+
+            // clean up after M500
+            if(m500) {
+                m500= false;
+                fsout->close();
+                delete fsout;
+                delete pos; // this would be the file output stream
+                if(!config_override) {
+                    os.printf("WARNING: override will NOT be loaded on boot\n", OVERRIDE_FILE);
+                }
+                os.printf("Settings Stored to %s\nok\n", OVERRIDE_FILE);
             }
 
         } else {
@@ -162,6 +249,7 @@ bool dispatch_line(OutputStream& os, const char *cl)
         }
         --ngcodes;
     }
+
 
     return true;
 }
@@ -463,7 +551,6 @@ void safe_sleep(uint32_t ms)
 #include "Player.h"
 
 #include "main.h"
-#include <fstream>
 
 extern void configureSPIFI();
 //float get_pll1_clk();
@@ -581,9 +668,8 @@ static void smoothie_startup(void *)
                 bool f = cr.get_bool(m, "grbl_mode", false);
                 THEDISPATCHER->set_grbl_mode(f);
                 printf("INFO: grbl mode %s\n", f ? "set" : "not set");
-                f= cr.get_bool(m, "config-override", false);
-                THEDISPATCHER->set_config_override(f);
-                printf("INFO: use config override is %s\n", f ? "set" : "not set");
+                config_override= cr.get_bool(m, "config-override", false);
+                printf("INFO: use config override is %s\n", config_override ? "set" : "not set");
                 rpi_port_enabled= cr.get_bool(m, "rpi_port_enable", false);
                 rpi_baudrate= cr.get_int(m, "rpi_baudrate", 115200);
                 printf("INFO: rpi port is %senabled, at baudrate: %lu\n", rpi_port_enabled ? "" : "not ", rpi_baudrate);
@@ -800,9 +886,9 @@ static void smoothie_startup(void *)
     system_running= true;
 
     // load config override if set
-    if(THEDISPATCHER->is_config_override()) {
+    if(config_override) {
         OutputStream os(&std::cout);
-        if(THEDISPATCHER->load_config_override(os)) {
+        if(load_config_override(os)) {
             os.printf("INFO: configuration override loaded\n");
 
         }else{

@@ -40,21 +40,14 @@ public:
     void clear_handlers();
     bool is_grbl_mode() const { return grbl_mode; }
     void set_grbl_mode(bool flg) { grbl_mode= flg; }
-    void set_config_override(bool flg) { config_override= flg; }
-    bool is_config_override() const { return config_override; }
-    bool load_config_override(OutputStream& os) const;
 
 private:
     static Dispatcher *instance;
-
 
     // use multimap as multiple handlers may be needed per gcode
     Handlers_t gcode_handlers;
     Handlers_t mcode_handlers;
     CommandHandlers_t command_handlers;
-    mutable bool loaded_configuration{false};
-
     bool grbl_mode{false};
-    bool config_override{false};
 };
 

@@ -168,8 +168,8 @@ bool Robot::configure(ConfigReader& cr)
         this->arm_solution = new CartesianSolution(cr);
     }
 
-    this->feed_rate = cr.get_float(m, default_feed_rate_key, 100.0F);
-    this->seek_rate = default_seek_rate = cr.get_float(m, default_seek_rate_key, 100.0F) / 60.0F;
+    this->feed_rate = cr.get_float(m, default_feed_rate_key, 4000.0F); // mm/min
+    this->seek_rate = default_seek_rate = cr.get_float(m, default_seek_rate_key, 4000.0F); // mm/min
     this->mm_per_line_segment = cr.get_float(m, mm_per_line_segment_key, 0.0F);
     this->delta_segments_per_second = cr.get_float(m, delta_segments_per_second_key, 0.0f);
     this->mm_per_arc_segment = cr.get_float(m, mm_per_arc_segment_key, 0.0f);
@@ -974,7 +974,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                     }
 
                 } else {
-                    os.printf(" S:%g ", this->default_seek_rate);
+                    os.printf(" S:%g ", this->default_seek_rate/60);
                 }
 
                 os.set_append_nl();
@@ -989,7 +989,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                 }
 
                 if (gcode.has_arg('S')) {
-                    this->seek_rate = this->default_seek_rate = gcode.get_arg('S'); // is specified in mm/sec
+                    this->seek_rate = this->default_seek_rate = gcode.get_arg('S')*60; // is specified in mm/sec
                 }
 
                 if(gcode.get_subcode() == 1) {
@@ -1217,7 +1217,7 @@ bool Robot::handle_M500(GCode& gcode, OutputStream& os)
 
     os.printf(";X- Junction Deviation, Z- Z junction deviation, S - Minimum Planner speed mm/sec:\nM205 X%1.5f Z%1.5f S%1.5f\n", Planner::getInstance()->xy_junction_deviation, Planner::getInstance()->z_junction_deviation, Planner::getInstance()->minimum_planner_speed);
 
-    os.printf(";Max cartesian feedrates in mm/sec:\nM203 X%1.5f Y%1.5f Z%1.5f S%1.5f\n", this->max_speeds[X_AXIS], this->max_speeds[Y_AXIS], this->max_speeds[Z_AXIS], this->default_seek_rate);
+    os.printf(";Max cartesian feedrates in mm/sec:\nM203 X%1.5f Y%1.5f Z%1.5f S%1.5f\n", this->max_speeds[X_AXIS], this->max_speeds[Y_AXIS], this->max_speeds[Z_AXIS], this->default_seek_rate/60);
 
     os.printf(";Max actuator feedrates in mm/sec:\nM203.1 ");
     for (int i = 0; i < n_motors; ++i) {

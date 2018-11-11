@@ -9,14 +9,11 @@
 #include <cmath>
 #include <string.h>
 #include <cstdarg>
-#include <fstream>
 
 using namespace std;
 
 //#define DEBUG_WARNING printf
 #define DEBUG_WARNING(...)
-
-const char *OVERRIDE_FILE= "/sd/config-override";
 
 Dispatcher *Dispatcher::instance= nullptr;
 
@@ -65,66 +62,17 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 		}
 	}
 
-	OutputStream *pos= &os;
-	std::fstream *fsout= nullptr;
-
-	if(gc.has_m() && (gc.get_code() >= 500 && gc.get_code() <= 503)) {
-		if(gc.get_code() == 500) {
-			// we have M500 so write direct to a config-override file
-			fsout= new std::fstream(OVERRIDE_FILE, std::fstream::out | std::fstream::trunc);
-		    if(!fsout->is_open()) {
-		        os.printf("ERROR: opening file: %s\n", OVERRIDE_FILE);
-		        delete fsout;
-		        return true;
-		    }
-		    pos= new OutputStream(fsout);
-
-		} else if(gc.get_code() == 501) {
-			if(load_config_override(os)) {
-				os.printf("configuration override loaded\nok\n");
-			}else{
-				os.printf("failed to load configuration override\nok\n");
-			}
-			return true;
-
-		} else if(gc.get_code() == 502) {
-			remove(OVERRIDE_FILE);
-			os.printf("configuration override file deleted\nok\n");
-			return true;
-
-		} else if(gc.get_code() == 503) {
-			if(loaded_configuration) {
-				os.printf("// NOTE: config override loaded\n");
-			}else{
-				os.printf("// NOTE: No config override loaded\n");
-			}
-			gc.set_command('M', 500, 3); // force it to be M500.3
-		}
-	}
-
 	auto& handler = gc.has_g() ? gcode_handlers : mcode_handlers;
 	const auto& f = handler.equal_range(gc.get_code());
 	bool ret = false;
 
 	for (auto it = f.first; it != f.second; ++it) {
-		if(it->second(gc, *pos)) {
+		if(it->second(gc, os)) {
 			ret = true;
 		} else {
 			// not really useful as many handlers will only process if certain params are set, so not an error unless no handler deals with it.
 			DEBUG_WARNING("//INFO: handler did not handle %c%d\n", gc.has_g() ? 'G' : 'M', gc.get_code());
 		}
-	}
-
-	if(fsout != nullptr) {
-		// clean up after M500
-		fsout->close();
-		delete fsout;
-		delete pos; // this would be the file output stream
-		if(!config_override) {
-			os.printf("WARNING: override will NOT be loaded on boot\n", OVERRIDE_FILE);
-		}
-		os.printf("Settings Stored to %s\nok\n", OVERRIDE_FILE);
-		return true;
 	}
 
 	if(ret) {
@@ -252,37 +200,4 @@ void Dispatcher::clear_handlers()
 	gcode_handlers.clear();
 	mcode_handlers.clear();
 	command_handlers.clear();
-}
-
-bool Dispatcher::load_config_override(OutputStream& os) const
-{
-	// load configuration from override file
-	std::fstream fsin(OVERRIDE_FILE, std::fstream::in);
-	if(fsin.is_open()) {
-		std::string s;
-		GCodeProcessor gp;
-		OutputStream nullos;
-		// foreach line dispatch it
-	    while (std::getline(fsin, s)) {
-	    	if(s[0] == ';') continue;
-			// Parse the Gcode
-			GCodeProcessor::GCodes_t gcodes;
-			gp.parse(s.c_str(), gcodes);
-			// dispatch it
-			for(auto& i : gcodes) {
-				if(i.get_code() >= 500 && i.get_code() <= 503) continue; // avoid recursion death
-				if(!dispatch(i, nullos)) {
-					os.printf("WARNING: load_config_override: this line was not handled: %s\n", s.c_str());
-				}
-			}
-		}
-		loaded_configuration= true;
-		fsin.close();
-
-	}else{
-		loaded_configuration= false;
-		return false;
-	}
-
-	return true;
 }
