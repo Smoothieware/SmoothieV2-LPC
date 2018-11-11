@@ -123,8 +123,6 @@ bool ThreePointStrategy::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 565, std::bind(&ThreePointStrategy::handle_mcode, this, _1, _2));
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&ThreePointStrategy::handle_mcode, this, _1, _2));
-    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&ThreePointStrategy::handle_mcode, this, _1, _2));
-
 
     return true;
 }
@@ -216,7 +214,7 @@ bool ThreePointStrategy::handle_mcode(GCode& gcode, OutputStream& os)
         probe_offsets = std::make_tuple(x, y, z);
         return true;
 
-    } else if(gcode.get_code() == 500 || gcode.get_code() == 503) { // M500 save, M503 display
+    } else if(gcode.get_code() == 500) { // M500 save, M503 display
         float x, y, z;
         os.printf(";Probe points:\n");
         for (int i = 0; i < 3; ++i) {

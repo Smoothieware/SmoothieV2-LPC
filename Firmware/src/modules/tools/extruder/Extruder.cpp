@@ -143,7 +143,6 @@ bool Extruder::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 208, std::bind(&Extruder::handle_mcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 221, std::bind(&Extruder::handle_mcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&Extruder::handle_mcode, this, _1, _2));
-    Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&Extruder::handle_mcode, this, _1, _2));
 
     Dispatcher::getInstance()->add_handler(Dispatcher::GCODE_HANDLER,   0, std::bind(&Extruder::handle_gcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::GCODE_HANDLER,   1, std::bind(&Extruder::handle_gcode, this, _1, _2));
@@ -389,7 +388,7 @@ bool Extruder::handle_mcode(GCode& gcode, OutputStream& os)
         }
         return true;
 
-    } else if (gcode.get_code() == 500 || gcode.get_code() == 503) { // M500 saves some volatile settings to config override file, M503 just prints the settings
+    } else if (gcode.get_code() == 500) { // M500 saves some volatile settings to config override file, M500.3 just prints the settings
         os.printf(";E Steps per mm:\nM92 E%1.4f P%d\n", stepper_motor->get_steps_per_mm(), this->tool_id);
         os.printf(";E Filament diameter:\nM200 D%1.4f P%d\n", this->filament_diameter, this->tool_id);
         os.printf(";E retract length, feedrate:\nM207 S%1.4f F%1.4f Z%1.4f Q%1.4f P%d\n", this->retract_length, this->retract_feedrate * 60.0F, this->retract_zlift_length, this->retract_zlift_feedrate * 60.0F, this->tool_id);

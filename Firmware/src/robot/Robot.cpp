@@ -63,7 +63,7 @@
 // only one of these for all the drivers
 #define common_key                      "common"
 #define motor_reset_pin_key             "motor_reset_pin"
-#define check_driver_errors_key          "check_driver_errors"
+#define check_driver_errors_key         "check_driver_errors"
 #define halt_on_driver_alarm_key        "halt_on_driver_alarm"
 
 // arm solutions
@@ -87,7 +87,7 @@
 Robot *Robot::instance = nullptr;
 
 // The Robot converts GCodes into actual movements, and then adds them to the Planner, which passes them to the Conveyor so they can be added to the queue
-// It takes care of cutting arcs into segments, same thing for line that are too long
+// It takes care of cutting arcs into segments
 
 Robot::Robot() : Module("robot")
 {
@@ -322,7 +322,7 @@ bool Robot::configure(ConfigReader& cr)
     auto s = ssm.find(common_key);
     if(s != ssm.end()) {
         auto& mm = s->second; // map of general actuator config settings
-        #ifdef BOARD_MINIALPHA
+#ifdef BOARD_MINIALPHA
         // driver reset pin, mini alpha is GPIO3_5
         Pin motor_reset_pin(cr.get_string(mm, motor_reset_pin_key, "nc"), Pin::AS_OUTPUT);
         if(motor_reset_pin.connected()) {
@@ -330,10 +330,10 @@ bool Robot::configure(ConfigReader& cr)
             motor_reset_pin.set(true);
         }
 
-        #elif defined(BOARD_PRIMEALPHA)
+#elif defined(BOARD_PRIMEALPHA)
         check_driver_errors= cr.get_bool(mm, check_driver_errors_key, false);
         halt_on_driver_alarm= cr.get_bool(mm, halt_on_driver_alarm_key, false);
-        #endif
+#endif
     }
 
     // initialise actuator positions to current cartesian position (X0 Y0 Z0)
@@ -350,11 +350,12 @@ bool Robot::configure(ConfigReader& cr)
     }
 
     //this->clearToolOffset();
-    #ifdef BOARD_PRIMEALPHA
+#ifdef BOARD_PRIMEALPHA
     // setup a timer to periodically check Vbb and if it is off we need to tell all motors to reset when it comes on again
     // also will check driver errors if enabled
     SlowTicker::getInstance()->attach(1, std::bind(&Robot::periodic_checks, this));
-    #endif
+#endif
+
     // register gcodes and mcodes
     using std::placeholders::_1;
     using std::placeholders::_2;
@@ -418,7 +419,6 @@ bool Robot::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 400, std::bind(&Robot::handle_mcodes, this, _1, _2));
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&Robot::handle_M500, this, _1, _2));
-    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&Robot::handle_M500, this, _1, _2));
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 665, std::bind(&Robot::handle_M665, this, _1, _2));
 #ifdef BOARD_PRIMEALPHA
@@ -1161,10 +1161,10 @@ bool Robot::handle_M911(GCode& gcode, OutputStream& os)
     return false;
 }
 
-#define HELP(m) if(params == "-h") { os.printf("%s\n", m); return true; }
+#define HELP(m) if(params == "-h") { os.puts(m); return true; }
 bool Robot::handle_setregs_cmd( std::string& params, OutputStream& os )
 {
-    HELP("setregs 0 00204,981C0,A0000,C000E,E0060");
+    HELP("setregs 0 00204,981C0,A0000,C000E,E0060\n");
     std::string str= stringutils::shift_parameter( params );
     int m= strtol(str.c_str(), NULL, 10);
     if(m >= get_number_registered_motors()) {

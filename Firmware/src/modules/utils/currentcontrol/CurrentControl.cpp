@@ -88,7 +88,7 @@ bool CurrentControl::configure(ConfigReader& cr)
     using std::placeholders::_1;
     using std::placeholders::_2;
 
-    Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&CurrentControl::handle_gcode, this, _1, _2));
+    Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&CurrentControl::handle_gcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 906, std::bind(&CurrentControl::handle_gcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 907, std::bind(&CurrentControl::handle_gcode, this, _1, _2));
 
@@ -164,7 +164,7 @@ bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
 
         return true;
 
-    } else if(gcode.get_code() == 503) {
+    } else if(gcode.get_code() == 500) {
         os.printf(";Motor currents:\nM907 ");
         for (auto i : currents) {
             char axis= name_lut[i.first];

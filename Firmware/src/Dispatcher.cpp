@@ -101,6 +101,7 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 			}else{
 				os.printf("; No config override loaded\n");
 			}
+			gc.set_command('M', 500, 3); // force it to be M500.3
 		}
 	}
 

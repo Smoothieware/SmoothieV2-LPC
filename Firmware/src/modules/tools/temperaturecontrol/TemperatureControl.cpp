@@ -258,7 +258,6 @@ bool TemperatureControl::configure(ConfigReader& cr, ConfigReader::section_map_t
         Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 301, std::bind(&TemperatureControl::handle_mcode, this, _1, _2));
         Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 303, std::bind(&TemperatureControl::handle_autopid, this, _1, _2));
         Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&TemperatureControl::handle_mcode, this, _1, _2));
-        Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&TemperatureControl::handle_mcode, this, _1, _2));
 
         Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, set_m_code, std::bind(&TemperatureControl::handle_mcode, this, _1, _2));
         Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, set_and_wait_m_code, std::bind(&TemperatureControl::handle_mcode, this, _1, _2));
@@ -396,7 +395,7 @@ bool TemperatureControl::handle_mcode(GCode & gcode, OutputStream & os)
 
         return true;
 
-    } else if (gcode.get_code() == 500 || gcode.get_code() == 503) { // M500 saves some volatile settings to config override file, M503 just prints the settings
+    } else if (gcode.get_code() == 500) { // M500 saves some volatile settings to config override file
         os.printf(";PID settings:\nM301 S%d P%1.4f I%1.4f D%1.4f X%1.4f Y%d\n", this->tool_id, this->p_factor, this->i_factor / this->PIDdt, this->d_factor * this->PIDdt, this->i_max, this->heater_pin->max_pwm());
 
         os.printf(";Max temperature setting:\nM143 S%d P%1.4f\n", this->tool_id, this->max_temp);

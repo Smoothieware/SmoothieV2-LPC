@@ -138,7 +138,6 @@ bool ZProbe::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 119, std::bind(&ZProbe::handle_mcode, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 670, std::bind(&ZProbe::handle_mcode, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&ZProbe::handle_mcode, this, _1, _2));
-    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&ZProbe::handle_mcode, this, _1, _2));
 
     // strategies may handle their own mcodes but we need to register them from the strategy themselves
 
@@ -388,7 +387,6 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
             break;
 
         case 500: // save settings
-        case 503: // print settings
             os.printf(";Probe feedrates Slow/fast(K)/Return (mm/sec) max_z (mm) height (mm) dwell (s):\nM670 S%1.2f K%1.2f R%1.2f Z%1.2f H%1.2f D%1.2f\n",
                       this->slow_feedrate, this->fast_feedrate, this->return_feedrate, this->max_z, this->probe_height, this->dwell_before_probing);
             break;

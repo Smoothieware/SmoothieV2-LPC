@@ -150,7 +150,6 @@ bool DeltaGridStrategy::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 561, std::bind(&DeltaGridStrategy::handle_mcode, this, _1, _2));
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&DeltaGridStrategy::handle_mcode, this, _1, _2));
-    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&DeltaGridStrategy::handle_mcode, this, _1, _2));
 
     return true;
 }
@@ -373,13 +372,13 @@ bool DeltaGridStrategy::handle_mcode(GCode & gcode, OutputStream & os)
         probe_offsets = std::make_tuple(x, y, z);
         return true;
 
-    } else if(gcode.get_code() == 500 || gcode.get_code() == 503) { // M500 save, M503 display
+    } else if(gcode.get_code() == 500) { // M500 save, M500.3 display
         float x, y, z;
         std::tie(x, y, z) = probe_offsets;
         os.printf(";Probe offsets:\nM565 X%1.5f Y%1.5f Z%1.5f\n", x, y, z);
         if(save) {
             if(grid != nullptr) os.printf(";Load saved grid\nM375\n");
-            else if(gcode.get_code() == 503) os.printf(";WARNING No grid to save\n");
+            else if(gcode.get_subcode() == 3) os.printf(";WARNING No grid to save\n");
         }
         return true;
     }

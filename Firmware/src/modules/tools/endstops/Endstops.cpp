@@ -88,7 +88,7 @@ bool Endstops::configure(ConfigReader& cr)
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 119, std::bind(&Endstops::handle_mcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 206, std::bind(&Endstops::handle_mcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 306, std::bind(&Endstops::handle_mcode, this, _1, _2));
-    Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 503, std::bind(&Endstops::handle_mcode, this, _1, _2));
+    Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&Endstops::handle_mcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 665, std::bind(&Endstops::handle_mcode, this, _1, _2));
     Dispatcher::getInstance()->add_handler(Dispatcher::MCODE_HANDLER, 666, std::bind(&Endstops::handle_mcode, this, _1, _2));
 
@@ -985,7 +985,6 @@ bool Endstops::handle_mcode(GCode& gcode, OutputStream& os)
             break;
 
         case 500: // save settings
-        case 503: // print settings
             if(!is_rdelta) {
                 os.printf(";Home offset (mm):\nM206 ");
                 for (auto &p : homing_axis) {
