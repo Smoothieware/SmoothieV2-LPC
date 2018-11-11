@@ -586,7 +586,7 @@ static void smoothie_startup(void *)
                 printf("INFO: use config override is %s\n", f ? "set" : "not set");
                 rpi_port_enabled= cr.get_bool(m, "rpi_port_enable", false);
                 rpi_baudrate= cr.get_int(m, "rpi_baudrate", 115200);
-                printf("INFO: rpi port is %senabled, at baudrate: %lu\n", f ? "" : "not ", rpi_baudrate);
+                printf("INFO: rpi port is %senabled, at baudrate: %lu\n", rpi_port_enabled ? "" : "not ", rpi_baudrate);
             }
         }
 

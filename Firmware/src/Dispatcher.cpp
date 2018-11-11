@@ -65,9 +65,6 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 		}
 	}
 
-	auto& handler = gc.has_g() ? gcode_handlers : mcode_handlers;
-	const auto& f = handler.equal_range(gc.get_code());
-	bool ret = false;
 	OutputStream *pos= &os;
 	std::fstream *fsout= nullptr;
 
@@ -97,13 +94,17 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 
 		} else if(gc.get_code() == 503) {
 			if(loaded_configuration) {
-				os.printf("; config override loaded\n");
+				os.printf("// NOTE: config override loaded\n");
 			}else{
-				os.printf("; No config override loaded\n");
+				os.printf("// NOTE: No config override loaded\n");
 			}
 			gc.set_command('M', 500, 3); // force it to be M500.3
 		}
 	}
+
+	auto& handler = gc.has_g() ? gcode_handlers : mcode_handlers;
+	const auto& f = handler.equal_range(gc.get_code());
+	bool ret = false;
 
 	for (auto it = f.first; it != f.second; ++it) {
 		if(it->second(gc, *pos)) {

@@ -19,7 +19,7 @@ static RINGBUFF_T txring, rxring;
 /* Transmit and receive buffers */
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
 
-/* Use UART3 for Prime alpha boards P2.3 : UART0_TXD, P2.4 : UART0_RX on RPI header*/
+/* Use UART3 for Prime alpha boards P2.3 : UART3_TXD, P2.4 : UART3_RX on RPI header*/
 
 #define LPC_UARTX       LPC_USART3
 #define UARTx_IRQn      USART3_IRQn
