@@ -3,6 +3,7 @@
  */
 #ifdef BOARD_PRIMEALPHA
 #include "uart3_comms.h"
+#include "board.h"
 
 #include <stdlib.h>
 
@@ -51,13 +52,13 @@ void set_notification_uart3(xTaskHandle h)
 	xTaskToNotify = h;
 }
 
-int setup_uart3()
+int setup_uart3(uint32_t baudrate)
 {
 	Board_UART_Init(LPC_UARTX);
 
-	/* Setup UART for 115.2K8N1 */
+	/* Setup UART for baudrate 8N1 */
 	Chip_UART_Init(LPC_UARTX);
-	Chip_UART_SetBaud(LPC_UARTX, 115200);
+	Chip_UART_SetBaud(LPC_UARTX, baudrate);
 	Chip_UART_ConfigData(LPC_UARTX, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
 	Chip_UART_SetupFIFOS(LPC_UARTX, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_UARTX);

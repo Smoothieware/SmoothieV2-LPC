@@ -28,6 +28,7 @@
 
 static bool system_running= false;
 static bool rpi_port_enabled= false;
+static uint32_t rpi_baudrate= 115200;
 
 //set in uart thread to signal command_thread to print a query response
 static volatile bool do_query = false;
@@ -584,7 +585,8 @@ static void smoothie_startup(void *)
                 THEDISPATCHER->set_config_override(f);
                 printf("INFO: use config override is %s\n", f ? "set" : "not set");
                 rpi_port_enabled= cr.get_bool(m, "rpi_port_enable", false);
-                printf("INFO: rpi port is %senabled\n", f ? "" : "not ");
+                rpi_baudrate= cr.get_int(m, "rpi_baudrate", 115200);
+                printf("INFO: rpi port is %senabled, at baudrate: %lu\n", f ? "" : "not ", rpi_baudrate);
             }
         }
 
@@ -774,9 +776,15 @@ static void smoothie_startup(void *)
     // fixed stack size of 4k Bytes each
     xTaskCreate(usb_comms, "USBCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
     xTaskCreate(uart_comms, "UARTCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+
 #ifdef BOARD_PRIMEALPHA
     if(rpi_port_enabled) {
-        xTaskCreate(uart3_comms, "UART3CommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+        if(setup_uart3(rpi_baudrate) < 0) {
+            printf("ERROR: UART3/RPI setup failed\n");
+        } else {
+            xTaskCreate(uart3_comms, "UART3CommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL
+                );
+        }
     }
 #endif
 

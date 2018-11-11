@@ -1,7 +1,5 @@
 #pragma once
 
-#include "board.h"
-
 #include "FreeRTOS.h"
 #include "task.h"
 

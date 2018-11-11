@@ -2,6 +2,7 @@
  * handles interrupt driven uart I/O for primary UART/DEBUG port
  */
 #include "uart_comms.h"
+#include "board.h"
 
 #include <stdlib.h>
 
