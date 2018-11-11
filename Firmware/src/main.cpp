@@ -15,6 +15,7 @@
 #include "ff.h"
 
 #include "uart_comms.h"
+#include "uart3_comms.h"
 
 #include "Module.h"
 #include "OutputStream.h"
@@ -26,6 +27,7 @@
 #include "Robot.h"
 
 static bool system_running= false;
+static bool rpi_port_enabled= false;
 
 //set in uart thread to signal command_thread to print a query response
 static volatile bool do_query = false;
@@ -312,7 +314,37 @@ static void uart_comms(void *)
         }
     }
 }
+#ifdef BOARD_PRIMEALPHA
+static void uart3_comms(void *)
+{
+    printf("DEBUG: UART3 Comms thread running\n");
+    set_notification_uart3(xTaskGetCurrentTaskHandle());
 
+    // create an output stream that writes to the uart
+    static OutputStream os([](const char *buf, size_t len) { return write_uart3(buf, len); });
+    output_streams.push_back(&os);
+
+    const TickType_t waitms = pdMS_TO_TICKS( 300 );
+
+    char rxBuf[256];
+    char line[MAX_LINE_LENGTH];
+    size_t cnt = 0;
+    bool discard = false;
+    while(1) {
+        // Wait to be notified that there has been a UART irq. (it may have been rx or tx so may not be anything to read)
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
+
+        if( ulNotificationValue != 1 ) {
+            /* The call to ulTaskNotifyTake() timed out. check anyway */
+        }
+
+        size_t n = read_uart3(rxBuf, sizeof(rxBuf));
+        if(n > 0) {
+           process_buffer(n, rxBuf, &os, line, cnt, discard);
+        }
+    }
+}
+#endif
 
 // this prints the string to all consoles that are connected and active
 // must be called in command thread context
@@ -551,6 +583,8 @@ static void smoothie_startup(void *)
                 f= cr.get_bool(m, "config-override", false);
                 THEDISPATCHER->set_config_override(f);
                 printf("INFO: use config override is %s\n", f ? "set" : "not set");
+                rpi_port_enabled= cr.get_bool(m, "rpi_port_enable", false);
+                printf("INFO: rpi port is %senabled\n", f ? "" : "not ");
             }
         }
 
@@ -740,6 +774,11 @@ static void smoothie_startup(void *)
     // fixed stack size of 4k Bytes each
     xTaskCreate(usb_comms, "USBCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
     xTaskCreate(uart_comms, "UARTCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+#ifdef BOARD_PRIMEALPHA
+    if(rpi_port_enabled) {
+        xTaskCreate(uart3_comms, "UART3CommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+    }
+#endif
 
     // wait for command thread to start
     // std::unique_lock<std::mutex> lk(m);

@@ -1,14 +1,15 @@
 /*
- * handles interrupt driven uart I/O for primary UART/DEBUG port
+ * handles interrupt driven uart I/O for RPI UART port USART3
  */
-#include "uart_comms.h"
+#ifdef BOARD_PRIMEALPHA
+#include "uart3_comms.h"
 
 #include <stdlib.h>
 
 static xTaskHandle xTaskToNotify = NULL;
 
 /* Transmit and receive ring buffers */
-STATIC RINGBUFF_T txring, rxring;
+static RINGBUFF_T txring, rxring;
 
 /* Transmit and receive ring buffer sizes */
 #define UART_SRB_SIZE 128	/* Send */
@@ -17,42 +18,11 @@ STATIC RINGBUFF_T txring, rxring;
 /* Transmit and receive buffers */
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
 
-// select the UART to use
-#if defined(BOARD_BAMBINO) && defined (USE_UART0)
-/* Use UART0 for Bambino boards P6.5 : UART0_TXD, P6.4 : UART0_RXD */
-#define LPC_UARTX       LPC_USART0
-#define UARTx_IRQn      USART0_IRQn
-#define UARTx_IRQHandler UART0_IRQHandler
+/* Use UART3 for Prime alpha boards P2.3 : UART0_TXD, P2.4 : UART0_RX on RPI header*/
 
-// Mini alpha also needs to be told which uart it uses as the pins are different
-#elif defined(BOARD_MINIALPHA) && defined(USE_UART2)
-/* Use UART2 for mini alpha boards PA.1 : UART2_TXD, PA.2 : UART2_RX */
-#define LPC_UARTX       LPC_USART2
-#define UARTx_IRQn      USART2_IRQn
-#define UARTx_IRQHandler UART2_IRQHandler
-
-#elif defined(BOARD_MINIALPHA) && defined(USE_UART0)
-/* Use UART0 for mini alpha boards P2.0 : UART0_TXD, P2.1 : UART0_RX */
-#define LPC_UARTX       LPC_USART0
-#define UARTx_IRQn      USART0_IRQn
-#define UARTx_IRQHandler UART0_IRQHandler
-
-#elif defined(BOARD_MINIALPHA) && defined(USE_UART1)
-// Use UART1 P1.13 : UART1_TXD, P1.14 : UART1_RX
-#define LPC_UARTX       LPC_UART1
-#define UARTx_IRQn      UART1_IRQn
-#define UARTx_IRQHandler UART1_IRQHandler
-
-#elif defined(BOARD_PRIMEALPHA) && defined(USE_UART0)
-/* Use UART0 for Prime alpha boards PF.10 : UART0_TXD, PF.11 : UART0_RX */
-#define LPC_UARTX       LPC_USART0
-#define UARTx_IRQn      USART0_IRQn
-#define UARTx_IRQHandler UART0_IRQHandler
-
-#else
-#error Board needs to define which UART to use (USE_UART[0|1|2])
-#endif
-
+#define LPC_UARTX       LPC_USART3
+#define UARTx_IRQn      USART3_IRQn
+#define UARTx_IRQHandler UART3_IRQHandler
 
 /**
  * @brief	UART interrupt handler using ring buffers
@@ -75,13 +45,13 @@ void UARTx_IRQHandler(void)
 	}
 }
 
-void set_notification_uart(xTaskHandle h)
+void set_notification_uart3(xTaskHandle h)
 {
 	/* Store the handle of the calling task. */
 	xTaskToNotify = h;
 }
 
-int setup_uart()
+int setup_uart3()
 {
 	Board_UART_Init(LPC_UARTX);
 
@@ -110,21 +80,20 @@ int setup_uart()
 	return 1;
 }
 
-void stop_uart()
+void stop_uart3()
 {
 	NVIC_DisableIRQ(UARTx_IRQn);
 	Chip_UART_IntDisable(LPC_UARTX, (UART_IER_RBRINT | UART_IER_RLSINT));
 }
 
-size_t read_uart(char * buf, size_t length)
+size_t read_uart3(char * buf, size_t length)
 {
 	int bytes = Chip_UART_ReadRB(LPC_UARTX, &rxring, buf, length);
 	return bytes;
 }
 
-size_t write_uart(const char *buf, size_t length)
+size_t write_uart3(const char *buf, size_t length)
 {
-	#if 0
 	// Note we do a blocking write here until all is written
 	size_t sent_cnt = 0;
 	while(sent_cnt < length) {
@@ -134,10 +103,5 @@ size_t write_uart(const char *buf, size_t length)
 		}
 	}
 	return length;
-	#else
-	taskENTER_CRITICAL();
-	size_t n= Chip_UART_SendBlocking(LPC_UARTX, buf, length);
-	taskEXIT_CRITICAL();
-	return n;
-	#endif
 }
+#endif // BOARD_PRIMEALPHA
