@@ -1208,7 +1208,13 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
-    // TODO probably should check the flashme.bin is on the disk first
+    // check the flashme.bin is on the disk first
+    FILE *fp= fopen("/sd/flashme.bin", "r");
+    if(fp == NULL) {
+        os.printf("No flashme file found\n");
+        return true;
+    }
+    fclose(fp);
 
     // stop stuff
     vTaskSuspendAll();
