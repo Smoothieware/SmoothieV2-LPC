@@ -90,7 +90,6 @@
 #include <cmath>
 #include <fastmath.h>
 
-#define grid_size_key "size"
 #define grid_x_size_key "grid_x_size"
 #define grid_y_size_key "grid_y_size"
 #define tolerance_key "tolerance"
@@ -125,9 +124,8 @@ bool CartGridStrategy::configure(ConfigReader& cr)
         return false;
     }
 
-    uint8_t grid_size = cr.get_float(m, grid_size_key, 7);
-    this->current_grid_x_size = this->configured_grid_x_size = cr.get_float(m, grid_x_size_key, grid_size);
-    this->current_grid_y_size = this->configured_grid_y_size = cr.get_float(m, grid_y_size_key, grid_size);
+    this->current_grid_x_size = this->configured_grid_x_size = cr.get_float(m, grid_x_size_key, 7);
+    this->current_grid_y_size = this->configured_grid_y_size = cr.get_float(m, grid_y_size_key, 7);
     tolerance = cr.get_float(m, tolerance_key, 0.03F);
     save = cr.get_bool(m, save_key, false);
     do_home = cr.get_bool(m, do_home_key, true);

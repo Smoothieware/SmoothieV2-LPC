@@ -157,6 +157,7 @@
 #define resistor_key                    "sense_resistor"
 #define max_current_key                 "max_current"
 #define raw_register_key                "reg"
+#define step_interpolation_key          "step_interpolation"
 
 //statics common to all instances
 SPI *TMC26X::spi= nullptr;
@@ -251,6 +252,13 @@ bool TMC26X::config(ConfigReader& cr, const char *actuator_name)
                 set_raw_register(os, ++reg, i);
             }
         }
+    }
+
+    // see if we want step interpolation (overrides the raw register setting if set)
+    bool interpolation= cr.get_bool(mm, step_interpolation_key, false);
+    if(interpolation) {
+        setStepInterpolation(1);
+        printf("DEBUG:configure-tmc2660: step interpolation for %s is on\n", actuator_name);
     }
 
     // if this is the first instance then get any common settings

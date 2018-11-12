@@ -302,10 +302,10 @@ bool Robot::configure(ConfigReader& cr)
                 return false;
             }
 
+            //set microsteps here which will override the raw register setting if any
             uint16_t microstep= cr.get_int(mm, microsteps_key, 32);
             actuators[a]->set_microsteps(microstep);
             printf("DEBUG:configure-robot: microsteps for %s set to %d\n", s->first.c_str(), microstep);
-
         } else {
             printf("DEBUG:configure-robot: %s is set as an external driver\n", s->first.c_str());
         }
