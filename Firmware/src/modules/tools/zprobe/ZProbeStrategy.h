@@ -14,7 +14,7 @@ class ZProbeStrategy
 public:
     ZProbeStrategy(ZProbe* zprb) : zprobe(zprb) {}
     virtual ~ZProbeStrategy(){};
-    virtual bool handleGCode(GCode& gcode, OutputStream& os)= 0;
+    virtual bool handle_gcode(GCode& gcode, OutputStream& os)= 0;
     virtual bool configure(ConfigReader& cr)= 0;
 
 protected:

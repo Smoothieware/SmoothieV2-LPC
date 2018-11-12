@@ -18,7 +18,7 @@
 #include "ThreePointStrategy.h"
 #include "DeltaCalibrationStrategy.h"
 #include "DeltaGridStrategy.h"
-//#include "CartGridStrategy.h"
+#include "CartGridStrategy.h"
 
 #define enable_key "enable"
 #define probe_pin_key "probe_pin"
@@ -78,8 +78,8 @@ bool ZProbe::configure(ConfigReader& cr)
         }else if(leveling == "delta grid") {
             leveling_strategy= new DeltaGridStrategy(this);
 
-        // }else if(leveling == "cartesian grid") {
-        //     leveling_strategy = new CartGridStrategy(this);
+        }else if(leveling == "cartesian grid") {
+            leveling_strategy = new CartGridStrategy(this);
 
         } else {
             printf("ERROR: config-zprobe: Unknown leveling stratagy: %s", leveling.c_str());
@@ -289,10 +289,10 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
         } else {
             if(!gcode.has_arg('P')) {
                 // find the first strategy to handle the gcode
-                if(leveling_strategy->handleGCode(gcode, os)) {
+                if(leveling_strategy->handle_gcode(gcode, os)) {
                     return true;
 
-                } else if(calibration_strategy->handleGCode(gcode, os)) {
+                } else if(calibration_strategy->handle_gcode(gcode, os)) {
                     return true;
 
                 } else {
@@ -305,12 +305,12 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
                 // 0 being the leveling, 1 being the calibration.
                 uint16_t i = gcode.get_arg('P');
                 if(i == 0) {
-                    if(leveling_strategy->handleGCode(gcode, os)) {
+                    if(leveling_strategy->handle_gcode(gcode, os)) {
                         return true;
                     }
 
                 } else if(i == 1) {
-                    if(calibration_strategy->handleGCode(gcode, os)) {
+                    if(calibration_strategy->handle_gcode(gcode, os)) {
                         return true;
                     }
 

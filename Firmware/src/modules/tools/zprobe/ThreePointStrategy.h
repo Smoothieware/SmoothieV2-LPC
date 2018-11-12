@@ -15,7 +15,7 @@ class ThreePointStrategy : public ZProbeStrategy
 public:
     ThreePointStrategy(ZProbe *zprobe);
     ~ThreePointStrategy();
-    bool handleGCode(GCode& gcode, OutputStream& os);
+    bool handle_gcode(GCode& gcode, OutputStream& os);
     bool configure(ConfigReader& cr);
     float getZOffset(float x, float y);
 

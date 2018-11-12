@@ -35,7 +35,7 @@ bool DeltaCalibrationStrategy::configure(ConfigReader& cr)
     return true;
 }
 
-bool DeltaCalibrationStrategy::handleGCode(GCode& gcode, OutputStream& os)
+bool DeltaCalibrationStrategy::handle_gcode(GCode& gcode, OutputStream& os)
 {
     // G code processing
     if( gcode.get_code() == 32 ) { // auto calibration for delta, Z bed mapping for cartesian

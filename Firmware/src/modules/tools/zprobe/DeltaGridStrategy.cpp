@@ -303,7 +303,7 @@ bool DeltaGridStrategy::probe_spiral(int n, float radius, OutputStream& os)
     return true;
 }
 
-bool DeltaGridStrategy::handleGCode(GCode& gcode, OutputStream& os)
+bool DeltaGridStrategy::handle_gcode(GCode& gcode, OutputStream& os)
 {
     if (gcode.get_code() == 29) { // do a probe to test flatness
         // first wait for an empty queue i.e. no moves left

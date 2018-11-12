@@ -127,7 +127,7 @@ bool ThreePointStrategy::configure(ConfigReader& cr)
     return true;
 }
 
-bool ThreePointStrategy::handleGCode(GCode& gcode, OutputStream& os)
+bool ThreePointStrategy::handle_gcode(GCode& gcode, OutputStream& os)
 {
     // G code processing
     if(gcode.get_code() == 29) { // test probe points for level

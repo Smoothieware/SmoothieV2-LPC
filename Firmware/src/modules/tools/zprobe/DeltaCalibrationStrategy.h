@@ -11,7 +11,7 @@ class DeltaCalibrationStrategy : public ZProbeStrategy
 public:
     DeltaCalibrationStrategy(ZProbe *zprb) : ZProbeStrategy(zprb){};
     ~DeltaCalibrationStrategy(){};
-    bool handleGCode(GCode& gcode, OutputStream& os);
+    bool handle_gcode(GCode& gcode, OutputStream& os);
     bool configure(ConfigReader& cr);
 
 private:
