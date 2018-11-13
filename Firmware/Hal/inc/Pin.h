@@ -43,8 +43,8 @@ public:
         uint8_t v= (this->inverting ^ value) ? 1 : 0;
         LPC_GPIO_PORT->B[this->gpioport][this->gpiopin] = v;
         if(open_drain) {
-            // simulates open drain by setting to input when off
-            Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, gpioport, gpiopin, value);
+            // simulates open drain by setting to input to turn off
+            Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, gpioport, gpiopin, v);
         }
     }
 
