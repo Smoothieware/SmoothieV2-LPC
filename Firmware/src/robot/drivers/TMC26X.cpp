@@ -457,6 +457,11 @@ void TMC26X::setStepInterpolation(int8_t value)
     }
 }
 
+bool TMC26X::getStepInterpolation()
+{
+    return (driver_control_register_value & STEP_INTERPOLATION) != 0;
+}
+
 void TMC26X::setDoubleEdge(int8_t value)
 {
     if (value) {
@@ -970,6 +975,7 @@ void TMC26X::dump_status(OutputStream& stream, bool readable)
         stream.printf("Coolstep current: %dmA\n", getCoolstepCurrent());
 
         stream.printf("Microsteps: 1/%d\n", microsteps);
+        stream.printf("Step interpolation is %s\n", getStepInterpolation() ? "on":"off");
 
         stream.printf("Register dump:\n");
         stream.printf(" driver control register: %05lX(%ld)\n", driver_control_register_value, driver_control_register_value);

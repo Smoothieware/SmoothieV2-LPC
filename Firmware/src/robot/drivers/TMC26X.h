@@ -95,6 +95,7 @@ public:
     int getMicrosteps(void);
 
     void setStepInterpolation(int8_t value);
+    bool getStepInterpolation();
     void setDoubleEdge(int8_t value);
 
     /*!
