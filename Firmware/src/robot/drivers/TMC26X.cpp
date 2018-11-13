@@ -977,7 +977,7 @@ void TMC26X::dump_status(OutputStream& stream, bool readable)
         stream.printf(" cool step register: %05lX(%ld)\n", cool_step_register_value, cool_step_register_value);
         stream.printf(" stall guard2 current register: %05lX(%ld)\n", stall_guard2_current_register_value, stall_guard2_current_register_value);
         stream.printf(" driver configuration register: %05lX(%ld)\n", driver_configuration_register_value, driver_configuration_register_value);
-        stream.printf(" %s.reg %05lX,%05lX,%05lX,%05lX,%05lX\n", name.c_str(), driver_control_register_value, chopper_config_register_value, cool_step_register_value, stall_guard2_current_register_value, driver_configuration_register_value);
+        stream.printf(" %s.reg = %05lX,%05lX,%05lX,%05lX,%05lX\n", name.c_str(), driver_control_register_value, chopper_config_register_value, cool_step_register_value, stall_guard2_current_register_value, driver_configuration_register_value);
 
     } else {
         // This is the format the [rocessing app uses for tuning TMX26X chips

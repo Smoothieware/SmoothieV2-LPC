@@ -95,9 +95,9 @@ bool Extruder::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
 
     // multi extruder setup
     this->tool_id             = cr.get_int(m, tool_id_key, 0); // set to T0 by default, must be set to > 0 for subsequent extruders
-    this->tool_offset[X_AXIS] = cr.get_float(m, x_offset_key          , 0);
-    this->tool_offset[Y_AXIS] = cr.get_float(m, y_offset_key          , 0);
-    this->tool_offset[Z_AXIS] = cr.get_float(m, z_offset_key          , 0);
+    this->tool_offset[X_AXIS] = cr.get_float(m, x_offset_key, 0);
+    this->tool_offset[Y_AXIS] = cr.get_float(m, y_offset_key, 0);
+    this->tool_offset[Z_AXIS] = cr.get_float(m, z_offset_key, 0);
 
     // settings
     this->filament_diameter        = cr.get_float(m, filament_diameter_key , 0);
