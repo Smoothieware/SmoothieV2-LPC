@@ -106,7 +106,7 @@ int Pwm::map_pin_to_pwm(const char *name)
             return 0;
         }
 
-        // check if ctoun is already in use
+        // check if ctout is already in use
         // TODO
 
         // setup pin for the PWM function

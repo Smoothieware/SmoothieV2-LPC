@@ -472,7 +472,7 @@ static void command_handler()
         OutputStream *os;
         bool idle = false;
 
-        // This will timeout after 200 ms
+        // This will timeout after 100 ms
         if(receive_message_queue(&line, &os)) {
             //printf("DEBUG: got line: %s\n", line);
             dispatch_line(*os, line);
@@ -950,16 +950,15 @@ extern "C" void vApplicationIdleHook( void )
     memory allocated by the kernel to any task that has since been deleted. */
 
     // handle play led
+    static TickType_t last_time_check = xTaskGetTickCount();
     if(system_running && play_led != nullptr) {
-        if(Module::is_halted()) {
-            static TickType_t last_time_check = xTaskGetTickCount();
-            if(TICKS2MS(xTaskGetTickCount() - last_time_check) >= 300) {
-                last_time_check = xTaskGetTickCount();
+        if(TICKS2MS(xTaskGetTickCount() - last_time_check) >= 300) {
+            last_time_check = xTaskGetTickCount();
+            if(Module::is_halted()) {
                 play_led->set(!play_led->get());
+            }else{
+                play_led->set(!Conveyor::getInstance()->is_idle());
             }
-
-        }else{
-            play_led->set(!Conveyor::getInstance()->is_idle());
         }
     }
 

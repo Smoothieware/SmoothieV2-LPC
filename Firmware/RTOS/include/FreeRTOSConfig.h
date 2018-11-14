@@ -84,7 +84,7 @@
 #define configUSE_TIMERS				1
 #define configTIMER_TASK_PRIORITY		( 0 )
 #define configTIMER_QUEUE_LENGTH		5
-#define configTIMER_TASK_STACK_DEPTH	( 300 )
+#define configTIMER_TASK_STACK_DEPTH	( 600 )
 
 /* Set the following definitions to 1 to include the API function, or zero
 to exclude the API function. */

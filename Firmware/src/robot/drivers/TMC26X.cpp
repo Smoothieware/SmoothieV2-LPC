@@ -29,7 +29,7 @@
 
 #ifdef BOARD_PRIMEALPHA
 #include "TMC26X.h"
-
+#include "main.h"
 #include "OutputStream.h"
 #include "Robot.h"
 #include "StepperMotor.h"
@@ -1058,14 +1058,14 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
     readStatus(TMC26X_READOUT_POSITION); // get the status bits
 
     if (this->getOverTemperature()&TMC26X_OVERTEMPERATURE_PREWARING) {
-        if(!error_reported.test(0)) stream.printf("%c - WARNING: Overtemperature Prewarning!\n", designator);
+        if(!error_reported.test(0)) stream.printf("WARNING: %c: Overtemperature Prewarning!\n", designator);
         error_reported.set(0);
     } else {
         error_reported.reset(0);
     }
 
     if (this->getOverTemperature()&TMC26X_OVERTEMPERATURE_SHUTDOWN) {
-        if(!error_reported.test(1)) stream.printf("%c - ERROR: Overtemperature Shutdown!\n", designator);
+        if(!error_reported.test(1)) stream.printf("WARNING: %c: Overtemperature Shutdown!\n", designator);
         error = true;
         error_reported.set(1);
     } else {
@@ -1073,7 +1073,7 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
     }
 
     if (this->isShortToGroundA()) {
-        if(!error_reported.test(2)) stream.printf("%c - ERROR: SHORT to ground on channel A!\n", designator);
+        if(!error_reported.test(2)) stream.printf("WARNING: %c: SHORT to ground on channel A!\n", designator);
         error = true;
         error_reported.set(2);
     } else {
@@ -1081,7 +1081,7 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
     }
 
     if (this->isShortToGroundB()) {
-        if(!error_reported.test(3)) stream.printf("%c - ERROR: SHORT to ground on channel B!\n", designator);
+        if(!error_reported.test(3)) stream.printf("WARNING: %c: SHORT to ground on channel B!\n", designator);
         error = true;
         error_reported.set(3);
     } else {
@@ -1091,7 +1091,7 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
     if(this->isStandStill()) {
         // these seem to be triggered when moving so ignore them when moving
         if (this->isOpenLoadA()) {
-            if(!error_reported.test(4)) stream.printf("%c - ERROR: Channel A seems to be unconnected!\n", designator);
+            if(!error_reported.test(4)) stream.printf("WARNING: %c: Channel A seems to be unconnected!\n", designator);
             error = false;
             error_reported.set(4);
         } else {
@@ -1099,7 +1099,7 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
         }
 
         if (this->isOpenLoadB()) {
-            if(!error_reported.test(5)) stream.printf("%c - ERROR: Channel B seems to be unconnected!\n", designator);
+            if(!error_reported.test(5)) stream.printf("WARNING: %c: Channel B seems to be unconnected!\n", designator);
             error = false;
             error_reported.set(5);
         } else {
@@ -1115,8 +1115,13 @@ bool TMC26X::check_error_status_bits(OutputStream& stream)
 
 bool TMC26X::check_errors()
 {
-    OutputStream os(&std::cout);
-    return check_error_status_bits(os);
+    std::ostringstream oss;
+    OutputStream os(&oss);
+    bool b= check_error_status_bits(os);
+    if(!oss.str().empty()) {
+        print_to_all_consoles(oss.str().c_str());
+    }
+    return b;
 }
 
 // sets a raw register to the value specified, for advanced settings
