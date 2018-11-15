@@ -15,7 +15,11 @@
 #define control_key "control"
 #define pin_key "pin"
 
-static std::map<std::string, char> name_lut = {
+// this puts the lookup table in FLASH
+static const struct name_lut_t {
+   const char *name;
+   char axis;
+} name_lut[] = {
     {"alpha", 'X'},
     {"beta", 'Y'},
     {"gamma", 'Z'},
@@ -23,14 +27,20 @@ static std::map<std::string, char> name_lut = {
     {"epsilon", 'B'},
     {"zeta", 'C'}
 };
-static std::map<char, std::string> axis_lut = {
-    {'X', "alpha"},
-    {'Y', "beta"},
-    {'Z', "gamma"},
-    {'A', "delta"},
-    {'B', "epsilon"},
-    {'C', "zeta"}
-};
+static char lookup_name(const char *n)
+{
+    for(auto& i : name_lut) {
+        if(strcmp(n, i.name) == 0) return i.axis;
+    }
+    return 0;
+}
+static const char* lookup_axis(char a)
+{
+    for(auto& i : name_lut) {
+        if(a == i.axis) return i.name;
+    }
+    return 0;
+}
 
 CurrentControl::CurrentControl() : Module("currentcontrol")
 {
@@ -107,7 +117,9 @@ bool CurrentControl::set_current(const std::string& name, float current)
 
 #elif defined(BOARD_PRIMEALPHA)
     // ask Actuator to set its current
-    char axis= name_lut[name];
+    char axis= lookup_name(name.c_str());
+    if(axis == 0) return false;
+
     int n= axis < 'X' ? axis-'A'+3 : axis-'X';
     if(n >= Robot::getInstance()->get_number_registered_motors()) return false;
     bool ok= Robot::getInstance()->actuators[n]->set_current(current);
@@ -130,8 +142,12 @@ bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
             char axis= i < 3 ? 'X'+i : 'A'+i-3;
             if (gcode.has_arg(axis)) {
                 float current= gcode.get_arg(axis);
-                std::string& name= axis_lut[axis];
-                set_current(name, current/1000.0F);
+                const char *name= lookup_axis(axis);
+                if(name == 0) {
+                    os.printf("WARNING: could not find axis %c\n", axis);
+                }else{
+                    set_current(name, current/1000.0F);
+                }
             }
         }
         return true;
@@ -150,13 +166,12 @@ bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
             char axis= i < 3 ? 'X'+i : 'A'+i-3;
             if (gcode.has_arg(axis)) {
                 float c = gcode.get_arg(axis);
-                auto s = axis_lut.find(axis);
-                if(s == axis_lut.end()) {
+                const char *name = lookup_axis(axis);
+                if(name == 0) {
                     os.printf("Unknown axis %c\n", axis);
                     break;
                 }
-                std::string& p= s->second;
-                if(!set_current(p, c)){
+                if(!set_current(name, c)){
                     os.printf("axis %c is not configured for current control\n", axis);
                 }
             }
@@ -167,7 +182,7 @@ bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
     } else if(gcode.get_code() == 500) {
         os.printf(";Motor currents:\nM907 ");
         for (auto i : currents) {
-            char axis= name_lut[i.first];
+            char axis= lookup_name(i.first.c_str());
             os.printf("%c%1.5f ", axis, i.second);
         }
         os.printf("\n");
