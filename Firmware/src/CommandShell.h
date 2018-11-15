@@ -29,6 +29,7 @@ private:
     bool cat_cmd(std::string& params, OutputStream& os);
     bool md5sum_cmd(std::string& params, OutputStream& os);
     bool switch_cmd(std::string& params, OutputStream& os);
+    bool switch_poll_cmd(std::string& params, OutputStream& os);
     bool modules_cmd(std::string& params, OutputStream& os);
     bool gpio_cmd(std::string& params, OutputStream& os);
     bool get_cmd(std::string& params, OutputStream& os);

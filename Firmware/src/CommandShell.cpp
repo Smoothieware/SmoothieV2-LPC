@@ -69,6 +69,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "$#", std::bind( &CommandShell::grblDP_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "$G", std::bind( &CommandShell::grblDG_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "$H", std::bind( &CommandShell::grblDH_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "$S", std::bind( &CommandShell::switch_poll_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "$J", std::bind( &CommandShell::jog_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "test", std::bind( &CommandShell::test_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "version", std::bind( &CommandShell::version_cmd, this, _1, _2) );
@@ -478,6 +479,27 @@ bool CommandShell::switch_cmd(std::string& params, OutputStream& os)
         } else {
             os.printf("unknown command %s.\n", cmd);
         }
+    }
+
+    return true;
+}
+
+bool CommandShell::switch_poll_cmd(std::string& params, OutputStream& os)
+{
+    HELP("returns switch poll query")
+    std::string name = stringutils::shift_parameter( params );
+
+    while(!name.empty()) {
+        Module *m = Module::lookup("switch", name.c_str());
+        if(m != nullptr) {
+            // get switch state
+            bool state;
+            bool ok = m->request("state", &state);
+            if (ok) {
+                os.printf("switch %s is %d\n", name.c_str(), state);
+            }
+        }
+        name = stringutils::shift_parameter( params );
     }
 
     return true;

@@ -146,8 +146,8 @@ void StepperMotor::enable(bool state)
     }
 
     if(state && !vmot){
-        printf("WARNING: %d: trying to enable motors when vmotor is off\n", motor_id);
-        tmc2660->setEnabled(false);
+        //printf("WARNING: %d: trying to enable motors when vmotor is off\n", motor_id);
+        //tmc2660->setEnabled(false);
         return;
     }
 

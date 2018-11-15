@@ -31,8 +31,9 @@ static bool system_running= false;
 static bool rpi_port_enabled= false;
 static uint32_t rpi_baudrate= 115200;
 
-//set in uart thread to signal command_thread to print a query response
-static volatile bool do_query = false;
+// set in comms threads to signal command_thread to print a query response
+static bool do_query = false; // for ? query
+static char *query_line = nullptr; // for certain $G or $S queries
 static OutputStream *query_os = nullptr;
 
 // set to true when M28 is in effect
@@ -298,7 +299,16 @@ static void process_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, 
 
         } else if(line[cnt] == '\n') {
             line[cnt] = '\0'; // remove the \n and nul terminate
-            send_message_queue(line, os);
+            if(line[0] == '$' && (line[1] == 'G' || line[1] == 'S')) {
+                // Handle $G and $S as queries if we do not have one outstanding
+                if(query_line == nullptr) {
+                    query_os = os;
+                    query_line= strdup(line);
+                } // else ignore it
+
+            }else{
+                send_message_queue(line, os);
+            }
             cnt = 0;
 
         } else if(line[cnt] == '\r') {
@@ -444,6 +454,26 @@ void print_to_all_consoles(const char *str)
     }
 }
 
+void handle_query()
+{
+    // set in comms thread, and executed in the command thread to avoid thread clashes.
+    // the trouble with this is that ? does not reply if a long command is blocking above call to dispatch_line
+    // test commands for instance or a long line when the queue is full or G4 etc
+    // so long as safe_sleep() is called then this will still be processed
+    if(do_query) {
+        std::string r;
+        Robot::getInstance()->get_query_string(r);
+        query_os->puts(r.c_str());
+        do_query= false;
+
+    }
+    if(query_line != nullptr) {
+        Dispatcher::getInstance()->dispatch(query_line, *query_os);
+        free(query_line);
+        query_line= nullptr;
+    }
+}
+
 #include "Conveyor.h"
 #include "Pin.h"
 
@@ -486,16 +516,7 @@ static void command_handler()
             }
         }
 
-        // set in comms thread, and executed here to avoid thread clashes
-        // the trouble with this is that ? does not reply if a long command is blocking above call to dispatch_line
-        // test commands for instance or a long line when the queue is full or G4 etc
-        // so long as safe_sleep() is called then this will still be handled
-        if(do_query) {
-            std::string r;
-            Robot::getInstance()->get_query_string(r);
-            query_os->puts(r.c_str());
-            do_query = false;
-        }
+        handle_query();
 
         // call in_command_ctx for all modules that want it
         // dispatch_line can be called from that
@@ -516,12 +537,7 @@ void safe_sleep(uint32_t ms)
     TickType_t delayms = pdMS_TO_TICKS(10); // 10 ms sleep
     while(ms > 0) {
         vTaskDelay(delayms);
-        if(do_query) {
-            std::string r;
-            Robot::getInstance()->get_query_string(r);
-            query_os->puts(r.c_str());
-            do_query = false;
-        }
+        handle_query();
 
         if(ms > 10) {
             ms -= 10;
