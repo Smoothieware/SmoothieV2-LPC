@@ -14,6 +14,7 @@ class Player : public Module {
     public:
         Player();
 
+        static bool create(ConfigReader& cr);
         bool configure(ConfigReader&);
         void in_command_ctx(bool idle);
         bool request(const char *key, void *value);

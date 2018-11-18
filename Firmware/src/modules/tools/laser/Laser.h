@@ -17,6 +17,8 @@ class Laser : public Module
     public:
         Laser();
         virtual ~Laser() {};
+        static bool create(ConfigReader& cr);
+
         bool configure(ConfigReader&);
         bool request(const char *key, void *value);
 

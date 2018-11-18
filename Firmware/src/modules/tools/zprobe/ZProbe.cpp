@@ -39,6 +39,20 @@
 #define STEPS_PER_MM(a) (STEPPER[a]->get_steps_per_mm())
 #define Z_STEPS_PER_MM STEPS_PER_MM(Z_AXIS)
 
+REGISTER_MODULE(ZProbe, ZProbe::create)
+
+bool ZProbe::create(ConfigReader& cr)
+{
+    printf("DEBUG: configure zprobe\n");
+    ZProbe *zprobe = new ZProbe();
+    if(!zprobe->configure(cr)) {
+        printf("INFO: No ZProbe configured\n");
+        delete zprobe;
+        zprobe = nullptr;
+    }
+    return true;
+}
+
 ZProbe::ZProbe() : Module("zprobe")
 {
     probing = false;

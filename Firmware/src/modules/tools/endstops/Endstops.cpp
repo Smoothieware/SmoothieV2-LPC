@@ -65,6 +65,20 @@ enum STATES {
     LIMIT_TRIGGERED
 };
 
+REGISTER_MODULE(Endstops, Endstops::create)
+
+bool Endstops::create(ConfigReader& cr)
+{
+    printf("DEBUG: configure endstops\n");
+    Endstops *endstops = new Endstops();
+    if(!endstops->configure(cr)) {
+        printf("INFO: No endstops enabled\n");
+        delete endstops;
+        endstops = nullptr;
+    }
+    return true;
+}
+
 Endstops::Endstops() : Module("endstops")
 {
     this->status = NOT_HOMING;

@@ -17,7 +17,8 @@ class Switch : public Module {
     public:
         Switch(const char *name);
 
-        bool configure(ConfigReader& cr);
+        static bool load_switches(ConfigReader& cr);
+
         void on_halt(bool);
         void in_command_ctx();
         bool request(const char *key, void *value) ;
@@ -26,7 +27,6 @@ class Switch : public Module {
         std::string get_info() const;
 
     private:
-        bool load_switches(ConfigReader& cr);
         bool configure(ConfigReader& cr, ConfigReader::section_map_t& m);
         void pinpoll_tick(void);
 

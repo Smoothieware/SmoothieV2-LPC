@@ -19,6 +19,7 @@ public:
     ZProbe();
     virtual ~ZProbe() {}
 
+    static bool create(ConfigReader& cr);
     bool configure(ConfigReader& cr);
 
     bool run_probe(float& mm, float feedrate, float max_dist= -1, bool reverse= false);

@@ -30,18 +30,12 @@
 #define failsafe_key            "failsafe_set_to"
 #define ignore_onhalt_key       "ignore_on_halt"
 
-Switch::Switch(const char *name) : Module("switch", name)
-{ }
-
-// this is called by the intial startup
-bool Switch::configure(ConfigReader& cr)
-{
-    bool ok = load_switches(cr);
-    return ok;
-}
+// register this module for creation in main
+REGISTER_MODULE(Switch, Switch::load_switches)
 
 bool Switch::load_switches(ConfigReader& cr)
 {
+    printf("DEBUG: configure switches\n");
     ConfigReader::sub_section_map_t ssmap;
     if(!cr.get_sub_sections("switch", ssmap)) {
         printf("configure-switch: no switch section found\n");
@@ -64,8 +58,13 @@ bool Switch::load_switches(ConfigReader& cr)
         }
     }
 
+    printf("INFO: %d switche(s) loaded\n", cnt);
+
     return cnt > 0;
 }
+
+Switch::Switch(const char *name) : Module("switch", name)
+{ }
 
 bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
 {

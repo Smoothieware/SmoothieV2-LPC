@@ -708,7 +708,7 @@ static void smoothie_startup(void *)
         }
 
         ///////////////////////////////////////////////////////////
-        // configure other modules here
+        // configure core modules here
         {
             // Pwm needs to be initialized, there can only be one frequency
             // needs to be done before any module that could use it
@@ -719,15 +719,6 @@ static void smoothie_startup(void *)
             }
             Pwm::setup(freq);
             printf("INFO: PWM frequency set to %lu Hz\n", freq);
-        }
-
-        {
-            printf("DEBUG: configure switches\n");
-            // this creates any configured switches then we can remove it
-            Switch switches("switch loader");
-            if(!switches.configure(cr)) {
-                printf("INFO: no switches loaded\n");
-            }
         }
 
         {
@@ -751,50 +742,16 @@ static void smoothie_startup(void *)
             }
         }
 
-        printf("DEBUG: configure endstops\n");
-        Endstops *endstops = new Endstops();
-        if(!endstops->configure(cr)) {
-            printf("INFO: No endstops enabled\n");
-            delete endstops;
-            endstops = nullptr;
-        }
-
-        printf("DEBUG: configure kill button\n");
-        KillButton *kill_button = new KillButton();
-        if(!kill_button->configure(cr)) {
-            printf("INFO: No kill button enabled\n");
-            delete kill_button;
-            kill_button = nullptr;
-        }
-
-        printf("DEBUG: configure current control\n");
-        CurrentControl *current_control = new CurrentControl();
-        if(!current_control->configure(cr)) {
-            printf("INFO: No current controls configured\n");
-            delete current_control;
-            current_control = nullptr;
-        }
-
-        printf("DEBUG: configure laser\n");
-        Laser *laser = new Laser();
-        if(!laser->configure(cr)) {
-            printf("INFO: No laser configured\n");
-            delete laser;
-            laser = nullptr;
-        }
-
-        printf("DEBUG: configure zprobe\n");
-        ZProbe *zprobe = new ZProbe();
-        if(!zprobe->configure(cr)) {
-            printf("INFO: No ZProbe configured\n");
-            delete zprobe;
-            zprobe = nullptr;
-        }
-
-        printf("DEBUG: configure player\n");
-        Player *player = new Player();
-        if(!player->configure(cr)) {
-            printf("WARNING: Failed to configure Player\n");
+        ///////////////////////////////////////////////////////////////////////////////////////
+        // create all registered modules, the addresses are stored in a known location in flash
+        extern uint32_t __registered_modules_start;
+        extern uint32_t __registered_modules_end;
+        uint32_t *g_pfnModules= &__registered_modules_start;
+        while (g_pfnModules < &__registered_modules_end) {
+            uint32_t *addr= g_pfnModules++;
+            bool (*pfnModule)(ConfigReader& cr)= (bool (*)(ConfigReader& cr))*addr;
+            // this calls the registered create function for the module
+            pfnModule(cr);
         }
 
         // end of module creation and configuration

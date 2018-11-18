@@ -8,6 +8,20 @@
 #define toggle_key "toggle_enable"
 #define unkill_key "unkill_enable"
 
+REGISTER_MODULE(KillButton, KillButton::create)
+
+bool KillButton::create(ConfigReader& cr)
+{
+    printf("DEBUG: configure kill button\n");
+    KillButton *kill_button = new KillButton();
+    if(!kill_button->configure(cr)) {
+        printf("INFO: No kill button enabled\n");
+        delete kill_button;
+        kill_button = nullptr;
+    }
+    return true;
+}
+
 KillButton::KillButton() : Module("killbutton")
 {
     this->state = IDLE;

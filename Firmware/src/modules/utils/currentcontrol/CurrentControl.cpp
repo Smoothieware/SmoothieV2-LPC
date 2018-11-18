@@ -42,6 +42,20 @@ static const char* lookup_axis(char a)
     return 0;
 }
 
+REGISTER_MODULE(CurrentControl, CurrentControl::create)
+
+bool CurrentControl::create(ConfigReader& cr)
+{
+    printf("DEBUG: configure current control\n");
+    CurrentControl *current_control = new CurrentControl();
+    if(!current_control->configure(cr)) {
+        printf("INFO: No current controls configured\n");
+        delete current_control;
+        current_control = nullptr;
+    }
+    return true;
+}
+
 CurrentControl::CurrentControl() : Module("currentcontrol")
 {
 }

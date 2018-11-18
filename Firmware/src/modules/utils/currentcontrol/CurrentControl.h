@@ -14,8 +14,9 @@ class CurrentControl : public Module {
     public:
         CurrentControl();
         virtual ~CurrentControl() {};
-
+        static bool create(ConfigReader& cr);
         bool configure(ConfigReader& cr);
+
     private:
         bool handle_gcode(GCode& gcode, OutputStream& os);
         std::map<const std::string, float> currents;
