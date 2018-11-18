@@ -16,6 +16,7 @@
 #define pin_key "pin"
 
 // this puts the lookup table in FLASH
+// and allows one lut to handle both mappings axis <=> name
 static const struct name_lut_t {
    const char *name;
    char axis;

@@ -116,7 +116,7 @@ Robot::Robot() : Module("robot")
 }
 
 // Make keys for the Primary XYZ StepperMotors, and potentially A B C
-const char* const actuator_keys[] = {
+static const char* const actuator_keys[] = {
     "alpha", // X
     "beta",  // Y
     "gamma", // Z

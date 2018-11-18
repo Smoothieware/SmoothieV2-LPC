@@ -457,7 +457,7 @@ void print_to_all_consoles(const char *str)
 void handle_query()
 {
     // set in comms thread, and executed in the command thread to avoid thread clashes.
-    // the trouble with this is that ? does not reply if a long command is blocking above call to dispatch_line
+    // the trouble with this is that ? does not reply if a long command is blocking call to dispatch_line
     // test commands for instance or a long line when the queue is full or G4 etc
     // so long as safe_sleep() is called then this will still be processed
     if(do_query) {
