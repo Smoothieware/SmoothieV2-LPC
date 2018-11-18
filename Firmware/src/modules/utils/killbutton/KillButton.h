@@ -6,7 +6,7 @@
 class KillButton : public Module {
     public:
         KillButton();
-
+        static bool create(ConfigReader& cr);
         bool configure(ConfigReader& cr);
 
     private:

@@ -72,3 +72,6 @@ private:
 
     static bool halted;
 };
+
+// this puts the address of the create function in a known area for main to call to create the module(s)
+#define REGISTER_MODULE(n, m) __attribute__ ((used,section(".registered_modules"))) static uint32_t RM_##n= (uint32_t)m;

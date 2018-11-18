@@ -47,7 +47,10 @@ SECTIONS
         /* End of Global Section Table */
 
         *(.after_vectors*)
-
+        . = ALIGN(4);
+        __registered_modules_start = .;
+        KEEP(*(.registered_modules*))
+        __registered_modules_end = .;
     } > SPIFI
 
     .text : ALIGN(4)

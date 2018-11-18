@@ -28,6 +28,20 @@
 //#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
 #define _ramfunc_
 
+REGISTER_MODULE(Laser, Laser::create)
+
+bool Laser::create(ConfigReader& cr)
+{
+    printf("DEBUG: configure laser\n");
+    Laser *laser = new Laser();
+    if(!laser->configure(cr)) {
+        printf("INFO: No laser configured\n");
+        delete laser;
+        laser = nullptr;
+    }
+    return true;
+}
+
 Laser::Laser() : Module("laser")
 {
     laser_on = false;

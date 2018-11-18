@@ -17,6 +17,7 @@ class Endstops : public Module
 {
     public:
         Endstops();
+        static bool create(ConfigReader& cr);
         bool configure(ConfigReader& cr);
         bool request(const char *key, void *value);
         void in_command_ctx();

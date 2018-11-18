@@ -32,6 +32,19 @@ Player *Player::instance = nullptr;
 // needs to be static as it may be used by a queued gcode after abort
 OutputStream Player::nullos;
 
+REGISTER_MODULE(Player, Player::create)
+
+bool Player::create(ConfigReader& cr)
+{
+    printf("DEBUG: configure player\n");
+    Player *player = new Player();
+    if(!player->configure(cr)) {
+        printf("WARNING: Failed to configure Player\n");
+    }
+
+    return true;
+}
+
 Player::Player() : Module("player")
 {
     this->playing_file = false;
