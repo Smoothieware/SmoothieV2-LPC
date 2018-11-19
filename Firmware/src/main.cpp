@@ -829,7 +829,7 @@ static void smoothie_startup(void *)
 
     } else {
         puts("ERROR: Configure failed\n");
-        config_error_msg= "There was an error in the config.ini this must be fixed to continue\nOnly shell commands are allowed and sdcard access\n";
+        config_error_msg= "There was a fatal error in the config.ini this must be fixed to continue\nOnly some shell commands are allowed and sdcard access\n";
         Module::broadcast_halt(true);
         puts(config_error_msg.c_str());
     }

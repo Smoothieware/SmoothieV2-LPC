@@ -166,6 +166,7 @@ private:
     // computational efficiency of generating arcs.
     int arc_correction;                                  // Setting : how often to rectify arc computation
     float max_speeds[3];                                 // Setting : max allowable speed in mm/s for each axis
+    float max_speed;                                     // Setting : max allowable speed in mm/s for any move
     float park_position[2];
 
     uint8_t n_motors;                                    //count of the motors/axis registered
