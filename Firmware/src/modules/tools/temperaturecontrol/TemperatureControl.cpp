@@ -396,7 +396,7 @@ bool TemperatureControl::handle_mcode(GCode & gcode, OutputStream & os)
         return true;
 
     } else if (gcode.get_code() == 500) { // M500 saves some volatile settings to config override file
-        os.printf(";PID settings:\nM301 S%d P%1.4f I%1.4f D%1.4f X%1.4f Y%d\n", this->tool_id, this->p_factor, this->i_factor / this->PIDdt, this->d_factor * this->PIDdt, this->i_max, this->heater_pin->max_pwm());
+        os.printf(";PID settings, i_max, max_pwm:\nM301 S%d P%1.4f I%1.4f D%1.4f X%1.4f Y%d\n", this->tool_id, this->p_factor, this->i_factor / this->PIDdt, this->d_factor * this->PIDdt, this->i_max, this->heater_pin->max_pwm());
 
         os.printf(";Max temperature setting:\nM143 S%d P%1.4f\n", this->tool_id, this->max_temp);
 

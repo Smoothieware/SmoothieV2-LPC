@@ -39,6 +39,7 @@ static OutputStream *query_os = nullptr;
 // set to true when M28 is in effect
 static bool uploading = false;
 static FILE *upload_fp = nullptr;
+static std::string config_error_msg;
 
 // TODO maybe move to Dispatcher
 static GCodeProcessor gp;
@@ -353,7 +354,11 @@ static void usb_comms(void *)
         if(n > 0) {
             for (size_t i = 0; i < n; ++i) {
                 if(rxBuf[i] == '\n') {
-                    write_cdc(welcome_message, strlen(welcome_message));
+                    if(config_error_msg.empty()) {
+                        write_cdc(welcome_message, strlen(welcome_message));
+                    }else{
+                        write_cdc(config_error_msg.c_str(), config_error_msg.size());
+                    }
                     done = true;
                     break;
                 }
@@ -525,7 +530,9 @@ static void command_handler()
         // we check the queue to see if it is ready to run
         // we specifically deal with this in append_block, but need to check for other places
         // This used to be done in on_idle which never blocked
-        Conveyor::getInstance()->check_queue();
+        if(Conveyor::getInstance() != nullptr) {
+            Conveyor::getInstance()->check_queue();
+        }
     }
 }
 
@@ -647,7 +654,7 @@ static void smoothie_startup(void *)
         if(!fs.is_open()) {
             std::cout << "Error: opening file: " << "/sd/config.ini" << "\n";
             // unmount sdcard
-            f_unmount("sd");
+            //f_unmount("sd");
             break;
         }
 
@@ -822,7 +829,8 @@ static void smoothie_startup(void *)
 
     } else {
         puts("ERROR: Configure failed\n");
-        __asm("bkpt #0");
+        config_error_msg= "There was an error in the config.ini this must be fixed to continue\nOnly shell commands are allowed and sdcard access\n";
+        Module::broadcast_halt(true);
     }
 
     // create queue for incoming buffers from the I/O ports
@@ -859,7 +867,7 @@ static void smoothie_startup(void *)
     system_running= true;
 
     // load config override if set
-    if(config_override) {
+    if(ok && config_override) {
         OutputStream os(&std::cout);
         if(load_config_override(os)) {
             os.printf("INFO: configuration override loaded\n");
