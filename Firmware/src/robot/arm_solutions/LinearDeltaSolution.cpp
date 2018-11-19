@@ -36,7 +36,7 @@ LinearDeltaSolution::LinearDeltaSolution(ConfigReader& cr)
         tower2_offset = cr.get_float(m, tower2_offset_key, 0.0f);
         tower3_offset = cr.get_float(m, tower3_offset_key, 0.0f);
     }else{
-        printf("WARNING:config-LinearDeltaSolution: No linear delta section found\n");
+        printf("WARNING:config-LinearDeltaSolution: No linear delta section found, defaults used\n");
     }
 
     init();

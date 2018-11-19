@@ -59,8 +59,6 @@ private:
     uint16_t debounce{0};
 
     volatile struct {
-        bool is_delta:1;
-        bool is_rdelta:1;
         bool probing:1;
         bool reverse_z:1;
         bool invert_override:1;

@@ -302,6 +302,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
         this->move_to_origin_after_home = cr.get_bool(mm, move_to_origin_key, is_delta);
 
     }else{
+        printf("WARNING: configure-endstop: no common settings found. Using defaults\n");
         // set defaults
         this->debounce_ms= 0;
         this->is_corexy= false;

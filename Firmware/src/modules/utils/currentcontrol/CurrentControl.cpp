@@ -170,7 +170,7 @@ bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
     }else if(gcode.get_code() == 907) {
         if(gcode.has_no_args()) {
             for (auto i : currents) {
-                os.printf("%s: %1.5f\n", i.first.c_str(), i.second);
+                os.printf("%s: %1.5f Amps\n", i.first.c_str(), i.second);
             }
             return true;
         }
@@ -195,10 +195,11 @@ bool CurrentControl::handle_gcode(GCode& gcode, OutputStream& os)
         return true;
 
     } else if(gcode.get_code() == 500) {
-        os.printf(";Motor currents:\nM907 ");
-        for (auto i : currents) {
-            char axis= lookup_name(i.first.c_str());
-            os.printf("%c%1.5f ", axis, i.second);
+        os.printf(";Motor currents (amps):\nM907 ");
+        for (int i = 0; i < Robot::getInstance()->get_number_registered_motors(); i++) {
+            char axis= i < 3 ? 'X'+i : 'A'+i-3;
+            const char *name= lookup_axis(axis);
+            os.printf("%c%1.5f ", axis, currents[name]);
         }
         os.printf("\n");
         return true;

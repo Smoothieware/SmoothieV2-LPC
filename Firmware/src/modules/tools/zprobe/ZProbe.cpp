@@ -101,9 +101,9 @@ bool ZProbe::configure(ConfigReader& cr)
 
         if(leveling_strategy != nullptr) {
             if(leveling_strategy->configure(cr)) {
-                printf("config-zprobe: loaded %s strategy\n", leveling.c_str());
+                printf("config-zprobe: loaded %s leveling strategy\n", leveling.c_str());
             } else {
-                printf("ERROR: config-zprobe: failed to load %s strategy\n", leveling.c_str());
+                printf("ERROR: config-zprobe: failed to load %s leveling strategy\n", leveling.c_str());
             }
         }
     }
@@ -122,9 +122,9 @@ bool ZProbe::configure(ConfigReader& cr)
 
         if(calibration_strategy != nullptr) {
             if(calibration_strategy->configure(cr)) {
-                printf("config-zprobe: loaded %s strategy\n", leveling.c_str());
+                printf("config-zprobe: loaded %s calibration strategy\n", calibration.c_str());
             } else {
-                printf("ERROR: config-zprobe: failed to load %s strategy\n", leveling.c_str());
+                printf("ERROR: config-zprobe: failed to load %s calibration strategy\n", calibration.c_str());
             }
         }
     }
@@ -276,7 +276,7 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
             // first wait for all moves to finish
             Conveyor::getInstance()->wait_for_idle();
 
-            bool set_z = (gcode.has_arg('Z') && !is_rdelta);
+            bool set_z = gcode.has_arg('Z'); // && !is_rdelta);
             bool probe_result;
             bool reverse = (gcode.has_arg('R') && gcode.get_arg('R') != 0); // specify to probe in reverse direction
             float rate = gcode.has_arg('F') ? gcode.get_arg('F') / 60 : this->slow_feedrate;

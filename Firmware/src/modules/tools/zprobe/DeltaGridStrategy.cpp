@@ -148,6 +148,7 @@ bool DeltaGridStrategy::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 374, std::bind(&DeltaGridStrategy::handle_mcode, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 375, std::bind(&DeltaGridStrategy::handle_mcode, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 561, std::bind(&DeltaGridStrategy::handle_mcode, this, _1, _2));
+    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 565, std::bind(&DeltaGridStrategy::handle_mcode, this, _1, _2));
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&DeltaGridStrategy::handle_mcode, this, _1, _2));
 
