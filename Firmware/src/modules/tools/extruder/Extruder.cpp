@@ -393,10 +393,10 @@ bool Extruder::handle_mcode(GCode& gcode, OutputStream& os)
         os.printf(";E Filament diameter:\nM200 D%1.4f P%d\n", this->filament_diameter, this->tool_id);
         os.printf(";E retract length, feedrate:\nM207 S%1.4f F%1.4f Z%1.4f Q%1.4f P%d\n", this->retract_length, this->retract_feedrate * 60.0F, this->retract_zlift_length, this->retract_zlift_feedrate * 60.0F, this->tool_id);
         os.printf(";E retract recover length, feedrate:\nM208 S%1.4f F%1.4f P%d\n", this->retract_recover_length, this->retract_recover_feedrate * 60.0F, this->tool_id);
-        os.printf(";E acceleration mm/sec²:\nM204 E%1.4f P%d\n", stepper_motor->get_acceleration(), this->tool_id);
+        os.printf(";E acceleration mm/sec/sec:\nM204 E%1.4f P%d\n", stepper_motor->get_acceleration(), this->tool_id);
         os.printf(";E max feed rate mm/sec:\nM203 E%1.4f P%d\n", stepper_motor->get_max_rate(), this->tool_id);
         if(this->max_volumetric_rate > 0) {
-            os.printf(";E max volumetric rate mm³/sec:\nM203 V%1.4f P%d\n", this->max_volumetric_rate, this->tool_id);
+            os.printf(";E max volumetric rate mm^3/sec:\nM203 V%1.4f P%d\n", this->max_volumetric_rate, this->tool_id);
         }
         return true;
     }

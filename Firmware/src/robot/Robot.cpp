@@ -1209,7 +1209,7 @@ bool Robot::handle_M500(GCode& gcode, OutputStream& os)
     os.printf("\n");
 
     // only print if not 0
-    os.printf(";Acceleration mm/sec^2:\nM204 S%1.5f ", default_acceleration);
+    os.printf(";Acceleration mm/sec/sec:\nM204 S%1.5f ", default_acceleration);
     for (int i = 0; i < n_motors; ++i) {
         if(actuators[i]->is_extruder()) continue; // extruders handle this themselves
         char axis = (i <= Z_AXIS ? 'X' + i : 'A' + (i - A_AXIS));
