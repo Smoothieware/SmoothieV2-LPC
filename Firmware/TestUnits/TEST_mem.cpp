@@ -21,21 +21,22 @@ REGISTER_TEST(MemoryTest, stats)
 }
 
 char test_ram2_bss[128] __attribute__ ((section (".bss.$RAM2")));
-char test_ram3_bss[128] __attribute__ ((section (".bss.$RAM3")));
+// RAM3 is used by USB CDC so it is not fully available
+//char test_ram3_bss[128] __attribute__ ((section (".bss.$RAM3")));
  __attribute__ ((section (".data.$RAM4"))) char test_ram4_data[8]= {1,2,3,4,5,6,7,8};
  __attribute__ ((section (".data.$RAM5"))) char test_ram5_data[4]= {9,8,7,6};
 
 REGISTER_TEST(MemoryTest, other_rams)
 {
     TEST_ASSERT_EQUAL_INT(0x10080000, (unsigned int)&test_ram2_bss);
-    TEST_ASSERT_EQUAL_INT(0x20000000, (unsigned int)&test_ram3_bss);
+    //TEST_ASSERT_EQUAL_INT(0x20000000, (unsigned int)&test_ram3_bss);
     TEST_ASSERT_EQUAL_INT(0x20008000, (unsigned int)&test_ram4_data);
     TEST_ASSERT_EQUAL_INT(0x2000C000, (unsigned int)&test_ram5_data);
 
     // check bss was cleared
     for (int i = 0; i < 128; ++i) {
         TEST_ASSERT_EQUAL_INT(0, test_ram2_bss[i]);
-        TEST_ASSERT_EQUAL_INT(0, test_ram3_bss[i]);
+        //TEST_ASSERT_EQUAL_INT(0, test_ram3_bss[i]);
     }
 
     // check data areas were copied
