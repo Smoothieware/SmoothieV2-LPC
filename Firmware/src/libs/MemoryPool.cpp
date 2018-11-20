@@ -45,8 +45,8 @@ MemoryPool::MemoryPool(void* _base, uint32_t _size)
     this->base = _base;
     this->size = _size;
 
-    ((_poolregion*) base)->used = 0;
-    ((_poolregion*) base)->next = size;
+    ((_poolregion*) _base)->used = 0;
+    ((_poolregion*) _base)->next = _size;
 
     // insert ourselves into head of LL
     next = first;

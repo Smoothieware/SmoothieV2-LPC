@@ -141,6 +141,7 @@ size_t read_cdc(char *buf, size_t len)
 }
 
 // Setup CDC, then process the incoming buffers
+__attribute__ ((section (".bss.$RAM3"))) static char usb_cdc_buffer[USB_STACK_MEM_SIZE];
 int setup_cdc(xTaskHandle h)
 {
 	USBD_API_INIT_PARAM_T usb_param;
@@ -161,7 +162,7 @@ int setup_cdc(xTaskHandle h)
 	memset((void *) &usb_param, 0, sizeof(USBD_API_INIT_PARAM_T));
 	usb_param.usb_reg_base = LPC_USB_BASE;
 	usb_param.max_num_ep = 4;
-	usb_param.mem_base = USB_STACK_MEM_BASE;
+	usb_param.mem_base = (uint32_t) &usb_cdc_buffer; // USB_STACK_MEM_BASE; AHB32 RAM3
 	usb_param.mem_size = USB_STACK_MEM_SIZE;
 
 	/* Set the USB descriptors */

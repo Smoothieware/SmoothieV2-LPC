@@ -32,11 +32,13 @@ REGISTER_TEST(MemoryTest, other_rams)
     TEST_ASSERT_EQUAL_INT(0x20008000, (unsigned int)&test_ram4_data);
     TEST_ASSERT_EQUAL_INT(0x2000C000, (unsigned int)&test_ram5_data);
 
+    // check bss was cleared
     for (int i = 0; i < 128; ++i) {
         TEST_ASSERT_EQUAL_INT(0, test_ram2_bss[i]);
         TEST_ASSERT_EQUAL_INT(0, test_ram3_bss[i]);
     }
 
+    // check data areas were copied
     for (int i = 0; i < 8; ++i) {
         TEST_ASSERT_EQUAL_INT(i+1, test_ram4_data[i]);
     }
@@ -58,16 +60,22 @@ REGISTER_TEST(MemoryTest, memory_pool)
     OutputStream os(&std::cout);
     uint32_t ef= &__top_RAM2 - &__end_bss_RAM2;
     _RAM2->debug(os);
+    // check amount of memory available
     TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
     TEST_ASSERT_EQUAL_INT(0x12000-128, ef);
     uint8_t *r2= (uint8_t *)_RAM2->alloc(128);
     _RAM2->debug(os);
     TEST_ASSERT_NOT_NULL(r2);
+    // check it lost expected amount + 4 byte overhead
     TEST_ASSERT_EQUAL_INT(0x10080000+128+4, (unsigned int)r2);
     TEST_ASSERT_TRUE(_RAM2->has(r2));
     TEST_ASSERT_EQUAL_INT(ef-128-4, _RAM2->free());
     _RAM2->dealloc(r2);
+    // check it deallocated it
     TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
+
+    // TODO test the placement new
+
 }
 
 #define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))

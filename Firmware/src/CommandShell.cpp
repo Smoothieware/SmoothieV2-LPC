@@ -303,6 +303,8 @@ bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
     os.printf("RAM3: %lu bytes free\n", _RAM3->free());
     os.printf("RAM4: %lu bytes free\n", _RAM4->free());
     os.printf("RAM5: %lu bytes free\n", _RAM5->free());
+    os.printf("Total available RAM: %lu\n", xPortGetFreeHeapSize() +
+        _RAM2->free() + _RAM3->free() + _RAM4->free() + _RAM5->free());
     return true;
 }
 
