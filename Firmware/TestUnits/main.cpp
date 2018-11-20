@@ -114,6 +114,11 @@ void print_to_all_consoles(const char *str)
     printf("%s", str);
 }
 
+void setup_memory_pool()
+{
+    // dummy
+}
+
 extern "C" void vRunTestsTask(void *pvParameters)
 {
     // show the DIVB clock rate used for SPIFI

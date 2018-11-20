@@ -298,6 +298,11 @@ bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
     os.printf("\n\nfree sbrk memory= %d, Total free= %d\n", xPortGetFreeHeapSize() - mem.fordblks, xPortGetFreeHeapSize());
     os.printf("malloc:      total       used       free    largest\n");
     os.printf("Mem:   %11d%11d%11d%11d\n", mem.arena, mem.uordblks, mem.fordblks, mem.ordblks);
+
+    os.printf("RAM2: %lu bytes free\n", _RAM2->free());
+    os.printf("RAM3: %lu bytes free\n", _RAM3->free());
+    os.printf("RAM4: %lu bytes free\n", _RAM4->free());
+    os.printf("RAM5: %lu bytes free\n", _RAM5->free());
     return true;
 }
 

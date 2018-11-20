@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "MemoryPool.h"
 
 class OutputStream;
 
@@ -18,3 +19,8 @@ float get_voltage_monitor(const char* name);
 int get_voltage_monitor_names(const char *names[]);
 
 #define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
+
+extern MemoryPool *_RAM2;
+extern MemoryPool *_RAM3;
+extern MemoryPool *_RAM4;
+extern MemoryPool *_RAM5;

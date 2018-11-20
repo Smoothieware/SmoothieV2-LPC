@@ -98,7 +98,7 @@ DeltaGridStrategy::DeltaGridStrategy(ZProbe *zprb) : ZProbeStrategy(zprb)
 
 DeltaGridStrategy::~DeltaGridStrategy()
 {
-    if(grid != nullptr) free(grid);
+    if(grid != nullptr) _RAM2->dealloc(grid);
 }
 
 bool DeltaGridStrategy::configure(ConfigReader& cr)
@@ -128,8 +128,8 @@ bool DeltaGridStrategy::configure(ConfigReader& cr)
         }
     }
 
-    // allocate memory
-    grid = (float *)malloc(grid_size * grid_size * sizeof(float));
+    // allocate memory in RAM2
+    grid = (float *)_RAM2->alloc(grid_size * grid_size * sizeof(float));
 
     if(grid == nullptr) {
         printf("ERROR: config-deltagrid: Not enough memory for grid\n");

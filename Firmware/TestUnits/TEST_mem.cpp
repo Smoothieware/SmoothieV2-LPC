@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <malloc.h>
+#include <iostream>
 
 #include "board.h"
 
 #include "TestRegistry.h"
+
+#include "OutputStream.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -17,26 +20,57 @@ REGISTER_TEST(MemoryTest, stats)
     printf("Mem:   %11d%11d%11d%11d\n", mem.arena, mem.uordblks, mem.fordblks, mem.usmblks);
 }
 
-char test_ahb0_ram[100] __attribute__ ((section (".bss.$RamAHB32")));
-char test_ahb1_ram[100] __attribute__ ((section (".bss.$RamAHB16")));
-REGISTER_TEST(MemoryTest, AHBn)
-{
-    TEST_ASSERT_EQUAL_INT(0x20000000, (unsigned int)&test_ahb0_ram);
-    TEST_ASSERT_EQUAL_INT(0x20008000, (unsigned int)&test_ahb1_ram);
+char test_ram2_bss[128] __attribute__ ((section (".bss.$RAM2")));
+char test_ram3_bss[128] __attribute__ ((section (".bss.$RAM3")));
+ __attribute__ ((section (".data.$RAM4"))) char test_ram4_data[8]= {1,2,3,4,5,6,7,8};
+ __attribute__ ((section (".data.$RAM5"))) char test_ram5_data[4]= {9,8,7,6};
 
-    for (int i = 0; i < 100; ++i) {
-        test_ahb0_ram[i]= i;
-        test_ahb1_ram[i]= i+10;
+REGISTER_TEST(MemoryTest, other_rams)
+{
+    TEST_ASSERT_EQUAL_INT(0x10080000, (unsigned int)&test_ram2_bss);
+    TEST_ASSERT_EQUAL_INT(0x20000000, (unsigned int)&test_ram3_bss);
+    TEST_ASSERT_EQUAL_INT(0x20008000, (unsigned int)&test_ram4_data);
+    TEST_ASSERT_EQUAL_INT(0x2000C000, (unsigned int)&test_ram5_data);
+
+    for (int i = 0; i < 128; ++i) {
+        TEST_ASSERT_EQUAL_INT(0, test_ram2_bss[i]);
+        TEST_ASSERT_EQUAL_INT(0, test_ram3_bss[i]);
     }
 
-    for (int i = 0; i < 100; ++i) {
-        TEST_ASSERT_EQUAL_INT(i, test_ahb0_ram[i]);
-        TEST_ASSERT_EQUAL_INT(i+10, test_ahb1_ram[i]);
+    for (int i = 0; i < 8; ++i) {
+        TEST_ASSERT_EQUAL_INT(i+1, test_ram4_data[i]);
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        TEST_ASSERT_EQUAL_INT(9-i, test_ram5_data[i]);
     }
 }
 
-#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
+#include "MemoryPool.h"
+extern uint8_t __end_bss_RAM2;
+extern uint8_t __top_RAM2;
 
+REGISTER_TEST(MemoryTest, memory_pool)
+{
+    MemoryPool RAM2= MemoryPool(&__end_bss_RAM2, &__top_RAM2 - &__end_bss_RAM2);
+    MemoryPool *_RAM2= &RAM2;
+
+    OutputStream os(&std::cout);
+    uint32_t ef= &__top_RAM2 - &__end_bss_RAM2;
+    _RAM2->debug(os);
+    TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
+    TEST_ASSERT_EQUAL_INT(0x12000-128, ef);
+    uint8_t *r2= (uint8_t *)_RAM2->alloc(128);
+    _RAM2->debug(os);
+    TEST_ASSERT_NOT_NULL(r2);
+    TEST_ASSERT_EQUAL_INT(0x10080000+128+4, (unsigned int)r2);
+    TEST_ASSERT_TRUE(_RAM2->has(r2));
+    TEST_ASSERT_EQUAL_INT(ef-128-4, _RAM2->free());
+    _RAM2->dealloc(r2);
+    TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
+}
+
+#define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))
 _ramfunc_ int testramfunc() { return 123; }
 REGISTER_TEST(MemoryTest, ramfunc)
 {

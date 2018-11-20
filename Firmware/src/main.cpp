@@ -47,6 +47,32 @@ static bool loaded_configuration= false;
 static bool config_override= false;
 const char *OVERRIDE_FILE= "/sd/config-override";
 
+MemoryPool *_RAM2;
+MemoryPool *_RAM3;
+MemoryPool *_RAM4;
+MemoryPool *_RAM5;
+
+// Called very early from ResetISR()
+void setup_memory_pool()
+{
+    // MemoryPool stuff - needs to be initialised before __libc_init_array
+    // so static ctors can use them
+    extern uint8_t __end_bss_RAM2;
+    extern uint8_t __top_RAM2;
+    extern uint8_t __end_bss_RAM3;
+    extern uint8_t __top_RAM3;
+    extern uint8_t __end_bss_RAM4;
+    extern uint8_t __top_RAM4;
+    extern uint8_t __end_bss_RAM5;
+    extern uint8_t __top_RAM5;
+
+    // alocate remaining areas to HEAP for those areas
+    _RAM2= new MemoryPool(&__end_bss_RAM2, &__top_RAM2 - &__end_bss_RAM2);
+    _RAM3= new MemoryPool(&__end_bss_RAM3, &__top_RAM3 - &__end_bss_RAM3);
+    _RAM4= new MemoryPool(&__end_bss_RAM4, &__top_RAM4 - &__end_bss_RAM4);
+    _RAM5= new MemoryPool(&__end_bss_RAM5, &__top_RAM5 - &__end_bss_RAM5);
+}
+
 // load configuration from override file
 static bool load_config_override(OutputStream& os)
 {

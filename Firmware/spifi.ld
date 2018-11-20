@@ -231,47 +231,6 @@ SECTIONS
         PROVIDE(end = .);
     } > RamLoc128
 
-    /* NOINIT section for RamLoc72 */
-    .noinit_RAM2 (NOLOAD) : ALIGN(4)
-    {
-       *(.noinit.$RAM2*)
-       *(.noinit.$RamLoc72*)
-       . = ALIGN(4) ;
-    } > RamLoc72
-
-    /* NOINIT section for RamAHB32 */
-    .noinit_RAM3 (NOLOAD) : ALIGN(4)
-    {
-       *(.noinit.$RAM3*)
-       *(.noinit.$RamAHB32*)
-       . = ALIGN(4) ;
-    } > RamAHB32
-
-    /* NOINIT section for RamAHB16 */
-    .noinit_RAM4 (NOLOAD) : ALIGN(4)
-    {
-       *(.noinit.$RAM4*)
-       *(.noinit.$RamAHB16*)
-       . = ALIGN(4) ;
-    } > RamAHB16
-
-    /* NOINIT section for RamAHB_ETB16 */
-    .noinit_RAM5 (NOLOAD) : ALIGN(4)
-    {
-       *(.noinit.$RAM5*)
-       *(.noinit.$RamAHB_ETB16*)
-       . = ALIGN(4) ;
-    } > RamAHB_ETB16
-
-    /* DEFAULT NOINIT SECTION */
-    .noinit (NOLOAD): ALIGN(4)
-    {
-        _noinit = .;
-        *(.noinit*)
-         . = ALIGN(4) ;
-        _end_noinit = .;
-    } > RamLoc128
-
     PROVIDE(__HeapBase = DEFINED(__user_heap_base) ? __user_heap_base : .);
     PROVIDE(_vStackTop = DEFINED(__user_stack_top) ? __user_stack_top : __top_RamLoc128 - 0);
 
