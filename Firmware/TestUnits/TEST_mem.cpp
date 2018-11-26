@@ -49,6 +49,15 @@ REGISTER_TEST(MemoryTest, other_rams)
     }
 }
 
+class DummyClass
+{
+public:
+    DummyClass() { printf("I'm at %p\n", this); }
+    ~DummyClass() { printf("I'm being dtord\n"); }
+    DummyClass *getInstance() { return this; }
+    int t{1234};
+};
+
 #include "MemoryPool.h"
 extern uint8_t __end_bss_RAM2;
 extern uint8_t __top_RAM2;
@@ -75,8 +84,13 @@ REGISTER_TEST(MemoryTest, memory_pool)
     // check it deallocated it
     TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
 
-    // TODO test the placement new
-
+    // test placement new
+    DummyClass *r3= new(*_RAM2)DummyClass();
+    TEST_ASSERT_EQUAL_INT(0x10080084, (unsigned int)r3->getInstance());
+    TEST_ASSERT_EQUAL_INT(ef-sizeof(DummyClass)-4, _RAM2->free());
+    TEST_ASSERT_EQUAL_INT(1234, r3->t);
+    delete r3;
+    TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
 }
 
 #define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))

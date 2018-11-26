@@ -123,6 +123,8 @@ bool CurrentControl::configure(ConfigReader& cr)
 bool CurrentControl::set_current(const std::string& name, float current)
 {
 #ifdef BOARD_MINIALPHA
+    char axis= lookup_name(name.c_str());
+    if(axis == 0) return false;
     auto x= pins.find(name);
     if(x == pins.end()){
         return false;

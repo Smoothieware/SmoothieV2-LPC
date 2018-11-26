@@ -288,7 +288,9 @@ void Board_SSP_Init(LPC_SSP_T *pSSP)
 		Chip_SCU_PinMuxSet(0xF, 2, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));/* PF.2 MISO0 */
 		Chip_SCU_PinMuxSet(0xF, 3, (SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC2));/* PF.3  MOSI0 */
 	}
-
+#elif defined(BOARD_MINIALPHA)
+	// TODO
+	#warning "SSP on minialpha not setup"
 #else
 #error board not defined for SSP1
 #endif
