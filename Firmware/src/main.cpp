@@ -541,7 +541,7 @@ static void command_handler()
         } else {
             // timed out or other error
             idle = true;
-            if(idle_led != nullptr) {
+            if(idle_led != nullptr && config_error_msg.empty()) {
                 // toggle led to show we are alive, but idle
                 idle_led->set(!idle_led->get());
             }
@@ -669,6 +669,9 @@ static void smoothie_startup(void *)
             std::cout << "Error: setting up sdmmc\n";
             break;
         }
+
+        // TODO check the card is inserted
+
         int ret = f_mount(&fatfs, "sd", 1);
         if(FR_OK != ret) {
             std::cout << "Error: mounting: " << "/sd: " << ret << "\n";
@@ -693,6 +696,7 @@ static void smoothie_startup(void *)
 #endif
         {
             // configure system leds (if any)
+            // TODO these should be hard coded and only disabled if disable_leds is set.
             ConfigReader::section_map_t m;
             if(cr.get_section("system leds", m)) {
                 std::string p = cr.get_string(m, "idle_led", "nc");
@@ -880,6 +884,16 @@ static void smoothie_startup(void *)
                 );
         }
     }
+
+    // if we got a config error and system leds were not configured, then configure them
+    if(!config_error_msg.empty()) {
+        if(idle_led == nullptr) {
+            idle_led= new Pin("p7.4", Pin::AS_OUTPUT);
+        }
+        if(play_led == nullptr) {
+            play_led= new Pin("p7.5", Pin::AS_OUTPUT);
+        }
+    }
 #endif
 
     // wait for command thread to start
@@ -967,9 +981,12 @@ extern "C" void vApplicationIdleHook( void )
             }else{
                 play_led->set(!Conveyor::getInstance()->is_idle());
             }
+            // handle config error
+            if(!config_error_msg.empty() && idle_led != nullptr) {
+                idle_led->set(!idle_led->get());
+            }
         }
     }
-
 }
 
 extern "C" void vApplicationTickHook( void )
