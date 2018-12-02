@@ -20,7 +20,6 @@ class Endstops : public Module
         static bool create(ConfigReader& cr);
         bool configure(ConfigReader& cr);
         bool request(const char *key, void *value);
-        void in_command_ctx();
 
     private:
         bool load_endstops(ConfigReader& cr);
@@ -43,7 +42,6 @@ class Endstops : public Module
         axis_bitmap_t axis_to_home;
 
         float trim_mm[3];
-        char report_string[132]{0};
         bool limit_enabled{false};
 
         // per endstop settings

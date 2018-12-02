@@ -267,7 +267,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
     if(s != ssmap.end()) {
         auto& mm = s->second; // map of common endstop config settings
 
-        this->debounce_ms= cr.get_float(mm, endstop_debounce_ms_key, 0);
+        this->debounce_ms= cr.get_float(mm, endstop_debounce_ms_key, 0); // 0 means no debounce
 
         this->is_corexy= cr.get_bool(mm, corexy_homing_key, false);
         this->is_delta=  cr.get_bool(mm, delta_homing_key, false);
@@ -320,17 +320,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
     return true;
 }
 
-// called in command context
-void Endstops::in_command_ctx()
-{
-    if(report_string[0] != '\0'){
-        print_to_all_consoles(report_string);
-        report_string[0]= 0;
-    }
-    want_command_ctx= false;
-}
-
-// Called every 10 milliseconds in an ISR
+// Called every 10 milliseconds from the timer thread
 void Endstops::read_endstops()
 {
     if(limit_enabled) check_limits();
@@ -349,7 +339,7 @@ void Endstops::read_endstops()
             // if it is moving then we check the associated endstop, and debounce it
             if(e.pin_info->pin.get()) {
                 if(e.pin_info->debounce < debounce_ms) {
-                    e.pin_info->debounce++;
+                    e.pin_info->debounce+=10; // as each iteration is 10ms
 
                 } else {
                     if(is_corexy && (m == X_AXIS || m == Y_AXIS)) {
@@ -374,8 +364,7 @@ void Endstops::read_endstops()
     return;
 }
 
-// this is called from read endstops ISR
-// only called if limits are enabled
+// this is called from read endstops every 10ms if limits are enabled
 void Endstops::check_limits()
 {
     if(this->status == LIMIT_TRIGGERED) {
@@ -388,7 +377,9 @@ void Endstops::check_limits()
                     return;
                 }
 
-                if(i->debounce++ >= debounce_ms) { // can use less as it calls on_idle in between
+                if(i->debounce < debounce_ms) {
+                    i->debounce += 10;
+                }else{
                     // clear the state
                     this->status = NOT_HOMING;
                 }
@@ -406,19 +397,20 @@ void Endstops::check_limits()
             // check min and max endstops
             if(i->pin.get()) {
                 if(i->debounce < debounce_ms) {
-                    i->debounce++;
+                    i->debounce+=10;
+
                 }else {
+                    char report_string[132];
                     // endstop triggered
                     if(!THEDISPATCHER->is_grbl_mode()) {
-                        // this needs to go to all connected consoles and cannot be called from ISR
+                        // this needs to go to all connected consoles
                         snprintf(report_string, sizeof(report_string), "Limit switch %c%c was hit - reset or M999 required\n", STEPPER[i->axis_index]->which_direction() ? '-' : '+', i->axis);
-                        want_command_ctx= true;
 
                     }else{
                         // this needs to go to all connected consoles
                         snprintf(report_string, sizeof(report_string), "ALARM: Hard limit %c%c was hit - $X needed\n", STEPPER[i->axis_index]->which_direction() ? '-' : '+', i->axis);
-                        want_command_ctx= true;
                     }
+                    print_to_all_consoles(report_string);
 
                     this->status = LIMIT_TRIGGERED;
                     i->debounce= 0;
