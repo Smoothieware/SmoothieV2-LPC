@@ -173,7 +173,7 @@ SRCS.each do |s|
   FileUtils.mkdir_p(d) unless Dir.exists?(d)
 end
 
-include_dirs = ["./Hal/lpc_board_bambino/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx",
+include_dirs = ["./Hal/lpc_board/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx",
                 "./Hal/lpc_chip_43xx/inc/usbd_rom", "./Hal/src",
                 "./RTOS/include",  "./Hal/sdmmc/inc", "./Hal/sdmmc/fatfs", "./Hal/usb_cdc/inc"] +
                [Dir.glob(['./src/**/'])].flatten # ,'./staging/**/'
