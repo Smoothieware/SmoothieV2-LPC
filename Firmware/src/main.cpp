@@ -326,8 +326,8 @@ static void process_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, 
 
         } else if(line[cnt] == '\n') {
             line[cnt] = '\0'; // remove the \n and nul terminate
-            if(line[0] == '$' && (line[1] == 'G' || line[1] == 'S')) {
-                // Handle $G and $S as queries if we do not have one outstanding
+            if(line[0] == '$' && (line[1] == 'I' || line[1] == 'S')) {
+                // Handle $I and $S as queries if we do not have one outstanding
                 if(query_line == nullptr) {
                     query_os = os;
                     query_line= strdup(line);
