@@ -1140,8 +1140,10 @@ bool CommandShell::ry_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
-    os.printf("start ymodem transfer\n");
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    if(params.empty()) {
+        os.printf("start ymodem transfer\n");
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
 
     prxos= &os;
     init_xmodem(rxsend);

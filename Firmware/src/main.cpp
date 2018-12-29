@@ -163,6 +163,7 @@ bool dispatch_line(OutputStream& os, const char *cl)
             }
 
         }else{
+            // TODO if we want to be compatible with grbl/bcnc $G (and some others) need to return ok not done
             os.puts("done\n");
         }
 
