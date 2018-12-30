@@ -32,7 +32,7 @@ static bool rpi_port_enabled= false;
 static uint32_t rpi_baudrate= 115200;
 
 // set in comms threads to signal command_thread to print a query response
-static bool do_query = false; // for ? query
+static volatile bool do_query = false; // for ? query
 static char *query_line = nullptr; // for certain $G or $S queries
 static OutputStream *query_os = nullptr;
 
