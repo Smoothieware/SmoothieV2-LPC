@@ -56,7 +56,6 @@ bool CommandShell::initialize()
 
     THEDISPATCHER->add_handler( "config-set", std::bind( &CommandShell::config_set_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "config-get", std::bind( &CommandShell::config_get_cmd, this, _1, _2) );
-    THEDISPATCHER->add_handler( "download", std::bind( &CommandShell::download_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "rx", std::bind( &CommandShell::rx_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "ry", std::bind( &CommandShell::ry_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "truncate", std::bind( &CommandShell::truncate_cmd, this, _1, _2) );
@@ -1043,41 +1042,6 @@ bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
     } else {
         os.printf("Failed to rename config.ini to config.bak - aborting\n");
     }
-    return true;
-}
-
-// Special hack that switches the input comms to send everything here until we finish.
-// NOTE Only works for ascii files.
-// unfortunately due to incorrect USB flow control we cannot use this as it drops characters on USB serial
-bool CommandShell::download_cmd(std::string& params, OutputStream& os)
-{
-    HELP("download filename - download an ascii/text file and save to sd");
-
-    if(!Conveyor::getInstance()->is_idle()) {
-        os.printf("download not allowed while printing or busy\n");
-        return true;
-    }
-
-    // open file to download to
-    std::string download_filename = params;
-    FILE *fd = fopen(download_filename.c_str(), "w");
-    if(fd != NULL) {
-        os.printf("downloading to file: %s, send control-D or control-Z to finish\r\n", download_filename.c_str());
-    } else {
-        os.printf("failed to open file: %s.\r\n", download_filename.c_str());
-        return true;
-    }
-
-    volatile bool downloading = true;
-    int cnt = 0;
-    set_capture([&downloading, fd, &cnt](char c){if( c == 4 || c == 26) downloading = false; else { fputc(c, fd); ++cnt; } });
-    while(downloading) {
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-    set_capture(nullptr);
-    fclose(fd);
-    os.printf("downloaded %d bytes\n", cnt);
-
     return true;
 }
 
