@@ -373,7 +373,7 @@ bool DeltaGridStrategy::handle_mcode(GCode & gcode, OutputStream & os)
         probe_offsets = std::make_tuple(x, y, z);
         return true;
 
-    } else if(gcode.get_code() == 500) { // M500 save, M500.3 display
+    } else if(gcode.get_code() == 500) { // M500 save
         float x, y, z;
         std::tie(x, y, z) = probe_offsets;
         os.printf(";Probe offsets:\nM565 X%1.5f Y%1.5f Z%1.5f\n", x, y, z);

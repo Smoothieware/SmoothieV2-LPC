@@ -516,7 +516,7 @@ bool CartGridStrategy::doProbe(GCode& gcode, OutputStream& os)
         return false;
     }
 
-    // find bed, and leave probe probe height above bed
+    // find bed, and leave probe probe_height above bed
     if(!findBed()) {
         os.printf("Finding bed failed, check the initial height setting\n");
         return false;
