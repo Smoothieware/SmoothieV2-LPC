@@ -116,7 +116,7 @@ bool DeltaGridStrategy::configure(ConfigReader& cr)
     grid_radius = cr.get_float(m, grid_radius_key, 50.0F);
 
     // the initial height above the bed we stop the intial move down after home to find the bed
-    // this should be a height that is enough that the probe will not hit the bed and is an offset from max_z (can be set to 0 if max_z takes into account the probe offset)
+    // this should be a height that is enough that the probe will not hit the bed
     this->initial_height = cr.get_float(m, initial_height_key, 10);
 
     // Probe offsets xxx,yyy,zzz
@@ -330,7 +330,7 @@ bool DeltaGridStrategy::handle_gcode(GCode& gcode, OutputStream& os)
         if(!doProbe(gcode, os)) {
             os.printf("Probe failed to complete, check the initial probe height and/or initial_height settings\n");
         } else {
-            os.printf("Probe completed\n");
+            os.printf("Probe completed. Use M374 to save it\n");
         }
         return true;
     }
@@ -419,7 +419,7 @@ void DeltaGridStrategy::setAdjustFunction(bool on)
 bool DeltaGridStrategy::findBed(float& ht)
 {
     if (do_home) zprobe->home();
-    // move to an initial position fast so as to not take all day, we move down max_z - initial_height, which is set in config, default 10mm
+    // move to an initial position fast so as to not take all day
     float deltaz = initial_height;
     zprobe->move_z(deltaz, zprobe->getFastFeedrate());
     zprobe->move_xy(0, 0, zprobe->getFastFeedrate()); // move to 0,0
@@ -431,7 +431,7 @@ bool DeltaGridStrategy::findBed(float& ht)
     float dz = zprobe->getProbeHeight() - mm;
     zprobe->move_z(dz, zprobe->getFastFeedrate(), true); // relative move
 
-    ht = mm + deltaz - zprobe->getProbeHeight(); // distance to move from home to 5mm above bed
+    ht = mm + deltaz - zprobe->getProbeHeight(); // distance above bed
     return true;
 }
 
@@ -447,7 +447,7 @@ bool DeltaGridStrategy::doProbe(GCode& gcode, OutputStream& os)
     // find bed, and leave probe probe height above bed
     float initial_z;
     if(!findBed(initial_z)) {
-        os.printf("Finding bed failed, check the maxz and initial height settings\n");
+        os.printf("Finding bed failed, check the max_travel and initial height settings\n");
         return false;
     }
 

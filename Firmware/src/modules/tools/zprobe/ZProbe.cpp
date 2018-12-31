@@ -28,7 +28,7 @@
 #define return_feedrate_key "return_feedrate"
 #define probe_height_key "probe_height"
 #define gamma_max_key "gamma_max"
-#define max_z_key "max_z"
+#define max_travel_key "max_travel"
 #define reverse_z_direction_key "reverse_z"
 #define dwell_before_probing_key "dwell_before_probing"
 #define leveling_key "leveling"
@@ -134,7 +134,7 @@ bool ZProbe::configure(ConfigReader& cr)
     this->fast_feedrate = cr.get_float(m, fast_feedrate_key, 100); // feedrate in mm/sec
     this->return_feedrate = cr.get_float(m, return_feedrate_key, 0); // feedrate in mm/sec
     this->reverse_z     = cr.get_bool(m, reverse_z_direction_key, false); // Z probe moves in reverse direction
-    this->max_z         = cr.get_float(m, max_z_key, 0); // maximum zprobe distance
+    this->max_travel    = cr.get_float(m, max_travel_key, 200); // maximum zprobe distance
 
     this->dwell_before_probing = cr.get_float(m, dwell_before_probing_key, 0); // dwell time in seconds before probing
 
@@ -197,7 +197,7 @@ bool ZProbe::run_probe(float& mm, float feedrate, float max_dist, bool reverse)
         return false;
     }
 
-    float maxz = max_dist < 0 ? this->max_z * 2 : max_dist;
+    float maxz = max_dist < 0 ? this->max_travel : max_dist;
 
     probing = true;
     probe_detected = false;
@@ -329,7 +329,7 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
                     }
 
                 } else {
-                    os.printf("Only P0 ad P1 supported\n");
+                    os.printf("Only P0 and P1 supported\n");
                     return false;
                 }
 
@@ -391,7 +391,7 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
             if (gcode.has_arg('S')) this->slow_feedrate = gcode.get_arg('S');
             if (gcode.has_arg('K')) this->fast_feedrate = gcode.get_arg('K');
             if (gcode.has_arg('R')) this->return_feedrate = gcode.get_arg('R');
-            if (gcode.has_arg('Z')) this->max_z = gcode.get_arg('Z');
+            if (gcode.has_arg('Z')) this->max_travel = gcode.get_arg('Z');
             if (gcode.has_arg('H')) this->probe_height = gcode.get_arg('H');
             if (gcode.has_arg('I')) { // NOTE this is temporary and toggles the invertion status of the pin
                 invert_override = (gcode.get_arg('I') != 0);
@@ -401,8 +401,8 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
             break;
 
         case 500: // save settings
-            os.printf(";Probe feedrates Slow/fast(K)/Return (mm/sec) max_z (mm) height (mm) dwell (s):\nM670 S%1.2f K%1.2f R%1.2f Z%1.2f H%1.2f D%1.2f\n",
-                      this->slow_feedrate, this->fast_feedrate, this->return_feedrate, this->max_z, this->probe_height, this->dwell_before_probing);
+            os.printf(";Probe feedrates Slow/fast(K)/Return (mm/sec) max_travel (mm) height (mm) dwell (s):\nM670 S%1.2f K%1.2f R%1.2f Z%1.2f H%1.2f D%1.2f\n",
+                      this->slow_feedrate, this->fast_feedrate, this->return_feedrate, this->max_travel, this->probe_height, this->dwell_before_probing);
             break;
 
         default:
@@ -461,7 +461,9 @@ void ZProbe::move_xy(float x, float y, float feedrate, bool relative)
 {
     Robot::getInstance()->push_state();
     Robot::getInstance()->absolute_mode = !relative;
-    Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+    if(!relative) {
+        Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+    }
     OutputStream nullos;
     THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', x, 'Y', y, 'F', feedrate * 60.0F, 0);
     Conveyor::getInstance()->wait_for_idle();
@@ -472,7 +474,9 @@ void ZProbe::move_x(float x, float feedrate, bool relative)
 {
     Robot::getInstance()->push_state();
     Robot::getInstance()->absolute_mode = !relative;
-    Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+    if(!relative) {
+        Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+    }
     OutputStream nullos;
     THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', x, 'F', feedrate * 60.0F, 0);
     Robot::getInstance()->pop_state();
@@ -482,7 +486,9 @@ void ZProbe::move_y(float y, float feedrate, bool relative)
 {
     Robot::getInstance()->push_state();
     Robot::getInstance()->absolute_mode = !relative;
-    Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+    if(!relative) {
+        Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+    }
     OutputStream nullos;
     THEDISPATCHER->dispatch(nullos, 'G', 0, 'Y', y, 'F', feedrate * 60.0F, 0);
     Conveyor::getInstance()->wait_for_idle();
@@ -493,7 +499,9 @@ void ZProbe::move_z(float z, float feedrate, bool relative)
 {
     Robot::getInstance()->push_state();
     Robot::getInstance()->absolute_mode = !relative;
-    Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+    if(!relative) {
+        Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+    }
     OutputStream nullos;
     THEDISPATCHER->dispatch(nullos, 'G', 0, 'Z', z, 'F', feedrate * 60.0F, 0);
     Conveyor::getInstance()->wait_for_idle();

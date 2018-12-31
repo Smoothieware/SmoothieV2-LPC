@@ -36,7 +36,6 @@ public:
     float getSlowFeedrate() const { return slow_feedrate; }
     float getFastFeedrate() const { return fast_feedrate; }
     float getProbeHeight() const { return probe_height; }
-    float getMaxZ() const { return max_z; }
 
 private:
     bool handle_gcode(GCode& gcode, OutputStream& os);
@@ -48,7 +47,7 @@ private:
     float fast_feedrate;
     float return_feedrate;
     float probe_height;
-    float max_z;
+    float max_travel;
     float dwell_before_probing;
 
     Pin pin;

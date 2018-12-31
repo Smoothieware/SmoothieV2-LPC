@@ -29,9 +29,9 @@ bool DeltaCalibrationStrategy::configure(ConfigReader& cr)
     // default is probably wrong
     this->probe_radius = cr.get_float(m, radius_key, 100.0F);
 
-    // the initial height above the bed we stop the intial move down after home to find the bed
-    // this should be a height that is enough that the probe will not hit the bed and is an offset from max_z (can be set to 0 if max_z takes into account the probe offset)
-    this->initial_height = cr.get_float(m, initial_height_key, 10);
+    // the initial height above the bed we stop the initial move down after home to find the bed
+    // this should be a height that is enough that the probe will not hit the bed
+    this->initial_height = cr.get_float(m, initial_height_key, 20);
     return true;
 }
 
@@ -88,7 +88,7 @@ bool DeltaCalibrationStrategy::probe_delta_points(GCode& gcode, OutputStream& os
     float bedht;
     if(!findBed(bedht)) return false;
 
-    os.printf("initial Bed ht is %f mm\n", bedht);
+    os.printf("initial Bed ht is Z%f\n", bedht);
 
     // check probe ht
     float mm;
@@ -138,19 +138,19 @@ bool DeltaCalibrationStrategy::findBed(float& ht)
     // home
     zprobe->home();
 
-    // move to an initial position fast so as to not take all day, we move down max_z - initial_height, which is set in config, default 10mm
-    float deltaz = zprobe->getMaxZ() - initial_height;
-    zprobe->move_z(-deltaz, zprobe->getFastFeedrate(), true);
+    // move to an initial position fast so as to not take all day, we move to initial_height, which is set in config, default 20mm
+    // This needs to be high enough to take the probe position under the head into account
+    zprobe->move_z(initial_height, zprobe->getFastFeedrate());
 
     // find bed, run at slow rate so as to not hit bed hard
     float mm;
-    if(!zprobe->run_probe_return(mm, zprobe->getSlowFeedrate())) return false;
+    if(!zprobe->run_probe(mm, zprobe->getSlowFeedrate())) return false;
 
     // leave the probe zprobe->getProbeHeight() above bed
-    float dz = zprobe->getProbeHeight() - mm;
-    zprobe->move_z(dz, zprobe->getFastFeedrate(), true); // relative move
+    float dz = zprobe->getProbeHeight();
+    zprobe->move_z(dz, zprobe->getFastFeedrate(), true); // relative move up
 
-    ht = mm + deltaz - zprobe->getProbeHeight(); // distance to move from home to 5mm above bed
+    ht = Robot::getInstance()->get_axis_position(Z_AXIS); // this is where we need to go to after homing to be 5mm above bed
     return true;
 }
 
@@ -200,7 +200,7 @@ bool DeltaCalibrationStrategy::calibrate_delta_endstops(GCode& gcode, OutputStre
     float bedht;
     if(!findBed(bedht)) return false;
 
-    os.printf("initial Bed ht is %f mm\n", bedht);
+    os.printf("initial start ht is Z%f\n", bedht);
 
     // check probe ht
     float mm;
@@ -247,7 +247,7 @@ bool DeltaCalibrationStrategy::calibrate_delta_endstops(GCode& gcode, OutputStre
 
         // home and move probe to start position just above the bed
         zprobe->home();
-        zprobe->move_z(-bedht, zprobe->getFastFeedrate(), true); // do a relative move from home to the point above the bed
+        zprobe->move_z(bedht, zprobe->getFastFeedrate());
 
         // probe the base of the X tower
         if(!zprobe->doProbeAt(mm, t1x, t1y)) return false;
@@ -301,10 +301,10 @@ bool DeltaCalibrationStrategy::calibrate_delta_radius(GCode& gcode, OutputStream
     std::tie(t1x, t1y, t2x, t2y, t3x, t3y) = getCoordinates(this->probe_radius);
 
     // find the bed, as we potentially have a temporary z probe we don't know how low under the nozzle it is
-    // so we need to find thr initial place that the probe triggers when it hits the bed
+    // so we need to find the initial place that the probe triggers when it hits the bed
     float bedht;
     if(!findBed(bedht)) return false;
-    os.printf("initial Bed ht is %f mm\n", bedht);
+    os.printf("initial start ht is Z%f\n", bedht);
 
     // check probe ht
     float mm;
@@ -366,7 +366,7 @@ bool DeltaCalibrationStrategy::calibrate_delta_radius(GCode& gcode, OutputStream
         os.printf("Setting delta radius to: %1.4f\n", delta_radius);
 
         zprobe->home();
-        zprobe->move_z(-bedht, zprobe->getFastFeedrate(), true); // needs to be a relative coordinated move
+        zprobe->move_z(bedht, zprobe->getFastFeedrate());
     }
 
     if(!good) {

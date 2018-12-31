@@ -151,7 +151,7 @@ bool CartGridStrategy::configure(ConfigReader& cr)
     }
 
     // the initial height above the bed we stop the intial move down after home to find the bed
-    // this should be a height that is enough that the probe will not hit the bed and is an offset from max_z (can be set to 0 if max_z takes into account the probe offset)
+    // this should be a height that is enough that the probe will not hit the bed
     this->initial_height = cr.get_float(m, initial_height_key, 10);
 
     // Probe offsets xxx,yyy,zzz
