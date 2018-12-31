@@ -44,6 +44,7 @@
 #define  segment_z_moves_key            "segment_z_moves"
 #define  save_g92_key                   "save_g92"
 #define  set_g92_key                    "set_g92"
+#define  save_wcs_key                   "save_wcs"
 
 // actuator keys
 #define step_pin_key                    "step_pin"
@@ -145,6 +146,7 @@ bool Robot::configure(ConfigReader& cr)
     // Here we read the config to find out which arm solution to use
     if (this->arm_solution) delete this->arm_solution;
 
+    bool is_delta= false;
     std::string solution = cr.get_string(m, arm_solution_key, "cartesian");
 
     if(solution == hbot_key || solution == corexy_key) {
@@ -155,9 +157,11 @@ bool Robot::configure(ConfigReader& cr)
 
     } else if(solution == rostock_key || solution == kossel_key || solution == delta_key || solution ==  linear_delta_key) {
         this->arm_solution = new LinearDeltaSolution(cr);
+        is_delta= true;
 
     } else if(solution == rotary_delta_key) {
         this->arm_solution = new RotaryDeltaSolution(cr);
+        is_delta= true;
 
     } else if(solution == morgan_key) {
         this->arm_solution = new MorganSCARASolution(cr);
@@ -172,7 +176,7 @@ bool Robot::configure(ConfigReader& cr)
     this->feed_rate = cr.get_float(m, default_feed_rate_key, 4000.0F); // mm/min
     this->seek_rate = default_seek_rate = cr.get_float(m, default_seek_rate_key, 4000.0F); // mm/min
     this->mm_per_line_segment = cr.get_float(m, mm_per_line_segment_key, 0.0F);
-    this->delta_segments_per_second = cr.get_float(m, delta_segments_per_second_key, 0.0f);
+    this->delta_segments_per_second = cr.get_float(m, delta_segments_per_second_key, is_delta?100:0);
     this->mm_per_arc_segment = cr.get_float(m, mm_per_arc_segment_key, 0.0f);
     this->mm_max_arc_error = cr.get_float(m, mm_max_arc_error_key, 0.01f);
     this->arc_correction = cr.get_float(m, arc_correction_key, 5);
@@ -187,6 +191,7 @@ bool Robot::configure(ConfigReader& cr)
     this->default_acceleration = cr.get_float(m, default_acceleration_key, 100.0F); // Acceleration is in mm/s²
 
     this->segment_z_moves     = cr.get_bool(m, segment_z_moves_key, true);
+    this->save_wcs            = cr.get_bool(m, save_wcs_key, false);
     this->save_g92            = cr.get_bool(m, save_g92_key, false);
     const char *g92           = cr.get_string(m, set_g92_key, "");
 
@@ -1246,17 +1251,22 @@ bool Robot::handle_M500(GCode& gcode, OutputStream& os)
 
     // save wcs_offsets and current_wcs
     // TODO this may need to be done whenever they change to be compliant
-    os.printf(";WCS settings\n");
-    os.printf("%s\n", stringutils::wcs2gcode(current_wcs).c_str());
-    int n = 1;
-    for(auto &i : wcs_offsets) {
-        if(i != wcs_t(0, 0, 0)) {
-            float x, y, z;
-            std::tie(x, y, z) = i;
-            os.printf("G10 L2 P%d X%f Y%f Z%f ; %s\n", n, x, y, z, stringutils::wcs2gcode(n - 1).c_str());
+    if(save_wcs) {
+        os.printf(";WCS settings\n");
+        os.printf("%s\n", stringutils::wcs2gcode(current_wcs).c_str());
+        int n = 1;
+        for(auto &i : wcs_offsets) {
+            if(i != wcs_t(0, 0, 0)) {
+                float x, y, z;
+                std::tie(x, y, z) = i;
+                os.printf("G10 L2 P%d X%f Y%f Z%f ; %s\n", n, x, y, z, stringutils::wcs2gcode(n - 1).c_str());
+            }
+            ++n;
         }
-        ++n;
+    }else{
+        os.printf(";WCS settings are not saved\n");
     }
+
     if(save_g92) {
         // linuxcnc saves G92, so we do too if configured, default is to not save to maintain backward compatibility
         // also it needs to be used to set Z0 on rotary deltas as M206/306 can't be used, so saving it is necessary in that case
@@ -1779,11 +1789,10 @@ bool Robot::append_line(GCode& gcode, const float target[], float rate_mm_s, flo
         // NOTE rate is mm/sec and we take into account any speed override
         float seconds = millimeters_of_travel / rate_mm_s;
         segments = std::max(1.0F, ceilf(this->delta_segments_per_second * seconds));
-        // TODO if we are only moving in Z on a delta we don't really need to segment at all
 
     } else {
-        if(this->mm_per_line_segment == 0.0F) {
-            segments = 1; // don't split it up
+        if(this->mm_per_line_segment < 0.0001F) {
+            segments = 1; // don't segment
         } else {
             segments = ceilf( millimeters_of_travel / this->mm_per_line_segment);
         }

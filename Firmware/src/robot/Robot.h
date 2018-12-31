@@ -90,6 +90,7 @@ public:
         bool disable_arm_solution: 1;                     // set to disable the arm solution
         bool segment_z_moves: 1;
         bool save_g92: 1;                                 // save g92 on M500 if set
+        bool save_wcs: 1;                                 // save wcs on M500 if set
         bool is_g123: 1;
         uint8_t plane_axis_0: 2;                          // Current plane ( XY, XZ, YZ )
         uint8_t plane_axis_1: 2;
