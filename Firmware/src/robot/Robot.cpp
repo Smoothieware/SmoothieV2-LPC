@@ -995,8 +995,9 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                     }
                 }
 
-                if (gcode.get_subcode() == 0 && gcode.has_arg('S') && gcode.get_arg('S') > 0.1F) {
+                if (gcode.get_subcode() == 0 && gcode.has_arg('S')) {
                     this->max_speed = gcode.get_arg('S'); // is specified in mm/sec
+                    if(this->max_speed <= 0.1F) this->max_speed= 0; // disable it
                 }
 
                 if(gcode.get_subcode() == 1) {
@@ -1224,7 +1225,7 @@ bool Robot::handle_M500(GCode& gcode, OutputStream& os)
 
     os.printf(";X- Junction Deviation, Z- Z junction deviation, S - Minimum Planner speed mm/sec:\nM205 X%1.5f Z%1.5f S%1.5f\n", Planner::getInstance()->xy_junction_deviation, Planner::getInstance()->z_junction_deviation, Planner::getInstance()->minimum_planner_speed);
 
-    os.printf(";Max cartesian feedrates in mm/sec:\nM203 X%1.5f Y%1.5f Z%1.5f", this->max_speeds[X_AXIS], this->max_speeds[Y_AXIS], this->max_speeds[Z_AXIS]);
+    os.printf(";Max cartesian feedrates in mm/sec, S - overall max speed:\nM203 X%1.5f Y%1.5f Z%1.5f", this->max_speeds[X_AXIS], this->max_speeds[Y_AXIS], this->max_speeds[Z_AXIS]);
     if(max_speed > 0.1F) {
         os.printf(" S%1.5f\n", max_speed);
     }else{
