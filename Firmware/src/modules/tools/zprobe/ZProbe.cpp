@@ -479,6 +479,7 @@ void ZProbe::move_x(float x, float feedrate, bool relative)
     }
     OutputStream nullos;
     THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', x, 'F', feedrate * 60.0F, 0);
+    Conveyor::getInstance()->wait_for_idle();
     Robot::getInstance()->pop_state();
 }
 
