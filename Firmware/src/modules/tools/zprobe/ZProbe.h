@@ -40,7 +40,7 @@ public:
 private:
     bool handle_gcode(GCode& gcode, OutputStream& os);
     bool handle_mcode(GCode& gcode, OutputStream& os);
-    void probe_XYZ(GCode& gc, OutputStream& os, int axis);
+    void probe_XYZ(GCode& gc, OutputStream& os, uint8_t axis);
     void read_probe(void);
 
     float slow_feedrate;

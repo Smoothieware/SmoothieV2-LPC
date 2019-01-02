@@ -354,21 +354,26 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
         // first wait for all moves to finish
         Conveyor::getInstance()->wait_for_idle();
 
+        uint8_t pa= 0;
         if(gcode.has_arg('X')) {
-            // probe in the X axis
-            probe_XYZ(gcode, os, X_AXIS);
-
-        } else if(gcode.has_arg('Y')) {
-            // probe in the Y axis
-            probe_XYZ(gcode, os, Y_AXIS);
-
-        } else if(gcode.has_arg('Z')) {
-            // probe in the Z axis
-            probe_XYZ(gcode, os, Z_AXIS);
-
-        } else {
-            os.printf("error:at least one of X Y or Z must be specified\n");
+            pa |= 1;
         }
+        if(gcode.has_arg('Y')) {
+            pa |= 2;
+        }
+        if(gcode.has_arg('Z')) {
+            pa |= 4;
+        }
+
+        if(pa == 0) {
+            os.printf("error:at least one of X Y or Z must be specified\n");
+            return true;
+        } else if(pa > 4) {
+            os.printf("error:Z cannot be probed at the same time as X or Y\n");
+            return true;
+        }
+
+        probe_XYZ(gcode, os, pa);
 
         return true;
     }
@@ -413,7 +418,7 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
 
 
 // special way to probe in the X or Y or Z direction using planned moves, should work with any kinematics
-void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, int axis)
+void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, uint8_t axis)
 {
     // enable the probe checking in the timer
     probing = true;
@@ -425,9 +430,11 @@ void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, int axis)
 
     // do a regular move which will stop as soon as the probe is triggered, or the distance is reached
     switch(axis) {
-        case X_AXIS: move_x(gcode.get_arg('X'), rate, true); break;
-        case Y_AXIS: move_y(gcode.get_arg('Y'), rate, true); break;
-        case Z_AXIS: move_z(gcode.get_arg('Z'), rate, true); break;
+        case 1: move_x(gcode.get_arg('X'), rate, true); break;
+        case 2: move_y(gcode.get_arg('Y'), rate, true); break;
+        case 3: move_xy(gcode.get_arg('X'), gcode.get_arg('Y'), rate, true); break;
+        case 4: move_z(gcode.get_arg('Z'), rate, true); break;
+        default: os.printf("error:Illegal combination of probe axis\n");
     }
 
     // coordinated_move returns when the move is finished
