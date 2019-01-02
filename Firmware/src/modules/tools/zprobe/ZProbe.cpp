@@ -417,7 +417,7 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
 }
 
 
-// special way to probe in the X or Y or Z direction using planned moves, should work with any kinematics
+// special way to probe in the X, Y or Z direction using planned moves, should work with any kinematics
 void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, uint8_t axis)
 {
     // enable the probe checking in the timer
