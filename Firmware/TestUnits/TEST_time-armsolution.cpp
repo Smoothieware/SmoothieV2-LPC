@@ -60,9 +60,9 @@ REGISTER_TEST(ArmSolution, delta_ik_vs_fk)
         k->actuator_to_cartesian(ac, mm);
         // printf("A: X%f, Y%f, Z%f - ", ac[0], ac[1], ac[2]);
         // printf("M: X%f, Y%f, Z%f\n", mm[0], mm[1], mm[2]);
-        TEST_ASSERT_FLOAT_WITHIN(0.005F, millimeters[0], mm[0]);
-        TEST_ASSERT_FLOAT_WITHIN(0.005F, millimeters[1], mm[1]);
-        TEST_ASSERT_FLOAT_WITHIN(0.005F, millimeters[2], mm[2]);
+        TEST_ASSERT_FLOAT_WITHIN(0.001F, millimeters[0], mm[0]);
+        TEST_ASSERT_FLOAT_WITHIN(0.001F, millimeters[1], mm[1]);
+        TEST_ASSERT_FLOAT_WITHIN(0.001F, millimeters[2], mm[2]);
     }
 
     delete k;
