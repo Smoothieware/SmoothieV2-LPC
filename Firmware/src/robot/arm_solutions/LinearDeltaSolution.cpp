@@ -108,9 +108,9 @@ void LinearDeltaSolution::actuator_to_cartesian(const ActuatorCoordinates &actua
 
     Vector3 cartesian = circumcenter.sub(normal.mul(dist));
 
-    cartesian_mm[0] = ROUND(cartesian[0], 4);
-    cartesian_mm[1] = ROUND(cartesian[1], 4);
-    cartesian_mm[2] = ROUND(cartesian[2], 4);
+    cartesian_mm[0] = ROUND(cartesian[0], 3);
+    cartesian_mm[1] = ROUND(cartesian[1], 3);
+    cartesian_mm[2] = ROUND(cartesian[2], 3);
 }
 
 bool LinearDeltaSolution::set_optional(const arm_options_t& options)
@@ -125,7 +125,6 @@ bool LinearDeltaSolution::set_optional(const arm_options_t& options)
             case 'C': tower3_offset = i.second; break;
             case 'D': tower1_angle = i.second; break;
             case 'E': tower2_angle = i.second; break;
-            case 'F': tower3_angle = i.second; break; // WARNING this will be deprecated
             case 'H': tower3_angle = i.second; break;
         }
     }

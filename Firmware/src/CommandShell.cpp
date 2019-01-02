@@ -910,7 +910,7 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
         for(int s = 0; s < steps; s++) {
             if(Module::is_halted()) break;
             Robot::getInstance()->actuators[a]->manual_step(dir);
-            // delay (note minimum is 10ms due to nuttx)
+            // delay (note minimum is 10ms due to rtos)
             safe_sleep(delayus / 1000);
         }
 
