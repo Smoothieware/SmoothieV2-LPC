@@ -108,9 +108,9 @@ void LinearDeltaSolution::actuator_to_cartesian(const ActuatorCoordinates &actua
 
     Vector3 cartesian = circumcenter.sub(normal.mul(dist));
 
-    cartesian_mm[0] = ROUND(cartesian[0], 3);
-    cartesian_mm[1] = ROUND(cartesian[1], 3);
-    cartesian_mm[2] = ROUND(cartesian[2], 3);
+    cartesian_mm[0] = ROUND(cartesian[0], 4);
+    cartesian_mm[1] = ROUND(cartesian[1], 4);
+    cartesian_mm[2] = ROUND(cartesian[2], 4);
 }
 
 bool LinearDeltaSolution::set_optional(const arm_options_t& options)
