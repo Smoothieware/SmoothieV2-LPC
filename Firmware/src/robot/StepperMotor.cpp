@@ -79,7 +79,7 @@ void StepperMotor::manual_step(bool dir)
 
     // pulse step pin
     this->step_pin.set(1);
-    StopWatch_DelayUs(3);
+    StopWatch_DelayUs(3); // TODO could use configured step pulse delay
     this->step_pin.set(0);
 
     // keep track of actuators actual position in steps
@@ -145,7 +145,8 @@ void StepperMotor::enable(bool state)
 
     if(state && !vmot){
         //printf("WARNING: %d: trying to enable motors when vmotor is off\n", motor_id);
-        tmc2660->setEnabled(false);
+        if(is_enabled())
+            tmc2660->setEnabled(false);
         return;
     }
 
