@@ -236,22 +236,19 @@ REGISTER_TEST(SDCardTest, directory)
 }
 
 #if 1
-
-using systime_t= uint32_t;
-#define clock_systimer() ((systime_t)Chip_RIT_GetCounter(LPC_RITIMER))
-#define TICK2USEC(x) ((systime_t)(((uint64_t)(x)*1000000)/timerFreq))
+#include "stopwatch.h"
 
 static void runSdPerfTest(char *buf, size_t transferSize)
 {
-    /* Get RIT timer peripheral clock rate */
-    uint32_t timerFreq = Chip_Clock_GetRate(CLK_MX_RITIMER);
+    StopWatch_Init();    /* Get RIT timer peripheral clock rate */
+
     #if 0
-    printf("RITIMER clock rate= %lu\n", timerFreq);
+    printf("RITIMER clock rate= %lu\n", StopWatch_TicksPerSecond());
     {
-        systime_t st = clock_systimer();
+        uint32_t st = StopWatch_Start();
         vTaskDelay(pdMS_TO_TICKS(1000));
-        systime_t en = clock_systimer();
-        printf("1 second delay= %lu us\n", TICK2USEC(en-st));
+        uint32_t d = StopWatch_Elapsed(st);
+        printf("1 second delay= %lu us\n", StopWatch_TicksToUs(d));
     }
     #endif
 
@@ -270,14 +267,14 @@ static void runSdPerfTest(char *buf, size_t transferSize)
     setvbuf(fp, NULL, _IONBF, 0);
     uint32_t n = 5120000/transferSize;
 
-    systime_t st = clock_systimer();
+    uint32_t st = StopWatch_Start();
     for (uint32_t i = 1; i <= n; ++i) {
         size_t x = fwrite(buf, 1, transferSize, fp);
         if(x != transferSize) {
             TEST_FAIL();
         }
     }
-    systime_t elapsed = TICK2USEC(clock_systimer() - st);
+    uint32_t elapsed = StopWatch_TicksToUs(StopWatch_Elapsed(st));
     uint32_t fileSize = n * transferSize;
     float speed = ((float)fileSize * 1e6F) / (float)elapsed;
     printf("elapsed time %lu us for writing %lu bytes, %1.4f bytes/sec (%.1f MB/sec)\n", elapsed, fileSize, speed, speed / 1e6F);
@@ -290,14 +287,14 @@ static void runSdPerfTest(char *buf, size_t transferSize)
     setvbuf(fp, NULL, _IONBF, 0);
 
     // read back data
-    st = clock_systimer();
+    st = StopWatch_Start();
     for (uint32_t i = 1; i <= n; ++i) {
         size_t x = fread(buf, 1, transferSize, fp);
         if(x != transferSize) {
             TEST_FAIL();
         }
     }
-    elapsed = TICK2USEC(clock_systimer() - st);;
+    elapsed = StopWatch_TicksToUs(StopWatch_Elapsed(st));
     speed = ((float)fileSize * 1e6F) / (float)elapsed;
     printf("elapsed time %lu us for reading %lu bytes, %1.4f bytes/sec (%.1f MB/sec)\n", elapsed, fileSize, speed, speed / 1e6F);
 

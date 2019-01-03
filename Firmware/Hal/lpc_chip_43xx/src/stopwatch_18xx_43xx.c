@@ -53,9 +53,15 @@ static uint32_t ticksPerUs;
  * Public functions
  ****************************************************************************/
 
+#define USE_RITIMER
+
 /* Initialize stopwatch */
 void StopWatch_Init(void)
 {
+#ifdef USE_RITIMER
+	Chip_RIT_GetCounter(LPC_RITIMER);
+	ticksPerSecond = Chip_Clock_GetRate(CLK_MX_RITIMER);
+#else
 	/* Use timer 1. Set prescaler to divide by 8 */
 	const uint32_t prescaleDivisor = 8;
 	Chip_TIMER_Init(LPC_TIMER0);
@@ -64,6 +70,8 @@ void StopWatch_Init(void)
 
 	/* Pre-compute tick rate. */
 	ticksPerSecond = Chip_Clock_GetRate(CLK_MX_TIMER0) / prescaleDivisor;
+#endif
+
 	ticksPerMs = ticksPerSecond / 1000;
 	ticksPerUs = ticksPerSecond / 1000000;
 }
@@ -72,7 +80,11 @@ void StopWatch_Init(void)
 uint32_t StopWatch_Start(void)
 {
 	/* Return the current timer count. */
+#ifdef USE_RITIMER
+	return Chip_RIT_GetCounter(LPC_RITIMER);
+#else
 	return Chip_TIMER_ReadCount(LPC_TIMER0);
+#endif
 }
 
 /* Returns number of ticks per second of the stopwatch timer */
@@ -104,7 +116,6 @@ uint32_t StopWatch_UsToTicks(uint32_t uS)
 {
 	return uS * ticksPerUs;
 }
-
 
 
 

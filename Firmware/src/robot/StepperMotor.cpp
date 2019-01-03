@@ -65,6 +65,7 @@ int32_t StepperMotor::steps_to_target(float target)
 // Does a manual step pulse, used for direct encoder control of a stepper
 // NOTE manual step is experimental and may change and/or be removed in the future, it is an unsupported feature.
 // use at your own risk
+#include "stopwatch.h"
 void StepperMotor::manual_step(bool dir)
 {
     if(!is_enabled()) enable(true);
@@ -73,14 +74,13 @@ void StepperMotor::manual_step(bool dir)
     if(this->direction != dir) {
         this->direction= dir;
         this->dir_pin.set(dir);
-        //wait_us(1);
+        StopWatch_DelayUs(1);
     }
 
     // pulse step pin
     this->step_pin.set(1);
-    //wait_us(3);
+    StopWatch_DelayUs(3);
     this->step_pin.set(0);
-
 
     // keep track of actuators actual position in steps
     this->current_position_steps += (dir ? -1 : 1);

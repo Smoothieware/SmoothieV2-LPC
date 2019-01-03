@@ -17,6 +17,7 @@
 
 #include "uart_comms.h"
 #include "uart3_comms.h"
+#include "stopwatch.h"
 
 #include "Module.h"
 #include "OutputStream.h"
@@ -945,6 +946,9 @@ int main(int argc, char *argv[])
 #endif
 
     printf("MCU clock rate= %lu Hz\n", SystemCoreClock);
+
+    StopWatch_Init();
+    printf("StopWatch clock rate= %lu Hz\n", StopWatch_TicksPerSecond());
 
     // launch the startup thread which will become the command thread that executes all incoming commands
     // 10000 Bytes stack

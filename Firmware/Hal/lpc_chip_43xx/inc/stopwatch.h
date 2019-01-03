@@ -34,6 +34,10 @@
 
 #include "cmsis.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @defgroup Stop_Watch CHIP: Stopwatch primitives.
  * @ingroup CHIP_Common
  * @{
@@ -133,6 +137,9 @@ STATIC INLINE void StopWatch_DelayUs(uint32_t uS)
 /**
  * @}
  */
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __STOPWATCH_H_ */
 
