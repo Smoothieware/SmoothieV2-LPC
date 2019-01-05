@@ -1180,8 +1180,8 @@ bool CommandShell::truncate_cmd(std::string& params, OutputStream& os)
 bool CommandShell::break_cmd(std::string& params, OutputStream& os)
 {
     HELP("force s/w break point");
-    //*(volatile int*)0xa5a5a5a4 = 1; // force hardware fault
-    __asm("bkpt #0");
+    *(volatile int*)0xa5a5a5a4 = 1; // force hardware fault
+    //__asm("bkpt #0");
     return true;
 }
 

@@ -642,6 +642,9 @@ static void smoothie_startup(void *)
     printf("INFO: Smoothie V2.alpha Build for %s - starting up\n", BUILD_TARGET);
     //get_pll1_clk();
 
+    // led 4 indicates boot phase 2 starts
+    Board_LED_Set(3, true);
+
     // create the SlowTicker here as it is used by some modules
     SlowTicker *slow_ticker = new SlowTicker();
 
@@ -920,8 +923,9 @@ static void smoothie_startup(void *)
         }
     }
 
-    // led 3 indicates boot phase 2 complete
-    Board_LED_Set(2, true);
+    // led 3,4 off indicates boot phase 2 complete
+    Board_LED_Set(2, false);
+    Board_LED_Set(3, false);
 
     // run the command handler in this thread
     command_handler();
@@ -1018,7 +1022,11 @@ extern "C" void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTask
     configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
     function is called if a stack overflow is detected. */
     taskDISABLE_INTERRUPTS();
-    __asm("bkpt #0");
+    Board_LED_Set(0, true);
+    Board_LED_Set(1, false);
+    Board_LED_Set(2, true);
+    Board_LED_Set(3, true);
+   __asm("bkpt #0");
     for( ;; );
 }
 
@@ -1036,6 +1044,15 @@ extern "C" void vApplicationMallocFailedHook( void )
     to query the size of free heap space that remains (although it does not
     provide information on how the remaining heap might be fragmented). */
     taskDISABLE_INTERRUPTS();
+    __asm("bkpt #0");
+    for( ;; );
+}
+
+extern "C" void HardFault_Handler(void) {
+    Board_LED_Set(0, false);
+    Board_LED_Set(1, false);
+    Board_LED_Set(2, true);
+    Board_LED_Set(3, true);
     __asm("bkpt #0");
     for( ;; );
 }
