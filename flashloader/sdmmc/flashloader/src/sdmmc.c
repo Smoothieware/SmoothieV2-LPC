@@ -331,11 +331,71 @@ void spifi_4K_write(int address, int * copy) {
 	}
 }
 
+#ifdef BOARD_PRIMEALPHA
+static void Board_LED_Init()
+{
+    const PINMUX_GRP_T ledpinmuxing[] = {
+		/* Board LEDs */
+		{0x7, 4, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_12
+		{0x7, 5, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_13
+		{0x7, 6, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_14
+		{0xB, 6, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC4)}  // GPIO5_26
+	};
+	Chip_SCU_SetPinMuxing(ledpinmuxing, sizeof(ledpinmuxing) / sizeof(PINMUX_GRP_T));
+
+	// setup the 4 system leds
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 12);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 13);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 14);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 26);
+
+	/* Set initial states to off */
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 12, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 13, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 14, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 26, (bool) false);
+}
+
+void Board_LED_Set(uint8_t LEDNumber, bool On)
+{
+	switch(LEDNumber) {
+		case 0: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 12, (bool)On); break;
+		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 13, (bool)On); break;
+		case 2: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 14, (bool)On); break;
+		case 3: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 26, (bool)On); break;
+	}
+}
+
+bool Board_LED_Test(uint8_t LEDNumber)
+{
+	switch(LEDNumber) {
+		case 0: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 12);
+		case 1: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 13);
+		case 2: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 14);
+		case 3: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 26);
+	}
+
+	return false;
+}
+
+void Board_LED_Toggle(uint8_t LEDNumber)
+{
+	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
+}
+#else
+static void Board_LED_Init(){}
+void Board_LED_Set(uint8_t LEDNumber, bool On){}
+bool Board_LED_Test(uint8_t LEDNumber){return false;}
+void Board_LED_Toggle(uint8_t LEDNumber){}
+#endif
+
 void flashloader()
 {
 	FRESULT rc;		/* Result code */
 	UINT br;
 	char *cbuf = (char *) Buff;
+
+	Board_LED_Init();
 
 	SystemCoreClockUpdate();
 
@@ -375,6 +435,7 @@ void flashloader()
 	spifi_init();
  	spifi_command_mode();
 
+ 	uint8_t cnt= 0;
  	uint32_t page= 0;
 	for (;; ) {
 		/* Read a chunk of file */
@@ -386,6 +447,13 @@ void flashloader()
 		// flash it
 		spifi_4K_write(SPIFLASH_BASE_ADDRESS+page, (int *)cbuf);
 		page += 4096;
+
+		// count up leds to show progress
+		cnt++;
+		Board_LED_Set(0, cnt&1);
+		Board_LED_Set(1, cnt&2);
+		Board_LED_Set(2, cnt&4);
+		Board_LED_Set(3, cnt&8);
 	}
 
 	spifi_memory_mode();
