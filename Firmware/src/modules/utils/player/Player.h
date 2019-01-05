@@ -53,12 +53,12 @@ class Player : public Module {
 
         volatile bool abort_thread;
         volatile bool play_thread_exited;
+        volatile bool abort_flg;
+        volatile bool playing_file;
 
         struct {
             bool on_boot_gcode_enable:1;
             bool booted:1;
-            bool abort_flg:1;
-            bool playing_file:1;
             bool suspended:1;
             bool was_playing_file:1;
             bool leave_heaters_on:1;
