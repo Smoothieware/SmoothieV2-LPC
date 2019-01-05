@@ -60,8 +60,21 @@ static CARD_HANDLE_T *hCard;
  ****************************************************************************/
 static void sdmmc_wait_for_card_insert()
 {
+	bool waited= false;
     while (Chip_SDIF_CardNDetect(LPC_SDMMC)) {
         vTaskDelay(pdMS_TO_TICKS(100));
+        // flash all 4 system leds
+        for (int i = 0; i < 4; ++i) {
+        	Board_LED_Toggle(i);
+        }
+        waited= true;
+    }
+    if(waited) {
+    	// wait for card to be pushed fully in
+    	vTaskDelay(pdMS_TO_TICKS(1000));
+        for (int i = 0; i < 4; ++i) {
+        	Board_LED_Set(i, false);
+        }
     }
 }
 

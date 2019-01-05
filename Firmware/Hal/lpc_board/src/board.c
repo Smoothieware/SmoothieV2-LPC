@@ -129,44 +129,6 @@ void Board_UARTPutSTR(const char *str)
 #endif
 }
 
-static void Board_LED_Init()
-{
-	/* P2.12 : LED D2 as output */
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 7);
-
-	/* P2.11 : LED D3 as output */
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 5);
-
-	/* Set initial states to off (true to disable) */
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, (bool) true);
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, (bool) true);
-}
-
-void Board_LED_Set(uint8_t LEDNumber, bool On)
-{
-	if (LEDNumber == 0) {
-		Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, (bool) !On);
-	} else if (LEDNumber == 1) {
-		Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, (bool) !On);
-	}
-}
-
-bool Board_LED_Test(uint8_t LEDNumber)
-{
-	if (LEDNumber == 0) {
-		return (bool) !Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 7);
-	} else if (LEDNumber == 1) {
-		return (bool) !Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 5);
-	}
-
-	return false;
-}
-
-void Board_LED_Toggle(uint8_t LEDNumber)
-{
-	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
-}
-
 void Board_Buttons_Init(void)	// FIXME not functional ATM
 {
 	Chip_SCU_PinMuxSet(0x2, 7, (SCU_MODE_PULLUP | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC0));		// P2_7 as GPIO0[7]
@@ -191,6 +153,64 @@ uint8_t Joystick_GetStatus(void)
 }
 #endif
 
+#ifdef BOARD_PRIMEALPHA
+static void Board_LED_Init()
+{
+    const PINMUX_GRP_T ledpinmuxing[] = {
+		/* Board LEDs */
+		{0x7, 4, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_12
+		{0x7, 5, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_13
+		{0x7, 6, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_14
+		{0xB, 6, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC4)}  // GPIO5_26
+	};
+	Chip_SCU_SetPinMuxing(ledpinmuxing, sizeof(ledpinmuxing) / sizeof(PINMUX_GRP_T));
+
+	// setup the 4 system leds
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 12);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 13);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 14);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 26);
+
+	/* Set initial states to off */
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 12, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 13, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 14, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 26, (bool) false);
+}
+
+void Board_LED_Set(uint8_t LEDNumber, bool On)
+{
+	switch(LEDNumber) {
+		case 0: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 12, (bool)On); break;
+		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 13, (bool)On); break;
+		case 2: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 14, (bool)On); break;
+		case 3: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 26, (bool)On); break;
+	}
+}
+
+bool Board_LED_Test(uint8_t LEDNumber)
+{
+	switch(LEDNumber) {
+		case 0: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 12);
+		case 1: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 13);
+		case 2: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 14);
+		case 3: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 26);
+	}
+
+	return false;
+}
+
+void Board_LED_Toggle(uint8_t LEDNumber)
+{
+	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
+}
+#else
+static void Board_LED_Init(){}
+void Board_LED_Set(uint8_t LEDNumber, bool On){}
+bool Board_LED_Test(uint8_t LEDNumber){return false;}
+void Board_LED_Toggle(uint8_t LEDNumber){}
+#endif
+
 /* Returns the MAC address assigned to this board */
 void Board_ENET_GetMacADDR(uint8_t *mcaddr)
 {
@@ -210,7 +230,8 @@ void Board_Init(void)
 	Chip_GPIO_Init(LPC_GPIO_PORT);
 
 	/* Initialize LEDs */
-	//Board_LED_Init();
+	Board_LED_Init();
+
 #if defined(USE_RMII)
 	Chip_ENET_RMIIEnable(LPC_ETHERNET);
 #else
