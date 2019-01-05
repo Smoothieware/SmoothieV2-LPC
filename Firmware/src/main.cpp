@@ -920,6 +920,9 @@ static void smoothie_startup(void *)
         }
     }
 
+    // led 3 indicates boot phase 2 complete
+    Board_LED_Set(2, true);
+
     // run the command handler in this thread
     command_handler();
 
@@ -949,6 +952,9 @@ int main(int argc, char *argv[])
 
     StopWatch_Init();
     printf("StopWatch clock rate= %lu Hz\n", StopWatch_TicksPerSecond());
+
+    // led 4 indicates boot phase 1 complete
+    Board_LED_Set(3, true);
 
     // launch the startup thread which will become the command thread that executes all incoming commands
     // 10000 Bytes stack
