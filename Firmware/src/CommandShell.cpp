@@ -1081,7 +1081,12 @@ bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     prxos= &os;
-    init_xmodem(rxsend);
+    if(!init_xmodem(rxsend)) {
+        os.printf("error: out of memory\n");
+        deinit_xmodem();
+        return true;
+    }
+
     set_capture([](char c){ add_to_xmodem_inbuff(c); });
     int ret= xmodemReceive(fd);
     set_capture(nullptr);
@@ -1111,7 +1116,12 @@ bool CommandShell::ry_cmd(std::string& params, OutputStream& os)
     }
 
     prxos= &os;
-    init_xmodem(rxsend);
+    if(!init_xmodem(rxsend)) {
+        os.printf("error: out of memory\n");
+        deinit_xmodem();
+        return true;
+    }
+
     set_capture([](char c){ add_to_xmodem_inbuff(c); });
     int ret= ymodemReceive();
     set_capture(nullptr);
@@ -1180,8 +1190,8 @@ bool CommandShell::truncate_cmd(std::string& params, OutputStream& os)
 bool CommandShell::break_cmd(std::string& params, OutputStream& os)
 {
     HELP("force s/w break point");
-    *(volatile int*)0xa5a5a5a4 = 1; // force hardware fault
-    //__asm("bkpt #0");
+    //*(volatile int*)0xa5a5a5a4 = 1; // force hardware fault
+    __asm("bkpt #0");
     return true;
 }
 

@@ -28,6 +28,7 @@
 #include "task.h"
 
 static char *inbuff;
+static unsigned char *xbuff;
 static volatile int inptr= 0;
 static volatile int outptr= 0;
 void add_to_xmodem_inbuff(char c)
@@ -42,16 +43,22 @@ void add_to_xmodem_inbuff(char c)
 }
 
 static void (*txc)(char c);
-void init_xmodem(void (*tx)(char c))
+int init_xmodem(void (*tx)(char c))
 {
 	inbuff= malloc(2048);
+	if(inbuff == NULL) return 0;
 	inptr= outptr= 0;
 	txc= tx;
+	xbuff= malloc(1030); /* 1024 for XModem 1k + 3 head chars + 2 crc + nul */
+	if(xbuff == NULL) return 0;
+
+	return 1;
 }
 
 void deinit_xmodem()
 {
 	free(inbuff);
+	free(xbuff);
 }
 
 static int _inbyte(int msec)
@@ -122,7 +129,6 @@ static void flushinput(void)
 
 int xmodemReceive(FILE *fp)
 {
-	unsigned char xbuff[1030]; /* 1024 for XModem 1k + 3 head chars + 2 crc + nul */
 	int err_ret;
 	unsigned char *p;
 	int bufsz, crc = 0;
@@ -205,7 +211,6 @@ reject:
 
 int ymodemReceive()
 {
-	unsigned char xbuff[1030]; /* 1024 for XModem 1k + 3 head chars + 2 crc + nul */
 	int file_size= 0;
 	int err_ret;
 	int first_packet= 1;
@@ -288,7 +293,7 @@ restart:
 					}
 
 					// get filename
-					strncpy(fn, (char *)&xbuff[3], 132-1);
+					strncpy(fn, (char *)&xbuff[3], sizeof(fn)-1);
 					// get file size
 					char s[16];
 					for (int j = 0; j < sizeof(s)-1; ++j) {
