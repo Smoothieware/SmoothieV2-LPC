@@ -1206,6 +1206,7 @@ bool CommandShell::reset_cmd(std::string& params, OutputStream& os)
 
 #include "uart_comms.h"
 extern "C" void shutdown_sdmmc();
+extern "C" void shutdown_cdc();
 bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 {
     HELP("flash image - flash flashme.bin");
@@ -1230,8 +1231,9 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
     Adc::stop();
     f_unmount("sd");
     shutdown_sdmmc();
+    shutdown_cdc();
     __disable_irq();
-    NVIC_DisableIRQ(USB0_IRQn);
+    //NVIC_DisableIRQ(USB0_IRQn);
     //NVIC_DisableIRQ(SysTick_IRQn);
 
     // get start address of the flash loader

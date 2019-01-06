@@ -214,6 +214,13 @@ int setup_cdc(xTaskHandle h)
 	return 1;
 }
 
+void shutdown_cdc()
+{
+	USBD_API->hw->Connect(g_hUsb, 0);
+	//USBD_API->hw->Reset(g_hUsb);
+	NVIC_DisableIRQ(LPC_USB_IRQ);
+}
+
 
 
 
