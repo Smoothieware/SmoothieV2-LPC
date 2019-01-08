@@ -1219,19 +1219,19 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
     // check the flashme.bin is on the disk first
     FILE *fp= fopen("/sd/flashme.bin", "r");
     if(fp == NULL) {
-        os.printf("No flashme file found\n");
+        os.printf("No flashme.bin file found\n");
         return true;
     }
     fclose(fp);
 
     // stop stuff
-    vTaskSuspendAll();
+    f_unmount("sd");
     FastTicker::getInstance()->stop();
     StepTicker::getInstance()->stop();
     Adc::stop();
-    f_unmount("sd");
     shutdown_sdmmc();
     shutdown_cdc();
+    vTaskSuspendAll();
     __disable_irq();
     //NVIC_DisableIRQ(USB0_IRQn);
     //NVIC_DisableIRQ(SysTick_IRQn);
