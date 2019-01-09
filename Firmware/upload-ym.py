@@ -32,8 +32,8 @@ fout= open(dev, "wb", buffering=0)
 
 fout.write(b'\n')
 rep1= fin.readline()
-fout.write(b'ry\n')
-rep2= fin.readline()
+fout.write(b'ry -q\n')
+#rep2= fin.readline()
 
 if args.verbose:
     print(rep1.decode('utf-8'))

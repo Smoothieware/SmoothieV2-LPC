@@ -1126,10 +1126,14 @@ bool CommandShell::ry_cmd(std::string& params, OutputStream& os)
     int ret= ymodemReceive();
     set_capture(nullptr);
     deinit_xmodem();
-    if(ret > 0) {
-        os.printf("downloaded %d file(s) ok\n", ret);
-    }else{
-        os.printf("download failed with error %d\n", ret);
+    if(params.empty()) {
+        if(ret > 0) {
+            os.printf("downloaded %d file(s) ok\n", ret);
+        }else{
+            os.printf("download failed with error %d\n", ret);
+        }
+    } else {
+        os.set_no_response(true);
     }
 
     return true;

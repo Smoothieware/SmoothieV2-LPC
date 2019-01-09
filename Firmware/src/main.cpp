@@ -163,9 +163,8 @@ bool dispatch_line(OutputStream& os, const char *cl)
                 os.printf("error:Unsupported command - %s\n", line);
             }
 
-        }else{
-            // TODO if we want to be compatible with grbl/bcnc $G (and some others) need to return ok not done
-            os.puts("done\n");
+        }else if(!os.is_no_response()) {
+            os.puts("ok\n");
         }
 
         return true;
