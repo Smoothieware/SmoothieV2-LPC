@@ -510,6 +510,8 @@ bool CommandShell::switch_poll_cmd(std::string& params, OutputStream& os)
         name = stringutils::shift_parameter( params );
     }
 
+    os.set_no_response();
+
     return true;
 }
 
@@ -937,6 +939,8 @@ bool CommandShell::version_cmd(std::string& params, OutputStream& os)
     os.printf("Build version: %s, Build date: %s, MCU: %s, System Clock: %ldMHz\r\n", vers.get_build(), vers.get_build_date(), mcu, SystemCoreClock / 1000000);
     os.printf("%d axis\n", MAX_ROBOT_ACTUATORS);
 
+    os.set_no_response();
+
     return true;
 }
 
@@ -979,6 +983,8 @@ bool CommandShell::config_get_cmd(std::string& params, OutputStream& os)
     }
 
     fsin.close();
+
+    os.set_no_response();
 
     return true;
 }
