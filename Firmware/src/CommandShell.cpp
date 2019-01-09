@@ -199,6 +199,7 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
     }
     f_closedir(&dir);
 #endif
+    os.set_no_response();
     return true;
 }
 
@@ -306,6 +307,8 @@ bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
     os.printf("RAM5: %lu bytes free\n", _RAM5->free());
     os.printf("Total available RAM: %lu\n", xPortGetFreeHeapSize() +
         _RAM2->free() + _RAM3->free() + _RAM4->free() + _RAM5->free());
+
+    os.set_no_response();
     return true;
 }
 
@@ -392,6 +395,7 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
         os.printf("File not found: %s\n", filename.c_str());
     }
 
+    os.set_no_response();
     return true;
 }
 
@@ -423,6 +427,7 @@ bool CommandShell::md5sum_cmd(std::string& params, OutputStream& os)
         os.printf("File not found: %s\n", params.c_str());
     }
 
+    os.set_no_response();
     return true;
 }
 
@@ -569,6 +574,7 @@ bool CommandShell::modules_cmd(std::string& params, OutputStream& os)
         os.printf("%s\n", i.c_str());
     }
 
+    os.set_no_response();
     return true;
 }
 
@@ -992,6 +998,7 @@ bool CommandShell::config_get_cmd(std::string& params, OutputStream& os)
 bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
 {
     HELP("config-set \"section name\" key [=] value");
+    os.set_no_response();
 
     std::string sectionstr = stringutils::shift_parameter( params );
     std::string keystr = stringutils::shift_parameter( params );
