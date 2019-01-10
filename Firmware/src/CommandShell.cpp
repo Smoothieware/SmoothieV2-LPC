@@ -1268,7 +1268,7 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 {
-    HELP("instant jog: $J X|Y|Z|A|B|C 0.01 [F0.5]");
+    HELP("instant jog: $J X0.01 [F0.5] - axis can be one of XYZABC, optional speed is scale of max_rate");
     // $J X0.1 F0.5
     int n_motors= Robot::getInstance()->get_number_registered_motors();
 
@@ -1276,7 +1276,7 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
     // for now always 1 axis
     size_t npos= params.find_first_of("XYZABC");
     if(npos == std::string::npos) {
-        os.printf("usage: $J X|Y|Z|A|B|C 0.01 [F0.5]\n");
+        os.printf("usage: $J X0.01 [F0.5]\n");
         return true;
     }
 
