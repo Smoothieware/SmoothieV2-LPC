@@ -599,6 +599,7 @@ void safe_sleep(uint32_t ms)
 #include "Endstops.h"
 #include "ZProbe.h"
 #include "Player.h"
+#include "Network.h"
 
 #include "main.h"
 
@@ -898,6 +899,20 @@ static void smoothie_startup(void *)
             play_led= new Pin("p7.5", Pin::AS_OUTPUT);
         }
     }
+
+    { // start network if available
+        Module *m;
+        m= Module::lookup("network");
+        if(m != nullptr) {
+            Network *net= static_cast<Network*>(m);
+            if(net->start()) {
+                printf("Network thread started\n");
+            }else{
+                printf("Failed to start network thread\n");
+            }
+        }
+    }
+
 #endif
 
     // wait for command thread to start

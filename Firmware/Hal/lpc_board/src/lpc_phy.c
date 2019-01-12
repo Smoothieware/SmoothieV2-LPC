@@ -44,7 +44,7 @@
 #define LAN8_BSR_REG        0x1	/*!< Basic Status Reg */
 #define LAN8_PHYID1_REG     0x2	/*!< PHY ID 1 Reg  */
 #define LAN8_PHYID2_REG     0x3	/*!< PHY ID 2 Reg */
-#define LAN8_PHYSPLCTL_REG  0x1F/*!< PHY special control/status Reg */
+#define LAN8_PHYSPLCTL_REG  0x1E/*!< PHY special control/status Reg */
 
 /* LAN8720 BCR register definitions */
 #define LAN8_RESET          (1 << 15)	/*!< 1= S/W Reset */
@@ -70,11 +70,11 @@
 #define LAN8_EXTEND_CAPAB   (1 << 0)	/*!< Supports extended capabilities */
 
 /* LAN8720 PHYSPLCTL status definitions */
-#define LAN8_SPEEDMASK      (7 << 2)	/*!< Speed and duplex mask */
-#define LAN8_SPEED100F      (6 << 2)	/*!< 100BT full duplex */
-#define LAN8_SPEED10F       (5 << 2)	/*!< 10BT full duplex */
-#define LAN8_SPEED100H      (2 << 2)	/*!< 100BT half duplex */
-#define LAN8_SPEED10H       (1 << 2)	/*!< 10BT half duplex */
+#define LAN8_SPEEDMASK      (7 << 0)	/*!< Speed and duplex mask */
+#define LAN8_SPEED100F      (6 << 0)	/*!< 100BT full duplex */
+#define LAN8_SPEED10F       (5 << 0)	/*!< 10BT full duplex */
+#define LAN8_SPEED100H      (2 << 0)	/*!< 100BT half duplex */
+#define LAN8_SPEED10H       (1 << 0)	/*!< 10BT half duplex */
 
 /* LAN8720 PHY ID 1/2 register definitions */
 #define LAN8_PHYID1_OUI     0x0007		/*!< Expected PHY ID1 */

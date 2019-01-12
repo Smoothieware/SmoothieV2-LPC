@@ -75,7 +75,7 @@ extern "C" {
 
 /* Build for RMII interface */
 #define USE_RMII
-#define BOARD_ENET_PHY_ADDR	0x01
+#define BOARD_ENET_PHY_ADDR	0x00
 
 
 

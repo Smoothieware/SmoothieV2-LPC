@@ -175,6 +175,7 @@ end
 
 include_dirs = ["./Hal/lpc_board/inc", "./Hal/lpc_chip_43xx/inc", "./Hal/lpc_chip_43xx/inc/config_43xx",
                 "./Hal/lpc_chip_43xx/inc/usbd_rom", "./Hal/src",
+                "./Hal/network/common", "./Hal/network/inc", "./Hal/network/lwip/include", "./Hal/network/lwip/include/ipv4",
                 "./RTOS/include",  "./Hal/sdmmc/inc", "./Hal/sdmmc/fatfs", "./Hal/usb_cdc/inc"] +
                [Dir.glob(['./src/**/'])].flatten # ,'./staging/**/'
 sys_include_dirs = []
