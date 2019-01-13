@@ -328,8 +328,8 @@ bool Robot::configure(ConfigReader& cr)
     // common settings for all drivers/actuators
     auto s = ssm.find(common_key);
     if(s != ssm.end()) {
-        auto& mm = s->second; // map of general actuator config settings
 #ifdef BOARD_MINIALPHA
+        auto& mm = s->second; // map of general actuator config settings
         // driver reset pin, mini alpha is GPIO3_5
         Pin motor_reset_pin(cr.get_string(mm, motor_reset_pin_key, "nc"), Pin::AS_OUTPUT);
         if(motor_reset_pin.connected()) {
@@ -338,6 +338,7 @@ bool Robot::configure(ConfigReader& cr)
         }
 
 #elif defined(BOARD_PRIMEALPHA)
+        auto& mm = s->second; // map of general actuator config settings
         check_driver_errors= cr.get_bool(mm, check_driver_errors_key, false);
         halt_on_driver_alarm= cr.get_bool(mm, halt_on_driver_alarm_key, false);
 #endif

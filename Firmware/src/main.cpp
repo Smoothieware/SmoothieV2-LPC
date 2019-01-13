@@ -899,6 +899,7 @@ static void smoothie_startup(void *)
             play_led= new Pin("p7.5", Pin::AS_OUTPUT);
         }
     }
+#endif
 
     { // start network if available
         Module *m;
@@ -910,10 +911,10 @@ static void smoothie_startup(void *)
             }else{
                 printf("Failed to start network thread\n");
             }
+        }else{
+            printf("Network module not loaded\n");
         }
     }
-
-#endif
 
     // wait for command thread to start
     // std::unique_lock<std::mutex> lk(m);

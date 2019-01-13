@@ -2,6 +2,8 @@
 
 #include "Module.h"
 
+class OutputStream;
+
 class Network : public Module {
     public:
         Network();
@@ -10,4 +12,5 @@ class Network : public Module {
         bool start(void);
 
     private:
+        bool handle_net_cmd( std::string& params, OutputStream& os );
 };

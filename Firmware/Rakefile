@@ -7,6 +7,10 @@ TESTING = ENV['testing'].nil? ? false : ENV['testing'] == '1'
 SPIFI = ENV['flash'].nil? ? true : false
 
 PROG = 'smoothiev2'
+
+# include a defaults file if present
+load 'rakefile.defaults' if File.exists?('rakefile.defaults')
+
 if ENV['target'].nil?
   TARGET = 'Primealpha'
 elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Minialpha' && ENV['target'] != 'Primealpha')
@@ -104,10 +108,6 @@ ARFLAGS = 'ur'
 current_version= `#{CC} -dumpversion`.chomp
 puts "Current GCC version is #{current_version}"
 ARMVERSION = ENV['ARMVERSION'].nil? ? current_version :  ENV['ARMVERSION']
-
-
-# include a defaults file if present
-load 'rakefile.defaults' if File.exists?('rakefile.defaults')
 
 # Set build type
 #BUILDTYPE= ENV['BUILDTYPE'] || 'Checked' unless defined? BUILDTYPE

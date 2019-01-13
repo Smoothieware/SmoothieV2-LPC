@@ -21,6 +21,8 @@
 #include "lpc_phy.h" /* For the PHY monitor support */
 
 #include "ConfigReader.h"
+#include "Dispatcher.h"
+#include "OutputStream.h"
 
 #define network_enable_key "enable"
 
@@ -31,33 +33,62 @@ static struct netif lpc_netif;
 
 bool Network::create(ConfigReader& cr)
 {
-    printf("DEBUG: configure network\n");
-    Network *network = new Network();
-    if(!network->configure(cr)) {
-        printf("INFO: Network not enabled\n");
-        delete network;
-        return false;
-    }
-    return true;
+	printf("DEBUG: configure network\n");
+	Network *network = new Network();
+	if(!network->configure(cr)) {
+		printf("INFO: Network not enabled\n");
+		delete network;
+		return false;
+	}
+	return true;
 }
 
-Network::Network() : Module("Network")
+Network::Network() : Module("network")
 {
 }
 
 bool Network::configure(ConfigReader& cr)
 {
-    ConfigReader::section_map_t m;
-    if(!cr.get_section("network", m)) return false;
+	ConfigReader::section_map_t m;
+	if(!cr.get_section("network", m)) return false;
 
-    bool enable = cr.get_bool(m,  network_enable_key , false);
-    if(!enable) {
-        return false;
-    }
+	bool enable = cr.get_bool(m,  network_enable_key , false);
+	if(!enable) {
+		return false;
+	}
 
+	// register command handlers
+	using std::placeholders::_1;
+	using std::placeholders::_2;
 
+	THEDISPATCHER->add_handler( "net", std::bind( &Network::handle_net_cmd, this, _1, _2) );
 
-    return true;
+	return true;
+}
+
+#define HELP(m) if(params == "-h") { os.printf("%s\n", m); return true; }
+
+bool Network::handle_net_cmd( std::string& params, OutputStream& os )
+{
+	HELP("net - show network status");
+
+	if(lpc_netif.flags & NETIF_FLAG_LINK_UP) {
+		os.printf("Link UP\n");
+		if (lpc_netif.ip_addr.addr) {
+			static char tmp_buff[16];
+			os.printf("IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.ip_addr, tmp_buff, 16));
+			os.printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.netmask, tmp_buff, 16));
+			os.printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.gw, tmp_buff, 16));
+
+		} else {
+			os.printf("no ip set\n");
+		}
+	} else {
+		os.printf("Link DOWN\n");
+	}
+	os.set_no_response();
+
+	return true;
 }
 
 /* Callback for TCPIP thread to indicate TCPIP init is done */
@@ -74,7 +105,8 @@ extern "C" void msDelay(uint32_t ms)
 }
 
 /* LWIP kickoff and PHY link monitor thread */
-static void vSetupIFTask(void *pvParameters) {
+static void vSetupIFTask(void *pvParameters)
+{
 	ip_addr_t ipaddr, netmask, gw;
 	volatile s32_t tcpipdone = 0;
 	uint32_t physts;
@@ -103,7 +135,7 @@ static void vSetupIFTask(void *pvParameters) {
 
 	/* Add netif interface for lpc17xx_8x */
 	if (!netif_add(&lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init,
-				   tcpip_input)) {
+	               tcpip_input)) {
 		printf("Network: Net interface failed to initialize\n");
 	}
 
@@ -137,41 +169,37 @@ static void vSetupIFTask(void *pvParameters) {
 				if (physts & PHY_LINK_SPEED100) {
 					Chip_ENET_SetSpeed(LPC_ETHERNET, 1);
 					NETIF_INIT_SNMP(&lpc_netif, snmp_ifType_ethernet_csmacd, 100000000);
-					printf("Network::start() - 100 ");
-				}
-				else {
+					printf("Network::start() - 100Mbit/s ");
+				} else {
 					Chip_ENET_SetSpeed(LPC_ETHERNET, 0);
 					NETIF_INIT_SNMP(&lpc_netif, snmp_ifType_ethernet_csmacd, 10000000);
-					printf("Network::start() - 10 ");
+					printf("Network::start() - 10Mbit/s ");
 				}
 				if (physts & PHY_LINK_FULLDUPLX) {
 					Chip_ENET_SetDuplex(LPC_ETHERNET, true);
-					printf("FullDuplex\n");
-				}
-				else {
+					printf("Full Duplex\n");
+				} else {
 					Chip_ENET_SetDuplex(LPC_ETHERNET, false);
-					printf("HalfDuplex\n");
+					printf("Half Duplex\n");
 				}
 
 				tcpip_callback_with_block((tcpip_callback_fn) netif_set_link_up,
-										  (void *) &lpc_netif, 1);
-			}
-			else {
-				Board_LED_Set(0, false);
+				                          (void *) &lpc_netif, 1);
+			} else {
 				tcpip_callback_with_block((tcpip_callback_fn) netif_set_link_down,
-										  (void *) &lpc_netif, 1);
+				                          (void *) &lpc_netif, 1);
 			}
 
 			printf("Network::start() - Link connect status: %d\r\n", ((physts & PHY_LINK_CONNECTED) != 0));
-
-			/* Delay for link detection (250mS) */
-			vTaskDelay(pdMS_TO_TICKS(250));
 		}
+
+		/* Delay for link detection (250mS) */
+		vTaskDelay(pdMS_TO_TICKS(250));
 
 		/* Print IP address info */
 		if (!prt_ip) {
 			if (lpc_netif.ip_addr.addr) {
-				static char tmp_buff[16];
+				char tmp_buff[16];
 				printf("IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.ip_addr, tmp_buff, 16));
 				printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.netmask, tmp_buff, 16));
 				printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.gw, tmp_buff, 16));
@@ -181,10 +209,11 @@ static void vSetupIFTask(void *pvParameters) {
 	}
 }
 
-bool Network::start() {
+bool Network::start()
+{
 	xTaskCreate(vSetupIFTask, "SetupIFx",
-				1024, NULL, (tskIDLE_PRIORITY + 1UL),
-				(xTaskHandle *) NULL);
+	            512, NULL, (tskIDLE_PRIORITY + 1UL),
+	            (xTaskHandle *) NULL);
 
 	return true;
 }
