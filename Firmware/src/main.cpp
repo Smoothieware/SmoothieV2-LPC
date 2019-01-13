@@ -901,6 +901,7 @@ static void smoothie_startup(void *)
     }
 #endif
 
+#ifndef NONETWORK
     { // start network if available
         Module *m;
         m= Module::lookup("network");
@@ -915,6 +916,7 @@ static void smoothie_startup(void *)
             printf("Network module not loaded\n");
         }
     }
+#endif
 
     // wait for command thread to start
     // std::unique_lock<std::mutex> lk(m);

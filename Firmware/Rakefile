@@ -112,6 +112,7 @@ ARMVERSION = ENV['ARMVERSION'].nil? ? current_version :  ENV['ARMVERSION']
 # Set build type
 #BUILDTYPE= ENV['BUILDTYPE'] || 'Checked' unless defined? BUILDTYPE
 #puts "#{BUILDTYPE} build"
+NONETWORK = ENV['nonetwork'].nil? ? 0 :  ENV['nonetwork']
 
 # add lpcopen HAL files
 hal_src = FileList['Hal/**/*.{c,cpp,s}']
@@ -149,6 +150,13 @@ else
   src = FileList['src/**/*.{c,cpp,s}'] #, 'staging/**/*.cpp' ]
   #src.exclude(/xxxx/) # TODO these are not ready yet
   puts "Building Firmware debug: #{DEBUG}"
+end
+
+if NONETWORK == '1'
+  hal_src.exclude(/Hal\/network\//)
+  src.exclude(/\/utils\/network\//)
+  target_defines << '-DNONETWORK'
+  puts "Excluding Network code"
 end
 
 # All sources
