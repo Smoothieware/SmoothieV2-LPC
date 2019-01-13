@@ -10,6 +10,8 @@ void set_capture(std::function<void(char)> cf);
 
 // TODO may move to Dispatcher
 bool dispatch_line(OutputStream& os, const char *line);
+void process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, size_t& cnt, bool& discard);
+
 // print string to all connected consoles
 void print_to_all_consoles(const char *);
 // sleep for given ms, but don't block things like ?

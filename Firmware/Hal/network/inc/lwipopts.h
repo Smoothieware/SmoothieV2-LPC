@@ -71,11 +71,7 @@
 #define LWIP_PLATFORM_BYTESWAP          0
 
 /* Non-static memory, used with DMA pool */
-#ifdef __CODE_RED
-#define MEM_SIZE                        (12 * 1024)
-#else
-#define MEM_SIZE                        (24 * 1024)
-#endif
+#define MEM_SIZE                        (15 * 1024)
 
 /* Raw interface not needed */
 #define LWIP_RAW                        0
@@ -130,7 +126,7 @@
 
 #define TCPIP_MBOX_SIZE                 6
 
-#define MEM_LIBC_MALLOC                 1
+#define MEM_LIBC_MALLOC                 0
 #define MEMP_MEM_MALLOC                 1
 
 /* Required for malloc/free */
@@ -141,21 +137,21 @@
 #include "FreeRTOS.h"
 
 /* Reentrant Free */
-#define mem_free vPortFree
+//#define mem_free vPortFree
 
 /* Reentrant Malloc */
-#define mem_malloc  pvPortMalloc
+//#define mem_malloc  pvPortMalloc
 
 /* Reentrant Calloc */
-STATIC INLINE void *pvPortCalloc(size_t nmemb, size_t size)
-{
-	void *x = mem_malloc(nmemb * size);
-	if (x != NULL)
-		memset(x, 0, nmemb * size);
-	return x;
-}
+// STATIC INLINE void *pvPortCalloc(size_t nmemb, size_t size)
+// {
+// 	void *x = mem_malloc(nmemb * size);
+// 	if (x != NULL)
+// 		memset(x, 0, nmemb * size);
+// 	return x;
+// }
 
-#define mem_calloc pvPortCalloc
+// #define mem_calloc pvPortCalloc
 
 #endif /* __LWIPOPTS_H_ */
 

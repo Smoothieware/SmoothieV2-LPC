@@ -896,7 +896,7 @@ err_t lpc_enetif_init(struct netif *netif)
 
 #if LWIP_NETIF_HOSTNAME
 	/* Initialize interface hostname */
-	netif->hostname = "lwiplpc";
+	netif->hostname = "smoothiev2";
 #endif /* LWIP_NETIF_HOSTNAME */
 
 	netif->name[0] = 'e';

@@ -25,11 +25,15 @@
 #include "OutputStream.h"
 
 #define network_enable_key "enable"
+#define shell_enable_key "shell_enable"
 
 REGISTER_MODULE(Network, Network::create)
 
 /* NETIF data */
 static struct netif lpc_netif;
+bool Network::enable_shell= false;
+bool Network::enable_httpd= false;
+bool Network::enable_ftpd= false;
 
 bool Network::create(ConfigReader& cr)
 {
@@ -52,10 +56,12 @@ bool Network::configure(ConfigReader& cr)
 	ConfigReader::section_map_t m;
 	if(!cr.get_section("network", m)) return false;
 
-	bool enable = cr.get_bool(m,  network_enable_key , false);
+	bool enable = cr.get_bool(m, network_enable_key, false);
 	if(!enable) {
 		return false;
 	}
+
+	enable_shell= cr.get_bool(m, shell_enable_key, false);
 
 	// register command handlers
 	using std::placeholders::_1;
@@ -105,7 +111,7 @@ extern "C" void msDelay(uint32_t ms)
 }
 
 /* LWIP kickoff and PHY link monitor thread */
-static void vSetupIFTask(void *pvParameters)
+void Network::vSetupIFTask(void *pvParameters)
 {
 	ip_addr_t ipaddr, netmask, gw;
 	volatile s32_t tcpipdone = 0;
@@ -150,8 +156,15 @@ static void vSetupIFTask(void *pvParameters)
 	dhcp_start(&lpc_netif);
 #endif
 
-	/* Initialize and start application */
-	//tcpecho_init();
+	/* Initialize and start application(s) */
+	if(enable_shell) {
+		extern void shell_init(void);
+		shell_init();
+	}
+
+	if(enable_httpd) {
+		//httpd_init();
+	}
 
 	/* This loop monitors the PHY link and will handle cable events
 	   via the PHY driver. */
@@ -211,9 +224,6 @@ static void vSetupIFTask(void *pvParameters)
 
 bool Network::start()
 {
-	xTaskCreate(vSetupIFTask, "SetupIFx",
-	            512, NULL, (tskIDLE_PRIORITY + 1UL),
-	            (xTaskHandle *) NULL);
-
+	xTaskCreate(vSetupIFTask, "SetupIFx", 512, NULL, (tskIDLE_PRIORITY + 1UL), (xTaskHandle *) NULL);
 	return true;
 }

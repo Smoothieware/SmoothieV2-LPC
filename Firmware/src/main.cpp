@@ -293,8 +293,8 @@ void set_capture(std::function<void(char)> cf)
 #include <vector>
 static std::vector<OutputStream*> output_streams;
 
-// this is here so we do not need duplicate this logic for USB and UART
-static void process_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, size_t& cnt, bool& discard)
+// this is here so we do not need to duplicate this logic for USB and UART
+void process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, size_t& cnt, bool& discard)
 {
     for (size_t i = 0; i < n; ++i) {
         line[cnt] = rxBuf[i];
@@ -411,7 +411,7 @@ static void usb_comms(void *)
 
         n = read_cdc(rxBuf, sizeof(rxBuf));
         if(n > 0) {
-            process_buffer(n, rxBuf, &os, line, cnt, discard);
+            process_command_buffer(n, rxBuf, &os, line, cnt, discard);
         }
     }
 }
@@ -441,7 +441,7 @@ static void uart_comms(void *)
 
         size_t n = read_uart(rxBuf, sizeof(rxBuf));
         if(n > 0) {
-           process_buffer(n, rxBuf, &os, line, cnt, discard);
+           process_command_buffer(n, rxBuf, &os, line, cnt, discard);
         }
     }
 }
@@ -471,7 +471,7 @@ static void uart3_comms(void *)
 
         size_t n = read_uart3(rxBuf, sizeof(rxBuf));
         if(n > 0) {
-           process_buffer(n, rxBuf, &os, line, cnt, discard);
+           process_command_buffer(n, rxBuf, &os, line, cnt, discard);
         }
     }
 }
