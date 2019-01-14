@@ -33,9 +33,9 @@
 /* dirent that will be given to callers;
  * note: both APIs assume that only one dirent ever exists
  */
-vfs_dirent_t dir_ent;
+static vfs_dirent_t dir_ent;
 
-FIL guard_for_the_whole_fs;
+static FIL guard_for_the_whole_fs;
 
 int vfs_read (void* buffer, int dummy, int len, vfs_file_t* file) {
 	unsigned int bytesread;
@@ -52,7 +52,7 @@ vfs_dirent_t* vfs_readdir(vfs_dir_t* dir) {
 	FRESULT r = f_readdir(dir, &fi);
 	if (r != FR_OK) return NULL;
 	if (fi.fname[0] == 0) return NULL;
-	memcpy(dir_ent.name, fi.fname, sizeof(fi.fname));
+	strncpy(dir_ent.name, fi.fname, sizeof(dir_ent.name));
 	return &dir_ent;
 }
 
@@ -116,7 +116,9 @@ char* vfs_getcwd(vfs_t* vfs, void* dummy1, int dummy2) {
 	}
 	return cwd;
 #else
-	return NULL;
+	char* cwd = malloc(32);
+	strcpy(cwd, "/sd");
+	return cwd;
 #endif
 }
 

@@ -96,7 +96,7 @@
              Where NAME is an official system name from the list in the
              Assigned Numbers document.
 */
-#define msg220 "220 lwIP FTP Server ready."
+#define msg220 "220 Smoothie FTP Server ready."
 /*
          220 Service ready for new user.
 */
@@ -430,7 +430,7 @@ static void send_file(struct ftpd_datastate *fsd, struct tcp_pcb *pcb)
 		return;
 
 	if (fsd->vfs_file) {
-		char buffer[2048];
+		char buffer[512];
 		int len;
 
 		len = sfifo_space(&fsd->fifo);
@@ -438,8 +438,8 @@ static void send_file(struct ftpd_datastate *fsd, struct tcp_pcb *pcb)
 			send_data(pcb, fsd);
 			return;
 		}
-		if (len > 2048)
-			len = 2048;
+		if (len > 512)
+			len = 512;
 		len = vfs_read(buffer, 1, len, fsd->vfs_file);
 		if (len == 0) {
 			if (vfs_eof(fsd->vfs_file) == 0)

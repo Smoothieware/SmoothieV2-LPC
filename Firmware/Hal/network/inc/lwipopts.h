@@ -100,6 +100,7 @@
 /* There are more *_DEBUG options that can be selected.
    See opts.h. Make sure that LWIP_DEBUG is defined when
    building the code to use debug. */
+#define LWIP_DEBUG
 #define TCP_DEBUG                       LWIP_DBG_OFF
 #define ETHARP_DEBUG                    LWIP_DBG_OFF
 #define PBUF_DEBUG                      LWIP_DBG_OFF
@@ -107,6 +108,7 @@
 #define TCPIP_DEBUG                     LWIP_DBG_OFF
 #define DHCP_DEBUG                      LWIP_DBG_OFF
 #define UDP_DEBUG                       LWIP_DBG_OFF
+#define TCP_OUTPUT_DEBUG				LWIP_DBG_ON
 
 /* This define is custom for the LPC EMAC driver. Enabled it to
    get debug messages for the driver. */
@@ -120,13 +122,13 @@
 #define DEFAULT_UDP_RECVMBOX_SIZE       6
 
 /* TCPIP thread must run at higher priority than MAC threads! */
-#define TCPIP_THREAD_PRIO               (DEFAULT_THREAD_PRIO + configMAX_PRIORITIES - 1)
+#define TCPIP_THREAD_PRIO               (DEFAULT_THREAD_PRIO + 2)
 
-#define TCPIP_THREAD_STACKSIZE          (512)
+#define TCPIP_THREAD_STACKSIZE          (2048)
 
 #define TCPIP_MBOX_SIZE                 6
 
-#define MEM_LIBC_MALLOC                 0
+#define MEM_LIBC_MALLOC                 1
 #define MEMP_MEM_MALLOC                 1
 
 /* Required for malloc/free */
@@ -137,21 +139,21 @@
 #include "FreeRTOS.h"
 
 /* Reentrant Free */
-//#define mem_free vPortFree
+#define mem_free vPortFree
 
 /* Reentrant Malloc */
-//#define mem_malloc  pvPortMalloc
+#define mem_malloc  pvPortMalloc
 
 /* Reentrant Calloc */
-// STATIC INLINE void *pvPortCalloc(size_t nmemb, size_t size)
-// {
-// 	void *x = mem_malloc(nmemb * size);
-// 	if (x != NULL)
-// 		memset(x, 0, nmemb * size);
-// 	return x;
-// }
+STATIC INLINE void *pvPortCalloc(size_t nmemb, size_t size)
+{
+	void *x = mem_malloc(nmemb * size);
+	if (x != NULL)
+		memset(x, 0, nmemb * size);
+	return x;
+}
 
-// #define mem_calloc pvPortCalloc
+#define mem_calloc pvPortCalloc
 
 #endif /* __LWIPOPTS_H_ */
 

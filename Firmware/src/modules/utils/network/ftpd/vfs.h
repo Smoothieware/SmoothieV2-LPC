@@ -46,7 +46,7 @@ typedef struct {
 	mtime_t st_mtime;
 } vfs_stat_t;
 typedef struct {
-	char name[13];
+	char name[256];
 } vfs_dirent_t;
 typedef FIL vfs_t;
 
