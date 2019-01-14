@@ -24,11 +24,11 @@
 #include "Dispatcher.h"
 #include "OutputStream.h"
 
-//#include "ftpd.h"
+#include "ftpd.h"
 
 #define network_enable_key "enable"
 #define shell_enable_key "shell_enable"
-#define shell_enable_key "ftp_enable"
+#define ftp_enable_key "ftp_enable"
 
 REGISTER_MODULE(Network, Network::create)
 
@@ -68,6 +68,7 @@ bool Network::configure(ConfigReader& cr)
 	}
 
 	enable_shell= cr.get_bool(m, shell_enable_key, false);
+	enable_ftpd= cr.get_bool(m, ftp_enable_key, false);
 
 	// register command handlers
 	using std::placeholders::_1;
@@ -168,10 +169,9 @@ void Network::vSetupIFTask(void *pvParameters)
 		shell_init();
 	}
 
-	// if(enable_ftpd) {
-	// 	ftpd= new Ftpd();
-	// 	ftpd->init();
-	// }
+	if(enable_ftpd) {
+		ftpd_init();
+	}
 
 	/* This loop monitors the PHY link and will handle cable events
 	   via the PHY driver. */
