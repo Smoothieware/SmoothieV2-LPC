@@ -24,8 +24,11 @@
 #include "Dispatcher.h"
 #include "OutputStream.h"
 
+//#include "ftpd.h"
+
 #define network_enable_key "enable"
 #define shell_enable_key "shell_enable"
+#define shell_enable_key "ftp_enable"
 
 REGISTER_MODULE(Network, Network::create)
 
@@ -44,6 +47,9 @@ bool Network::create(ConfigReader& cr)
 		delete network;
 		return false;
 	}
+
+	network->start();
+
 	return true;
 }
 
@@ -162,9 +168,10 @@ void Network::vSetupIFTask(void *pvParameters)
 		shell_init();
 	}
 
-	if(enable_httpd) {
-		//httpd_init();
-	}
+	// if(enable_ftpd) {
+	// 	ftpd= new Ftpd();
+	// 	ftpd->init();
+	// }
 
 	/* This loop monitors the PHY link and will handle cable events
 	   via the PHY driver. */

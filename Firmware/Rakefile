@@ -155,7 +155,6 @@ end
 if NONETWORK == '1'
   hal_src.exclude(/Hal\/network\//)
   src.exclude(/\/utils\/network\//)
-  target_defines << '-DNONETWORK'
   puts "Excluding Network code"
 end
 

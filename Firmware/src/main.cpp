@@ -901,23 +901,6 @@ static void smoothie_startup(void *)
     }
 #endif
 
-#ifndef NONETWORK
-    { // start network if available
-        Module *m;
-        m= Module::lookup("network");
-        if(m != nullptr) {
-            Network *net= static_cast<Network*>(m);
-            if(net->start()) {
-                printf("Network thread started\n");
-            }else{
-                printf("Failed to start network thread\n");
-            }
-        }else{
-            printf("Network module not loaded\n");
-        }
-    }
-#endif
-
     // wait for command thread to start
     // std::unique_lock<std::mutex> lk(m);
     // cv.wait(lk);
