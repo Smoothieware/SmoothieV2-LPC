@@ -7,6 +7,8 @@ class OutputStream;
 
 // sets a callback for all incoming data
 void set_capture(std::function<void(char)> cf);
+using StartupFunc_t = std::function<void()>;
+void register_startup(StartupFunc_t sf);
 
 // TODO may move to Dispatcher
 bool dispatch_line(OutputStream& os, const char *line);

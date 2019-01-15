@@ -28,8 +28,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define _USE_LFN 0
-
 /* dirent that will be given to callers;
  * note: both APIs assume that only one dirent ever exists
  */
@@ -46,9 +44,6 @@ int vfs_read (void* buffer, int dummy, int len, vfs_file_t* file) {
 
 vfs_dirent_t* vfs_readdir(vfs_dir_t* dir) {
 	FILINFO fi;
-#if _USE_LFN
-	fi.lfname = NULL;
-#endif
 	FRESULT r = f_readdir(dir, &fi);
 	if (r != FR_OK) return NULL;
 	if (fi.fname[0] == 0) return NULL;
@@ -58,9 +53,6 @@ vfs_dirent_t* vfs_readdir(vfs_dir_t* dir) {
 
 int vfs_stat(vfs_t* vfs, const char* filename, vfs_stat_t* st) {
 	FILINFO f;
-#if _USE_LFN
-	f.lfname = NULL;
-#endif
 	if (FR_OK != f_stat(filename, &f)) {
 		return 1;
 	}

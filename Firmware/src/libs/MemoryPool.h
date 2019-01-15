@@ -24,7 +24,7 @@ public:
 
     bool  has(void*);
 
-    uint32_t free(void);
+    uint32_t available(void);
 
     MemoryPool* next;
 

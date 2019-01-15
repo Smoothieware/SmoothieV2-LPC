@@ -20,6 +20,7 @@
 #include "arch/sys_arch.h"
 #include "lpc_phy.h" /* For the PHY monitor support */
 
+#include "main.h"
 #include "ConfigReader.h"
 #include "Dispatcher.h"
 #include "OutputStream.h"
@@ -48,7 +49,8 @@ bool Network::create(ConfigReader& cr)
 		return false;
 	}
 
-	network->start();
+	// register a startup function
+	register_startup(std::bind(&Network::start, network));
 
 	return true;
 }
@@ -231,6 +233,7 @@ void Network::vSetupIFTask(void *pvParameters)
 
 bool Network::start()
 {
+	printf("Network: running start\n");
 	xTaskCreate(vSetupIFTask, "SetupIFx", 512, NULL, (tskIDLE_PRIORITY + 1UL), (xTaskHandle *) NULL);
 	return true;
 }

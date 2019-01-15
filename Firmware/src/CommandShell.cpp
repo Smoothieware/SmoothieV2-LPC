@@ -301,12 +301,12 @@ bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
     os.printf("malloc:      total       used       free    largest\n");
     os.printf("Mem:   %11d%11d%11d%11d\n", mem.arena, mem.uordblks, mem.fordblks, mem.ordblks);
 
-    os.printf("RAM2: %lu bytes free\n", _RAM2->free());
-    os.printf("RAM3: %lu bytes free\n", _RAM3->free());
-    os.printf("RAM4: %lu bytes free\n", _RAM4->free());
-    os.printf("RAM5: %lu bytes free\n", _RAM5->free());
+    os.printf("RAM2: %lu bytes free\n", _RAM2->available());
+    os.printf("RAM3: %lu bytes free\n", _RAM3->available());
+    os.printf("RAM4: %lu bytes free\n", _RAM4->available());
+    os.printf("RAM5: %lu bytes free\n", _RAM5->available());
     os.printf("Total available RAM: %lu\n", xPortGetFreeHeapSize() +
-        _RAM2->free() + _RAM3->free() + _RAM4->free() + _RAM5->free());
+        _RAM2->available() + _RAM3->available() + _RAM4->available() + _RAM5->available());
 
     os.set_no_response();
     return true;

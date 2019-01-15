@@ -100,7 +100,7 @@
 /* There are more *_DEBUG options that can be selected.
    See opts.h. Make sure that LWIP_DEBUG is defined when
    building the code to use debug. */
-#define LWIP_DEBUG
+//#define LWIP_DEBUG
 #define TCP_DEBUG                       LWIP_DBG_OFF
 #define ETHARP_DEBUG                    LWIP_DBG_OFF
 #define PBUF_DEBUG                      LWIP_DBG_OFF
@@ -122,10 +122,8 @@
 #define DEFAULT_UDP_RECVMBOX_SIZE       6
 
 /* TCPIP thread must run at higher priority than MAC threads! */
-#define TCPIP_THREAD_PRIO               (DEFAULT_THREAD_PRIO + 2)
-
+#define TCPIP_THREAD_PRIO               (tskIDLE_PRIORITY + 4)
 #define TCPIP_THREAD_STACKSIZE          (2048)
-
 #define TCPIP_MBOX_SIZE                 6
 
 #define MEM_LIBC_MALLOC                 1
@@ -138,11 +136,17 @@
 #include "lpc_types.h"
 #include "FreeRTOS.h"
 
-/* Reentrant Free */
-#define mem_free vPortFree
-
-/* Reentrant Malloc */
-#define mem_malloc  pvPortMalloc
+#if 0
+/* Reentrant malloc and free are in newlib */
+#define mem_free free
+#define mem_malloc  malloc
+#else
+// use RAM4 (16k) for Network allocations
+extern void *AllocRAM4(size_t);
+extern void DeallocRAM4(void*);
+#define mem_free DeallocRAM4
+#define mem_malloc AllocRAM4
+#endif
 
 /* Reentrant Calloc */
 STATIC INLINE void *pvPortCalloc(size_t nmemb, size_t size)

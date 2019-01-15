@@ -1,11 +1,21 @@
 #include "MemoryPool.h"
 #include "OutputStream.h"
 
+#include "FreeRTOS.h" // defines public interface we're implementing here
+#include "task.h" // defines public interface we're implementing here
+
 #ifdef MEMDEBUG
     #define MDEBUG(...) printf(__VA_ARGS__)
 #else
     #define MDEBUG(...)
 #endif
+
+class AutoLock
+{
+public:
+    AutoLock(){ vTaskSuspendAll(); }
+    ~AutoLock(){ xTaskResumeAll(); }
+};
 
 // this catches all usages of delete blah. The object's destructor is called before we get here
 // it first checks if the deleted object is part of a pool, and uses free otherwise.
@@ -79,6 +89,8 @@ MemoryPool::~MemoryPool()
 
 void* MemoryPool::alloc(size_t nbytes)
 {
+    AutoLock lock();
+
     // nbytes = ceil(nbytes / 4) * 4
     if (nbytes & 3)
         nbytes += 4 - (nbytes & 3);
@@ -139,6 +151,7 @@ void* MemoryPool::alloc(size_t nbytes)
 
 void MemoryPool::dealloc(void* d)
 {
+    AutoLock lock();
     _poolregion* p = (_poolregion*) (((uint8_t*) d) - sizeof(_poolregion));
     p->used = 0;
 
@@ -228,7 +241,7 @@ bool MemoryPool::has(void* p)
     return ((p >= base) && (p < (void*) (((uint8_t*) base) + size)));
 }
 
-uint32_t MemoryPool::free()
+uint32_t MemoryPool::available()
 {
     uint32_t free = 0;
 
@@ -243,4 +256,17 @@ uint32_t MemoryPool::free()
             return free;
         p = (_poolregion*) (((uint8_t*) p) + p->next);
     } while (1);
+}
+
+// convenience routines to allow alloc/dealloc from C
+#include "main.h"
+// allocate from AHBx instead
+extern "C" void *AllocRAM4(size_t size)
+{
+   return _RAM4->alloc(size);
+}
+
+extern "C" void DeallocRAM4(void *mem)
+{
+   return _RAM4->dealloc(mem);
 }

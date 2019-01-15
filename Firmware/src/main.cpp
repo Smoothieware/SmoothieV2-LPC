@@ -10,6 +10,8 @@
 #include <iostream>
 #include <malloc.h>
 #include <fstream>
+#include <vector>
+#include <functional>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -283,14 +285,12 @@ bool dispatch_line(OutputStream& os, const char *cl)
     return true;
 }
 
-#include <functional>
 static std::function<void(char)> capture_fnc;
 void set_capture(std::function<void(char)> cf)
 {
     capture_fnc = cf;
 }
 
-#include <vector>
 static std::vector<OutputStream*> output_streams;
 
 // this is here so we do not need to duplicate this logic for USB and UART
@@ -599,9 +599,6 @@ void safe_sleep(uint32_t ms)
 #include "Endstops.h"
 #include "ZProbe.h"
 #include "Player.h"
-#include "Network.h"
-
-#include "main.h"
 
 extern void configureSPIFI();
 //float get_pll1_clk();
@@ -635,6 +632,13 @@ int get_voltage_monitor_names(const char *names[])
         ++i;
     }
     return i;
+}
+
+// this is used to add callback functions to be called once the system is running
+static std::vector<StartupFunc_t> startup_fncs;
+void register_startup(StartupFunc_t sf)
+{
+    startup_fncs.push_back(sf);
 }
 
 static void smoothie_startup(void *)
@@ -879,6 +883,12 @@ static void smoothie_startup(void *)
     // fixed stack size of 4k Bytes each
     xTaskCreate(usb_comms, "USBCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
     xTaskCreate(uart_comms, "UARTCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+
+    // run any startup functions that have been registered
+    for(auto f : startup_fncs) {
+        f();
+    }
+    startup_fncs.clear();
 
 #ifdef BOARD_PRIMEALPHA
     if(rpi_port_enabled) {

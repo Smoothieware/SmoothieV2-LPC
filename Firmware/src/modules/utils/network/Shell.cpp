@@ -21,6 +21,8 @@ static void shell_thread(void *arg)
     err_t err;
     LWIP_UNUSED_ARG(arg);
 
+    printf("Network: shell thread started\n");
+
     /* Create a new connection identifier. */
     conn = netconn_new(NETCONN_TCP);
 

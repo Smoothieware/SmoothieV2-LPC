@@ -77,8 +77,8 @@ extern void msDelay(uint32_t ms);
  * to prioritize receive or transmit bandwidth. In a heavily loaded
  * system or with LWIP_DEBUG enabled, the priorities might be better
  * the same. */
-#define tskTXCLEAN_PRIORITY  (TCPIP_THREAD_PRIO - 1)
-#define tskRECPKT_PRIORITY   (TCPIP_THREAD_PRIO - 1)
+#define tskTXCLEAN_PRIORITY  (TCPIP_THREAD_PRIO)
+#define tskRECPKT_PRIORITY   (TCPIP_THREAD_PRIO)
 #endif
 
 /** @brief	Debug output formatter lock define
