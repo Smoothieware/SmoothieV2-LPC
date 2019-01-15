@@ -143,7 +143,7 @@ void* MemoryPool::alloc(size_t nbytes)
         p = (_poolregion*) (((uint8_t*) p) + p->next);
 
         // make sure we don't walk off the end
-    } while (p <= (_poolregion*) (((uint8_t*)base) + size));
+    } while (p < (_poolregion*) (((uint8_t*)base) + size));
 
     // fell off the end of the region!
     return NULL;
@@ -159,6 +159,11 @@ void MemoryPool::dealloc(void* d)
 
     // combine next block if it's free
     _poolregion* q = (_poolregion*) (((uint8_t*) p) + p->next);
+    if(q >= (_poolregion*) (((uint8_t*) base) + size)) {
+        // we are beyond the end of the pool, ie last block
+        return;
+    }
+
     if (q->used == 0)
     {
         MDEBUG("\t\tCombining with next free region at %p, new size is %d\n", q, p->next + q->next);

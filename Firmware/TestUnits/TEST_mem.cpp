@@ -71,7 +71,7 @@ REGISTER_TEST(MemoryTest, memory_pool)
     uint32_t ef= &__top_RAM2 - &__end_bss_RAM2;
     _RAM2->debug(os);
     // check amount of memory available
-    TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
+    TEST_ASSERT_EQUAL_INT(ef, _RAM2->available());
     TEST_ASSERT_EQUAL_INT(0x12000-128, ef);
     uint8_t *r2= (uint8_t *)_RAM2->alloc(128);
     _RAM2->debug(os);
@@ -79,18 +79,34 @@ REGISTER_TEST(MemoryTest, memory_pool)
     // check it lost expected amount + 4 byte overhead
     TEST_ASSERT_EQUAL_INT(0x10080000+128+4, (unsigned int)r2);
     TEST_ASSERT_TRUE(_RAM2->has(r2));
-    TEST_ASSERT_EQUAL_INT(ef-128-4, _RAM2->free());
+    TEST_ASSERT_EQUAL_INT(ef-128-4, _RAM2->available());
     _RAM2->dealloc(r2);
     // check it deallocated it
-    TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
+    TEST_ASSERT_EQUAL_INT(ef, _RAM2->available());
 
     // test placement new
     DummyClass *r3= new(*_RAM2)DummyClass();
     TEST_ASSERT_EQUAL_INT(0x10080084, (unsigned int)r3->getInstance());
-    TEST_ASSERT_EQUAL_INT(ef-sizeof(DummyClass)-4, _RAM2->free());
+    TEST_ASSERT_EQUAL_INT(ef-sizeof(DummyClass)-4, _RAM2->available());
     TEST_ASSERT_EQUAL_INT(1234, r3->t);
     delete r3;
-    TEST_ASSERT_EQUAL_INT(ef, _RAM2->free());
+    TEST_ASSERT_EQUAL_INT(ef, _RAM2->available());
+
+    _RAM2->debug(os);
+
+    // test we get correct return if no memory left
+    uint8_t *r4= (uint8_t *)_RAM2->alloc(100000);
+    TEST_ASSERT_NULL(r4);
+    TEST_ASSERT_EQUAL_INT(ef, _RAM2->available());
+
+    // test we get correct return if all memory used
+    uint8_t *r5= (uint8_t *)_RAM2->alloc(ef-4);
+    TEST_ASSERT_NOT_NULL(r5);
+    _RAM2->debug(os);
+    TEST_ASSERT_EQUAL_INT(0, _RAM2->available());
+    _RAM2->dealloc(r5);
+    TEST_ASSERT_EQUAL_INT(ef, _RAM2->available());
+    _RAM2->debug(os);
 }
 
 #define _ramfunc_ __attribute__ ((section(".ramfunctions"),long_call,noinline))

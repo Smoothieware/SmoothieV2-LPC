@@ -430,7 +430,7 @@ static void send_file(struct ftpd_datastate *fsd, struct tcp_pcb *pcb)
 		return;
 
 	if (fsd->vfs_file) {
-		char buffer[512];
+		char buffer[1024];
 		int len;
 
 		len = sfifo_space(&fsd->fifo);
@@ -438,8 +438,8 @@ static void send_file(struct ftpd_datastate *fsd, struct tcp_pcb *pcb)
 			send_data(pcb, fsd);
 			return;
 		}
-		if (len > 512)
-			len = 512;
+		if (len > 1024)
+			len = 1024;
 		len = vfs_read(buffer, 1, len, fsd->vfs_file);
 		if (len == 0) {
 			if (vfs_eof(fsd->vfs_file) == 0)
