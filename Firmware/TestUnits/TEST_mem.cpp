@@ -104,6 +104,10 @@ REGISTER_TEST(MemoryTest, memory_pool)
     TEST_ASSERT_NOT_NULL(r5);
     _RAM2->debug(os);
     TEST_ASSERT_EQUAL_INT(0, _RAM2->available());
+
+    uint8_t *r6= (uint8_t *)_RAM2->alloc(1);
+    TEST_ASSERT_NULL(r6);
+
     _RAM2->dealloc(r5);
     TEST_ASSERT_EQUAL_INT(ef, _RAM2->available());
     _RAM2->debug(os);
