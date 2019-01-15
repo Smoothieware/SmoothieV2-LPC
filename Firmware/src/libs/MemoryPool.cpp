@@ -188,7 +188,7 @@ void MemoryPool::dealloc(void* d)
                 q->next += p->next;
 
                 // sanity check
-                if ((offset(p) + p->next) >= size)
+                if ((offset(p) + p->next) > size)
                 {
                     // captain, we have a problem!
                     // this can only happen if something has corrupted our heap, since we should simply fail to find a free block if it's full
@@ -258,15 +258,11 @@ uint32_t MemoryPool::available()
     } while (1);
 }
 
-// convenience routines to allow alloc/dealloc from C
+// convenience routines to allow alloc/dealloc in _RAMx from C
 #include "main.h"
-// allocate from AHBx instead
-extern "C" void *AllocRAM4(size_t size)
-{
-   return _RAM4->alloc(size);
-}
-
-extern "C" void DeallocRAM4(void *mem)
-{
-   return _RAM4->dealloc(mem);
-}
+extern "C" void *AllocRAM2(size_t size) { return _RAM2->alloc(size); }
+extern "C" void DeallocRAM2(void *mem) { _RAM2->dealloc(mem); }
+extern "C" void *AllocRAM3(size_t size) { return _RAM3->alloc(size); }
+extern "C" void DeallocRAM3(void *mem) { _RAM3->dealloc(mem); }
+extern "C" void *AllocRAM4(size_t size) { return _RAM4->alloc(size); }
+extern "C" void DeallocRAM4(void *mem) { _RAM4->dealloc(mem); }

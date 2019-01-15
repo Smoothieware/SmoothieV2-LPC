@@ -301,12 +301,19 @@ bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
     os.printf("malloc:      total       used       free    largest\n");
     os.printf("Mem:   %11d%11d%11d%11d\n", mem.arena, mem.uordblks, mem.fordblks, mem.ordblks);
 
-    os.printf("RAM2: %lu bytes free\n", _RAM2->available());
-    os.printf("RAM3: %lu bytes free\n", _RAM3->available());
-    os.printf("RAM4: %lu bytes free\n", _RAM4->available());
-    os.printf("RAM5: %lu bytes free\n", _RAM5->available());
+    os.printf("RAM2: %lu used, %lu bytes free\n", _RAM2->get_size() - _RAM2->available(), _RAM2->available());
+    os.printf("RAM3: %lu used, %lu bytes free\n", _RAM3->get_size() - _RAM3->available(), _RAM3->available());
+    os.printf("RAM4: %lu used, %lu bytes free\n", _RAM4->get_size() - _RAM4->available(), _RAM4->available());
+    os.printf("RAM5: %lu used, %lu bytes free\n", _RAM5->get_size() - _RAM5->available(), _RAM5->available());
     os.printf("Total available RAM: %lu\n", xPortGetFreeHeapSize() +
         _RAM2->available() + _RAM3->available() + _RAM4->available() + _RAM5->available());
+
+    if(!params.empty()) {
+        os.printf("-- RAM2 --\n"); _RAM2->debug(os);
+        os.printf("-- RAM3 --\n"); _RAM3->debug(os);
+        os.printf("-- RAM4 --\n"); _RAM4->debug(os);
+        os.printf("-- RAM5 --\n"); _RAM5->debug(os);
+    }
 
     os.set_no_response();
     return true;

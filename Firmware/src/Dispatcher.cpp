@@ -43,6 +43,7 @@ static bool is_allowed_mcode(int m) {
 // Must be called from the command thread context
 bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 {
+	os.clear_flags();
 	if(Module::is_halted()) {
 		// If we are halted then we reject most g/m codes unless in exception list
 		if(gc.has_m() && gc.get_code() == 999) {
@@ -155,6 +156,7 @@ bool Dispatcher::dispatch(OutputStream& os, char cmd, uint16_t code, ...) const
 // dispatch command to a command handler if one is registered
 bool Dispatcher::dispatch(const char *line, OutputStream& os) const
 {
+	os.clear_flags();
 	std::string params(line);
 	std::string cmd = stringutils::get_command_arguments(params);
 	const auto& f = command_handlers.equal_range(cmd);

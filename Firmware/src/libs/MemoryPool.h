@@ -19,12 +19,10 @@ public:
 
     void* alloc(size_t);
     void  dealloc(void* p);
-
     void  debug(OutputStream&);
-
     bool  has(void*);
-
     uint32_t available(void);
+    uint32_t get_size(void) const { return size; };
 
     MemoryPool* next;
 

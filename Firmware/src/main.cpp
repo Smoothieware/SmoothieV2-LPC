@@ -167,6 +167,8 @@ bool dispatch_line(OutputStream& os, const char *cl)
 
         }else if(!os.is_no_response()) {
             os.puts("ok\n");
+        }else{
+            os.set_no_response(false);
         }
 
         return true;
@@ -889,6 +891,7 @@ static void smoothie_startup(void *)
         f();
     }
     startup_fncs.clear();
+    startup_fncs.shrink_to_fit();
 
 #ifdef BOARD_PRIMEALPHA
     if(rpi_port_enabled) {
@@ -1053,9 +1056,14 @@ extern "C" void vApplicationMallocFailedHook( void )
     FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
     to query the size of free heap space that remains (although it does not
     provide information on how the remaining heap might be fragmented). */
+    #if 0
     taskDISABLE_INTERRUPTS();
     __asm("bkpt #0");
     for( ;; );
+    #else
+    printf("FATAL: malloc/sbrk out of memory\n");
+    return;
+    #endif
 }
 
 extern "C" void HardFault_Handler(void) {

@@ -137,15 +137,15 @@
 #include "FreeRTOS.h"
 
 #if 0
-/* Reentrant malloc and free are in newlib */
+/* use Reentrant malloc and free from newlib */
 #define mem_free free
 #define mem_malloc  malloc
 #else
-// use RAM4 (16k) for Network allocations
-extern void *AllocRAM4(size_t);
-extern void DeallocRAM4(void*);
-#define mem_free DeallocRAM4
-#define mem_malloc AllocRAM4
+// use RAMn for Network allocations
+extern void *AllocRAM2(size_t);
+extern void DeallocRAM2(void*);
+#define mem_free DeallocRAM2
+#define mem_malloc AllocRAM2
 #endif
 
 /* Reentrant Calloc */
