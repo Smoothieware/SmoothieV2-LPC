@@ -563,7 +563,16 @@ static err_t ftpd_datarecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t
 {
 	struct ftpd_datastate *fsd = arg;
 
+
 	if (err == ERR_OK && p != NULL) {
+		// struct ftpd_msgstate *fsm= fsd->msgfs;
+		// if(fsm->state != FTPD_STOR) {
+		// 	dbg_printf("DEBUG: Recieved data when not is STOR state\n");
+		// }
+		// if(fsd->vfs_file == NULL) {
+		// 	dbg_printf("DEBUG: Recieved data when file is not open\n");
+		// }
+
 		struct pbuf *q;
 		u16_t tot_len = 0;
 

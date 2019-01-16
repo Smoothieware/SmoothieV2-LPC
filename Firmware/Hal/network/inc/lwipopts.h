@@ -101,6 +101,7 @@
    See opts.h. Make sure that LWIP_DEBUG is defined when
    building the code to use debug. */
 //#define LWIP_DEBUG
+
 #define TCP_DEBUG                       LWIP_DBG_OFF
 #define ETHARP_DEBUG                    LWIP_DBG_OFF
 #define PBUF_DEBUG                      LWIP_DBG_OFF
@@ -108,11 +109,13 @@
 #define TCPIP_DEBUG                     LWIP_DBG_OFF
 #define DHCP_DEBUG                      LWIP_DBG_OFF
 #define UDP_DEBUG                       LWIP_DBG_OFF
-#define TCP_OUTPUT_DEBUG				LWIP_DBG_ON
+#define TCP_OUTPUT_DEBUG				    LWIP_DBG_OFF
 
 /* This define is custom for the LPC EMAC driver. Enabled it to
    get debug messages for the driver. */
-#define EMAC_DEBUG                    LWIP_DBG_OFF
+#define EMAC_DEBUG                    LWIP_DBG_ON
+
+#define TCP_MSL 100 // added
 
 #define DEFAULT_THREAD_PRIO             (tskIDLE_PRIORITY + 1)
 #define DEFAULT_THREAD_STACKSIZE        (512)

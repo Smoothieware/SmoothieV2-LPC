@@ -88,7 +88,7 @@ extern void msDelay(uint32_t ms);
  * define when the system is under load will cause the output to
  * be unreadable. There is a small tradeoff in performance for this
  * so use it only for debug. */
-// #define LOCK_RX_THREAD
+#define LOCK_RX_THREAD
 
 /* LPC EMAC driver data structure */
 struct lpc_enetdata {
@@ -160,7 +160,7 @@ static void lpc_rxqueue_pbuf(struct lpc_enetdata *lpc_netifdata,
 	lpc_netifdata->rx_free_descs--;
 
 	LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-				("lpc_rxqueue_pbuf: Queueing packet %p at index %d, free %d\n",
+				("lpc_rxqueue_pbuf: Queueing packet %p at index %lu, free %lu\n",
 				 p, idx, lpc_netifdata->rx_free_descs));
 
 	/* Update index for next pbuf */
@@ -302,7 +302,7 @@ static struct pbuf *lpc_low_level_input(struct netif *netif) {
 		p = NULL;
 
 		LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-					("lpc_low_level_input: RX error condition status 0x%08x\n",
+					("lpc_low_level_input: RX error condition status 0x%08lx\n",
 					 status));
 	}
 	else {
@@ -316,7 +316,7 @@ static struct pbuf *lpc_low_level_input(struct netif *netif) {
 
 		LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
 					("lpc_low_level_input: Packet received, %d bytes, "
-					 "status 0x%08x\n", p->len, status));
+					 "status 0x%08lx\n", p->len, status));
 	}
 
 	/* (Re)start receive polling */
@@ -486,8 +486,8 @@ static err_t lpc_low_level_output(struct netif *netif, struct pbuf *sendp)
 		lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_ENH_CIC(3);
 
 		LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-					("lpc_low_level_output: pbuf packet %p sent, chain %d,"
-					 " size %d, index %d, free %d\n", p, dn, p->len, idx,
+					("lpc_low_level_output: pbuf packet %p sent, chain %lu,"
+					 " size %d, index %lu, free %lu\n", p, dn, p->len, idx,
 					 lpc_netifdata->tx_free_descs));
 
 		/* Update next available descriptor */
@@ -666,8 +666,8 @@ s32_t lpc_rx_queue(struct netif *netif)
 		p = pbuf_alloc(PBUF_RAW, (u16_t) EMAC_ETH_MAX_FLEN, PBUF_RAM);
 		if (p == NULL) {
 			LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-						("lpc_rx_queue: could not allocate RX pbuf index %d, "
-						 "free %d)\n", lpc_netifdata->rx_next_idx,
+						("lpc_rx_queue: could not allocate RX pbuf index %lu, "
+						 "free %lu)\n", lpc_netifdata->rx_next_idx,
 						 lpc_netifdata->rx_free_descs));
 			return queued;
 		}
@@ -748,13 +748,13 @@ void lpc_tx_reclaim(struct netif *netif)
 		status = lpc_netifdata->ptdesc[ridx].CTRLSTAT;
 
 		LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-					("lpc_tx_reclaim: Reclaiming sent packet %p, index %d\n",
+					("lpc_tx_reclaim: Reclaiming sent packet %p, index %lu\n",
 					 lpc_netifdata->txpbufs[ridx], ridx));
 
 		/* Check TX error conditions */
 		if (status & TDES_ES) {
 			LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-						("lpc_tx_reclaim: TX error condition status 0x%x\n", status));
+						("lpc_tx_reclaim: TX error condition status 0x%lx\n", status));
 			LINK_STATS_INC(link.err);
 
 #if LINK_STATS == 1

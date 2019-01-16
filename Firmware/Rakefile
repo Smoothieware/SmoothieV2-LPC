@@ -27,6 +27,7 @@ if TARGET == 'Minialpha'
   # select the pinset either 2 or 6
   target_defines << '-DUART0_PINSET=2'
   target_defines << "-DNOETHERNET"
+  ENV['nonetwork'] = '1'
 elsif TARGET == 'Primealpha'
   # on G5
   target_defines << '-DUSE_UART0'
@@ -112,7 +113,7 @@ ARMVERSION = ENV['ARMVERSION'].nil? ? current_version :  ENV['ARMVERSION']
 # Set build type
 #BUILDTYPE= ENV['BUILDTYPE'] || 'Checked' unless defined? BUILDTYPE
 #puts "#{BUILDTYPE} build"
-NONETWORK = ENV['nonetwork'].nil? ? 0 :  ENV['nonetwork']
+NONETWORK = ENV['nonetwork'].nil? ? 0 : ENV['nonetwork']
 
 # add lpcopen HAL files
 hal_src = FileList['Hal/**/*.{c,cpp,s}']
