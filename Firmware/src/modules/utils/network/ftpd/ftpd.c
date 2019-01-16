@@ -46,7 +46,7 @@
 #include <string.h>
 
 #include "vfs.h"
-#define FTPD_DEBUG
+//#define FTPD_DEBUG
 #ifdef FTPD_DEBUG
 #define dbg_printf printf
 #else
