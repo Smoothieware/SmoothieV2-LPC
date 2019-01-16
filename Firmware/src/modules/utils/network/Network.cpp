@@ -35,9 +35,9 @@ REGISTER_MODULE(Network, Network::create)
 
 /* NETIF data */
 static struct netif lpc_netif;
-bool Network::enable_shell= false;
-bool Network::enable_httpd= false;
-bool Network::enable_ftpd= false;
+bool Network::enable_shell = false;
+bool Network::enable_httpd = false;
+bool Network::enable_ftpd = false;
 
 bool Network::create(ConfigReader& cr)
 {
@@ -69,8 +69,8 @@ bool Network::configure(ConfigReader& cr)
 		return false;
 	}
 
-	enable_shell= cr.get_bool(m, shell_enable_key, false);
-	enable_ftpd= cr.get_bool(m, ftp_enable_key, false);
+	enable_shell = cr.get_bool(m, shell_enable_key, false);
+	enable_ftpd = cr.get_bool(m, ftp_enable_key, false);
 
 	// register command handlers
 	using std::placeholders::_1;
@@ -81,11 +81,125 @@ bool Network::configure(ConfigReader& cr)
 	return true;
 }
 
-#define HELP(m) if(params == "-h") { os.printf("%s\n", m); return true; }
+#include "lwip/tcp.h"
+#include "lwip/inet.h"
+extern "C" struct tcp_pcb ** const tcp_pcb_lists[];
+static unsigned long netstat(char *pcOut)
+{
+	char *pcStart = pcOut;
+	enum tcp_state eState;
+	u16_t local_port, remote_port;
+	ip_addr_t local_ip, remote_ip;
+	int j= 1;
+	struct tcp_pcb *cpcb;
+	for (int i = 0; i < 4; i++) {
+    	for(cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
+			pcOut += sprintf(pcOut, "%2u           ", j++);
+			pcOut     += sprintf(pcOut, "TCP");
+			pcOut     += sprintf(pcOut, "        ");        //spacer
 
+			//OsIrqDisable();
+			//get all states during disabled preemption so that the pcb pointer can't be nulled in between
+			eState = cpcb->state;
+			local_port = cpcb->local_port;
+			local_ip = cpcb->local_ip;
+			remote_port = cpcb->remote_port;
+			remote_ip = cpcb->remote_ip;
+			//OsIrqEnable();
+
+
+			pcOut += sprintf(pcOut, "%15s", inet_ntoa(local_ip));
+			pcOut     += sprintf(pcOut, "   ");                            //spacer
+			pcOut     += sprintf(pcOut, "%5u", local_port);
+			pcOut     += sprintf(pcOut, "        ");         //spacer
+
+			if(remote_ip.addr != 0) {
+				pcOut += sprintf(pcOut, "%15s", inet_ntoa(remote_ip));
+				pcOut   += sprintf(pcOut, "   ");                     //spacer
+				pcOut += sprintf(pcOut, "%5u", remote_port);
+
+			} else {
+				pcOut += sprintf(pcOut, "---.---.---.---");                   //empty IP
+				pcOut   += sprintf(pcOut, "   ");                     //spacer
+				pcOut   += sprintf(pcOut, "-----");                   //emtpy Port
+			}
+
+			pcOut     += sprintf(pcOut, "          SOCKET    ");     //socket API
+			switch(eState) {
+				case CLOSED:
+					pcOut += sprintf(pcOut, "CLOSED");
+					break;
+
+				case LISTEN:
+					pcOut += sprintf(pcOut, "LISTEN");
+					break;
+
+				case ESTABLISHED:
+					pcOut += sprintf(pcOut, "ESTABLISHED");
+					break;
+
+				case FIN_WAIT_1:
+					pcOut += sprintf(pcOut, "FIN_WAIT_1");
+					break;
+
+				case FIN_WAIT_2:
+					pcOut += sprintf(pcOut, "FIN_WAIT_2");
+					break;
+
+				case CLOSE_WAIT:
+					pcOut += sprintf(pcOut, "CLOSE_WAIT");
+					break;
+
+				case TIME_WAIT:
+					pcOut += sprintf(pcOut, "TIME_WAIT");
+					break;
+
+				case SYN_SENT:
+				case SYN_RCVD:
+					pcOut += sprintf(pcOut, "CONNECTING");
+					break;
+
+				case CLOSING:
+					pcOut += sprintf(pcOut, "CLOSING");
+					break;
+
+				case LAST_ACK:
+					pcOut += sprintf(pcOut, "LAST_ACK");
+					break;
+
+				default:
+					pcOut += sprintf(pcOut, "???");
+					break;
+			}
+
+			// 	case NETCONN_UDP:
+			// 		pcOut     += sprintf(pcOut, "UDP");
+			// 		pcOut     += sprintf(pcOut, "        ");                                     //spacer
+			// 		pcOut += sprintf(pcOut, "%15s", sock->conn->pcb.udp->local_ip);
+			// 		pcOut     += sprintf(pcOut, "   ");                                         //spacer
+			// 		pcOut     += sprintf(pcOut, "%5u", sock->conn->pcb.udp->local_port);
+			// 		pcOut     += sprintf(pcOut, "        ");                                     //spacer
+			// 		pcOut     += sprintf(pcOut, "               ");                 //empty foreign IP (n/a in UDP)
+			// 		pcOut     += sprintf(pcOut, "   ");                            //spacer
+			// 		pcOut     += sprintf(pcOut, "     ");                          //empty foreign port (n/a in UDP)
+			// 		pcOut     += sprintf(pcOut, "          SOCKET");         //socket API
+			// 		break;
+
+			// 	default:
+			// 		pcOut     += sprintf(pcOut, "???");
+			// 		break;
+
+			// }
+			pcOut += sprintf(pcOut, "\r\n");
+		}
+	}
+	return((unsigned long)(pcOut - pcStart));
+}
+
+#define HELP(m) if(params == "-h") { os.printf("%s\n", m); return true; }
 bool Network::handle_net_cmd( std::string& params, OutputStream& os )
 {
-	HELP("net - show network status");
+	HELP("net - show network status, -v also shows netstat");
 
 	if(lpc_netif.flags & NETIF_FLAG_LINK_UP) {
 		os.printf("Link UP\n");
@@ -101,6 +215,19 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
 	} else {
 		os.printf("Link DOWN\n");
 	}
+
+	if(!params.empty()) {
+		// do netstat-like dump
+		os.puts("\nNetstat...\n");
+		char *buf= (char *)malloc(2048);
+		if(buf != NULL) {
+			unsigned long n= netstat(buf);
+			buf[n]= '\0';
+			os.puts(buf);
+			free(buf);
+		}
+	}
+
 	os.set_no_response();
 
 	return true;
@@ -165,7 +292,7 @@ void Network::vSetupIFTask(void *pvParameters)
 	dhcp_start(&lpc_netif);
 #endif
 
-	/* Initialize and start application(s) */
+	/* Initialize application(s) */
 	if(enable_shell) {
 		extern void shell_init(void);
 		shell_init();
@@ -207,12 +334,13 @@ void Network::vSetupIFTask(void *pvParameters)
 
 				tcpip_callback_with_block((tcpip_callback_fn) netif_set_link_up,
 				                          (void *) &lpc_netif, 1);
+				printf("Network::start() - Link connect status: UP\r\n");
+
 			} else {
 				tcpip_callback_with_block((tcpip_callback_fn) netif_set_link_down,
 				                          (void *) &lpc_netif, 1);
+				printf("Network::start() - Link connect status: DOWN\r\n");
 			}
-
-			printf("Network::start() - Link connect status: %d\r\n", ((physts & PHY_LINK_CONNECTED) != 0));
 		}
 
 		/* Delay for link detection (250mS) */
