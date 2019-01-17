@@ -79,6 +79,7 @@
 /* DHCP is ok, UDP is required with DHCP */
 #define LWIP_DHCP                       1
 #define LWIP_UDP                        1
+#define LWIP_NETIF_API                  1
 
 /* Hostname can be used */
 #define LWIP_NETIF_HOSTNAME             1

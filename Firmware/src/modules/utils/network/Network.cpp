@@ -30,6 +30,7 @@
 #define network_enable_key "enable"
 #define shell_enable_key "shell_enable"
 #define ftp_enable_key "ftp_enable"
+#define webserver_enable_key "webserver_enable"
 
 REGISTER_MODULE(Network, Network::create)
 
@@ -71,6 +72,7 @@ bool Network::configure(ConfigReader& cr)
 
 	enable_shell = cr.get_bool(m, shell_enable_key, false);
 	enable_ftpd = cr.get_bool(m, ftp_enable_key, false);
+	enable_httpd = cr.get_bool(m, webserver_enable_key, false);
 
 	// register command handlers
 	using std::placeholders::_1;
@@ -90,10 +92,10 @@ static unsigned long netstat(char *pcOut)
 	enum tcp_state eState;
 	u16_t local_port, remote_port;
 	ip_addr_t local_ip, remote_ip;
-	int j= 1;
+	int j = 1;
 	struct tcp_pcb *cpcb;
 	for (int i = 0; i < 4; i++) {
-    	for(cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
+		for(cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
 			pcOut += sprintf(pcOut, "%2u           ", j++);
 			pcOut     += sprintf(pcOut, "TCP");
 			pcOut     += sprintf(pcOut, "        ");        //spacer
@@ -219,10 +221,10 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
 	if(!params.empty()) {
 		// do netstat-like dump
 		os.puts("\nNetstat...\n");
-		char *buf= (char *)malloc(2048);
+		char *buf = (char *)malloc(2048);
 		if(buf != NULL) {
-			unsigned long n= netstat(buf);
-			buf[n]= '\0';
+			unsigned long n = netstat(buf);
+			buf[n] = '\0';
 			os.puts(buf);
 			free(buf);
 		}
@@ -237,7 +239,8 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
 static void tcpip_init_done_signal(void *arg)
 {
 	/* Tell main thread TCP/IP init is done */
-	*(s32_t *) arg = 1;
+	sys_sem_t *init_sem = (sys_sem_t*)arg;
+	sys_sem_signal(init_sem);
 }
 
 // used by various emac drivers
@@ -246,23 +249,25 @@ extern "C" void msDelay(uint32_t ms)
 	vTaskDelay(pdMS_TO_TICKS(ms));
 }
 
+extern "C" void http_server_init(void);
+
 /* LWIP kickoff and PHY link monitor thread */
 void Network::vSetupIFTask(void *pvParameters)
 {
 	ip_addr_t ipaddr, netmask, gw;
-	volatile s32_t tcpipdone = 0;
 	uint32_t physts;
 	static int prt_ip = 0;
 
-	/* Wait until the TCP/IP thread is finished before
-	   continuing or wierd things may happen */
-	printf("Network: Waiting for TCPIP thread to initialize...\n");
-	tcpip_init(tcpip_init_done_signal, (void *) &tcpipdone);
-	while (!tcpipdone) {
-		vTaskDelay(pdMS_TO_TICKS(1));
+	{
+		// Wait until the TCP/IP thread is finished before continuing or wierd things may happen
+		printf("Network: Waiting for TCPIP thread to initialize...\n");
+		sys_sem_t init_sem;
+		sys_sem_new(&init_sem, 0);
+		tcpip_init(tcpip_init_done_signal, (void *) &init_sem);
+		sys_sem_wait(&init_sem);
+		sys_sem_free(&init_sem);
+		printf("Network: TCPIP thread has started...\n");
 	}
-
-	printf("Network: Starting LWIP TCP echo server...\n");
 
 	/* Static IP assignment */
 #if LWIP_DHCP
@@ -276,20 +281,21 @@ void Network::vSetupIFTask(void *pvParameters)
 #endif
 
 	/* Add netif interface for lpc17xx_8x */
-	if (!netif_add(&lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init,
-	               tcpip_input)) {
+	if (!netifapi_netif_add(&lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init,
+	                        tcpip_input)) {
 		printf("Network: Net interface failed to initialize\n");
 	}
 
-	netif_set_default(&lpc_netif);
-	netif_set_up(&lpc_netif);
+	netifapi_netif_set_default(&lpc_netif);
+	netifapi_netif_set_up(&lpc_netif);
 
 	/* Enable MAC interrupts only after LWIP is ready */
 	NVIC_SetPriority(ETHERNET_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
 	NVIC_EnableIRQ(ETHERNET_IRQn);
 
 #if LWIP_DHCP
-	dhcp_start(&lpc_netif);
+	netifapi_dhcp_start(&lpc_netif);
+	//dhcp_start(&lpc_netif);
 #endif
 
 	/* Initialize application(s) */
@@ -300,6 +306,10 @@ void Network::vSetupIFTask(void *pvParameters)
 
 	if(enable_ftpd) {
 		ftpd_init();
+	}
+
+	if(enable_httpd) {
+		http_server_init();
 	}
 
 	/* This loop monitors the PHY link and will handle cable events
