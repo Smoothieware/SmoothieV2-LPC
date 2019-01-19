@@ -13,22 +13,14 @@
 #include <map>
 
 
-#define http_get "GET "
-#define http_post "POST "
-#define http_options "OPTIONS "
-#define http_10 "HTTP/1.0"
-#define http_11 "HTTP/1.1"
 #define http_content_length "Content-Length: "
 #define http_cache_control "Cache-Control: "
 #define http_no_cache "no-cache"
-#define http_index_html "/index.html"
 #define http_404_html "/404.html"
-#define http_header_preflight "HTTP/1.0 200 OK\r\nAccess-Control-Allow-Methods: POST\r\nAccess-Control-Allow-Headers:X-Filename, Content-Type\r\nAccess-Control-Max-Age: 86400\r\n"
 #define http_header_200 "HTTP/1.0 200 OK\r\n"
 #define http_header_304 "HTTP/1.0 304 Not Modified\r\nExpires: Thu, 31 Dec 2037 23:55:55 GMT\r\nCache-Control:max-age=315360000\r\nX-Cache: HIT\r\n"
 #define http_header_404 "HTTP/1.0 404 Not found\r\n"
 #define http_header_503 "HTTP/1.0 503 Failed\r\n"
-#define http_header_all "Server: uIP/1.0\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\n"
 #define http_content_type_plain "Content-Type: text/plain\r\n\r\n"
 #define http_content_type_html "Content-Type: text/html\r\n\r\n"
 #define http_content_type_css  "Content-Type: text/css\r\n\r\n"
@@ -47,6 +39,7 @@
 
 using hdr_map_t = std::map<std::string, std::string>;
 
+// TODO make this configurabe in config
 static const char *webdir= "/sd/www";
 
 /* Send the HTML header
@@ -58,13 +51,13 @@ static bool write_header(struct netconn *conn, const char *hdr)
     return err == ERR_OK;
 }
 
+// construct path and test if file exists
 static std::string test_file(const char *fn)
 {
     std::string path(webdir);
     path.append(fn);
     FILE *fd = fopen(path.c_str(), "r");
     if (fd == NULL) {
-        printf("Failed to open: %s\n", path.c_str());
         return "";
     }
     fclose(fd);
@@ -144,7 +137,7 @@ static err_t websocket_decode(char *buf, uint16_t& len)
     return ERR_VAL;
 }
 
-static int websocket_write(struct netconn *conn, const char *data, uint16_t len)
+static int websocket_write(struct netconn *conn, const char *data, uint16_t len, uint8_t mode=0x02)
 {
     // TODO handle larger packets
     // TODO handle fragmentation, fragment large packets
@@ -153,7 +146,7 @@ static int websocket_write(struct netconn *conn, const char *data, uint16_t len)
         return len;
     }
     unsigned char buf[len + 2];
-    buf[0] = 0x80 | 0x02; // binary
+    buf[0] = 0x80 | mode; // binary/text
     buf[1] = len;
     memcpy(&buf[2], data, len);
     len += 2;
@@ -224,7 +217,11 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
             // decode payload, return in buf with new len
             err = websocket_decode(buf, n);
             if(err == ERR_OK) {
-                process_command_buffer(n, buf, &os, line, cnt, discard);
+                buf[n]= '\0';
+                printf("websocket: got %s\n", buf);
+                // echo back
+                websocket_write(conn, buf, n, 0x01);
+                //process_command_buffer(n, buf, &os, line, cnt, discard);
             } else if(err == ERR_CLSD) {
                 break;
             } else {
@@ -461,12 +458,10 @@ static void http_server_netconn_serve(struct netconn *conn)
             }
             printf("badly formatted websocket request\n");
 
-        } else if(method == "GET" && request_target == "/") {
-            write_header(conn, http_header_200);
-            write_header(conn, http_content_type_html);
-            write_page(conn, "/index.html");
-
         } else if(method == "GET") {
+            if(request_target == "/") {
+                request_target= "/index.html";
+            }
             std::string path= test_file(request_target.c_str());
             if(!path.empty()) {
                 write_header(conn, http_header_200);
