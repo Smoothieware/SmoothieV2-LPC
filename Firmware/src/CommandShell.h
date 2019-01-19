@@ -22,6 +22,8 @@ private:
     bool rm_cmd(std::string& params, OutputStream& os);
     bool mv_cmd(std::string& params, OutputStream& os);
     bool cp_cmd(std::string& params, OutputStream& os);
+    bool cd_cmd(std::string& params, OutputStream& os);
+    bool mkdir_cmd(std::string& params, OutputStream& os);
     bool config_set_cmd(std::string& params, OutputStream& os);
     bool config_get_cmd(std::string& params, OutputStream& os);
     bool mem_cmd(std::string& params, OutputStream& os);

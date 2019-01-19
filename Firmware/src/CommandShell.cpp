@@ -52,6 +52,8 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "rm", std::bind( &CommandShell::rm_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "mv", std::bind( &CommandShell::mv_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "cp", std::bind( &CommandShell::cp_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "cd", std::bind( &CommandShell::cd_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "mkdir", std::bind( &CommandShell::mkdir_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "cat", std::bind( &CommandShell::cat_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "md5sum", std::bind( &CommandShell::md5sum_cmd, this, _1, _2) );
 
@@ -213,6 +215,34 @@ bool CommandShell::rm_cmd(std::string& params, OutputStream& os)
     }
     int s = remove(fn.c_str());
     if (s != 0) os.printf("Could not delete %s\n", fn.c_str());
+    return true;
+}
+
+bool CommandShell::cd_cmd(std::string& params, OutputStream& os)
+{
+    HELP("change directory");
+    std::string fn = stringutils::shift_parameter( params );
+    if(fn.empty()) {
+        os.puts("directory name required\n");
+        return true;
+    }
+    if(FR_OK != f_chdir(fn.c_str())){
+        os.puts("failed to change directory\n");
+    }
+    return true;
+}
+
+bool CommandShell::mkdir_cmd(std::string& params, OutputStream& os)
+{
+    HELP("make directory");
+    std::string fn = stringutils::shift_parameter( params );
+    if(fn.empty()) {
+        os.puts("directory name required\n");
+        return true;
+    }
+    if(FR_OK != f_mkdir(fn.c_str())) {
+        os.puts("failed to make directory\n");
+    }
     return true;
 }
 
