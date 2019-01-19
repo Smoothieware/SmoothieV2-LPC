@@ -35,6 +35,7 @@ public:
 	bool is_no_response() const { return no_response; }
 	int flush_prepend();
 	void clear_flags() { append_nl= prepend_ok= no_response= false; }
+	void set_closed() { closed= true; }
 
 private:
 	// Hack to allow us to create a ostream writing to a supplied write function (used for the USBCDC)
@@ -50,6 +51,7 @@ private:
 	std::ostream *os;
 	FdBuf *fdbuf;
 	std::string prepending;
+	bool closed{false};
 	struct {
 		bool append_nl: 1;
 		bool prepend_ok: 1;

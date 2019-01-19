@@ -34,7 +34,7 @@ int OutputStream::flush_prepend()
 
 int OutputStream::write(const char *buffer, size_t size)
 {
-	if(os == nullptr) return 0;
+	if(os == nullptr || closed) return 0;
 	if(prepend_ok) {
 		prepending.append(buffer, size);
 	} else {

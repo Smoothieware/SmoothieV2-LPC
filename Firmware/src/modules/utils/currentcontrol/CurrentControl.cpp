@@ -141,6 +141,8 @@ bool CurrentControl::set_current(const std::string& name, float current)
     if(n >= Robot::getInstance()->get_number_registered_motors()) return false;
     bool ok= Robot::getInstance()->actuators[n]->set_current(current);
 #else
+    char axis= lookup_name(name.c_str());
+    if(axis == 0) return false;
     bool ok= false;
 #endif
 

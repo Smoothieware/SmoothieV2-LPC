@@ -17,10 +17,11 @@
 #define http_cache_control "Cache-Control: "
 #define http_no_cache "no-cache"
 #define http_404_html "/404.html"
-#define http_header_200 "HTTP/1.0 200 OK\r\n"
-#define http_header_304 "HTTP/1.0 304 Not Modified\r\nExpires: Thu, 31 Dec 2037 23:55:55 GMT\r\nCache-Control:max-age=315360000\r\nX-Cache: HIT\r\n"
-#define http_header_404 "HTTP/1.0 404 Not found\r\n"
-#define http_header_503 "HTTP/1.0 503 Failed\r\n"
+#define http_header_200 "HTTP/1.1 200 OK\r\n"
+#define http_header_304 "HTTP/1.1 304 Not Modified\r\nExpires: Thu, 31 Dec 2037 23:55:55 GMT\r\nCache-Control:max-age=315360000\r\nX-Cache: HIT\r\n"
+#define http_header_400 "HTTP/1.1 400 Bad Request\r\n"
+#define http_header_404 "HTTP/1.1 404 Not found\r\n"
+#define http_header_503 "HTTP/1.1 503 Failed\r\n"
 #define http_content_type_plain "Content-Type: text/plain\r\n\r\n"
 #define http_content_type_html "Content-Type: text/html\r\n\r\n"
 #define http_content_type_css  "Content-Type: text/css\r\n\r\n"
@@ -137,7 +138,7 @@ static err_t websocket_decode(char *buf, uint16_t& len)
     return ERR_VAL;
 }
 
-static int websocket_write(struct netconn *conn, const char *data, uint16_t len, uint8_t mode=0x02)
+static int websocket_write(struct netconn *conn, const char *data, uint16_t len, uint8_t mode=0x01)
 {
     // TODO handle larger packets
     // TODO handle fragmentation, fragment large packets
@@ -157,6 +158,8 @@ static int websocket_write(struct netconn *conn, const char *data, uint16_t len,
     return len;
 }
 
+// this may need to stay around until command thread is done with it so we do not delete it until we need to create another
+static OutputStream *os= nullptr;
 static err_t handle_websocket(struct netconn *conn, const char *keystr)
 {
     unsigned char encoded_key[32];
@@ -198,6 +201,8 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
     write_header(conn, swa.c_str());
     write_header(conn, "\r\n");
 
+    printf("websocket now open\n");
+
     // now the socket is a websocket
     // ....
     const u16_t bufsize = 256;
@@ -205,8 +210,12 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
     char line[132];
     size_t cnt = 0;
     bool discard = false;
-    // FIXME this may need to stay around until command thread is done with it
-    OutputStream os([conn](const char *ibuf, size_t ilen) { return websocket_write(conn, ibuf, ilen); });
+
+    // if there is an old Outputstream delete it first
+    if(os != nullptr) delete(os);
+    // create the OutputStream that commands can write to
+    os= new OutputStream([conn](const char *ibuf, size_t ilen) { return websocket_write(conn, ibuf, ilen, 0x01); });
+
     struct pbuf *p;
     err_t err;
     // read from connection until it closes
@@ -219,9 +228,9 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
             if(err == ERR_OK) {
                 buf[n]= '\0';
                 printf("websocket: got %s\n", buf);
-                // echo back
-                websocket_write(conn, buf, n, 0x01);
-                //process_command_buffer(n, buf, &os, line, cnt, discard);
+                // echo back text
+                //websocket_write(conn, buf, n, 0x01);
+                process_command_buffer(n, buf, os, line, cnt, discard);
             } else if(err == ERR_CLSD) {
                 break;
             } else {
@@ -231,10 +240,19 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
         }
     }
 
+    // make sure command thread does not try to write to the soon to be closed (and deleted) conn
+    os->set_closed();
+
     // exit string
     const char ebuf[] = {0x88, 0x02, 0x03, 0xe8};
     u16_t elen = sizeof(ebuf);
-    return netconn_write(conn, ebuf, elen, NETCONN_COPY);
+    netconn_write(conn, ebuf, elen, NETCONN_COPY);
+
+    // hang around for a bit to allow things to stop using OutputString
+    // FIXME there must be a better way to do this
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    return ERR_OK;
 }
 
 static err_t readto(struct netconn *conn, struct pbuf* &cp, std::string match, uint16_t& offset, uint16_t from = 0)
@@ -457,6 +475,7 @@ static void http_server_netconn_serve(struct netconn *conn)
                 }
             }
             printf("badly formatted websocket request\n");
+            write_header(conn, http_header_400);
 
         } else if(method == "GET") {
             if(request_target == "/") {
@@ -494,6 +513,8 @@ static void http_server_netconn_serve(struct netconn *conn)
             printf("Unhandled request\n");
         }
     }
+
+    printf("request closed\n");
 }
 
 /** The main function, never returns! */
@@ -530,5 +551,5 @@ static void http_server_thread(void *arg)
 /** Initialize the HTTP server (start its thread) */
 void http_server_init(void)
 {
-    sys_thread_new("http_server_netconn", http_server_thread, NULL, 1025, DEFAULT_THREAD_PRIO);
+    sys_thread_new("http_server_netconn", http_server_thread, NULL, 1000, DEFAULT_THREAD_PRIO);
 }
