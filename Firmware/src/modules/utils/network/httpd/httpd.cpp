@@ -140,21 +140,34 @@ static err_t websocket_decode(char *buf, uint16_t& len)
 
 static int websocket_write(struct netconn *conn, const char *data, uint16_t len, uint8_t mode=0x01)
 {
-    // TODO handle larger packets
-    // TODO handle fragmentation, fragment large packets
-    if (len > 125) {
-        printf("websocket_write: packet too large\n");
-        return len;
+    // potentially large packets should not be put on the stack
+    unsigned char *buf= (unsigned char*)malloc(len + 4);
+    if(buf == NULL) {
+        printf("websocket_write: out of memory\n");
+        return -1;
     }
-    unsigned char buf[len + 2];
     buf[0] = 0x80 | mode; // binary/text
-    buf[1] = len;
-    memcpy(&buf[2], data, len);
-    len += 2;
+    int o;
+    if (len < 126) {
+        o= 1;
+        buf[1] = len;
+    }else if(len < 65535) {
+        o= 3;
+        buf[1]= 126;
+        buf[2]= len >> 8;
+        buf[3]= len & 0xFF;
+    }else {
+        printf("websocket_write: buffer too big\n");
+        free(buf);
+        return -1;
+    }
+    memcpy(&buf[o+1], data, len);
+    len += o+1;
     err_t err = netconn_write(conn, buf, len, NETCONN_COPY);
     if(err != ERR_OK) {
         printf("websocket_write: error writing: %d\n", err);
     }
+    free(buf);
     return len;
 }
 
@@ -227,7 +240,7 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
             err = websocket_decode(buf, n);
             if(err == ERR_OK) {
                 buf[n]= '\0';
-                printf("websocket: got %s\n", buf);
+                //printf("websocket: got %s\n", buf);
                 // echo back text
                 //websocket_write(conn, buf, n, 0x01);
                 process_command_buffer(n, buf, os, line, cnt, discard);
@@ -248,10 +261,7 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
     u16_t elen = sizeof(ebuf);
     netconn_write(conn, ebuf, elen, NETCONN_COPY);
 
-    // hang around for a bit to allow things to stop using OutputString
-    // FIXME there must be a better way to do this
-    vTaskDelay(pdMS_TO_TICKS(5000));
-
+    printf("websocket: closing\n");
     return ERR_OK;
 }
 

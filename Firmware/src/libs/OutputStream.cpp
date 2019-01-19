@@ -77,39 +77,11 @@ int OutputStream::printf(const char *format, ...)
 
 int OutputStream::FdBuf::sync()
 {
-	// USB CDC can't write more than 64 bytes at a time so limit it here
 	if(!this->str().empty()) {
 		size_t len = this->str().size();
-		if(len <= 64) {
-			// write fnc may return less than len need to address that case
-			size_t sent_cnt = 0;
-			while(sent_cnt < len) {
-				int n = fnc(this->str().substr(sent_cnt, len).c_str(), len-sent_cnt);
-				if(n >= 0) {
-					sent_cnt += n;
-				} else {
-					::printf("error: write fnc failed\n");
-					break;
-				}
-			}
-
-			//::printf("write: %d\n", s);
-
-		} else {
-			// FIXME: hack before we fix the cdc driver
-			size_t n = len;
-			int off = 0;
-			while(n > 0) {
-				int s = std::min((size_t)64, n);
-				s = fnc(this->str().substr(off, s).c_str(), s);
-				if( s >= 0) {
-					off += s;
-					n -= s;
-				} else {
-					::printf("error: write fnc failed\n");
-					break;
-				}
-			}
+		int n = fnc(this->str().c_str(), len);
+		if(n < 0) {
+			::printf("OutputStream error: write fnc failed\n");
 		}
 		this->str("");
 	}
