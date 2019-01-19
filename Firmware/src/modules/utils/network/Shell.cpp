@@ -1,4 +1,4 @@
-#include "lwip/opt.h"
+    #include "lwip/opt.h"
 #include "lwip/sys.h"
 #include "lwip/api.h"
 
@@ -44,19 +44,22 @@ static void shell_thread(void *arg)
         // wait for new connection.
         err = netconn_accept(conn, &newconn);
         printf("DEBUG: shell: accepted new connection %p, %s\n", newconn, lwip_strerr(err));
-        // create an output stream that writes to the connection
 
         /* Process the new connection. */
         if (err == ERR_OK) {
-
+            netconn_write(newconn, "Welcome to the Smoothie Shell\n", 30, NETCONN_COPY);
             struct pbuf *p;
             // read from connection until it closes
             while ((err = netconn_recv_tcp_pbuf(newconn, &p)) == ERR_OK) {
                 int n= pbuf_copy_partial(p, buf, bufsize, 0);
+                pbuf_free(p);
                 if(n > 0) {
+                    if(strcmp(buf, "quit\n") == 0) {
+                        netconn_write(newconn, "Goodbye!\n", 9, NETCONN_COPY);
+                        break;
+                    }
                     process_command_buffer(n, buf, &os, line, cnt, discard);
                 }
-                pbuf_free(p);
             }
             struct netconn *c= newconn;
             newconn= nullptr;

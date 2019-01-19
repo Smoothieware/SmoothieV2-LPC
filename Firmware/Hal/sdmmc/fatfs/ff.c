@@ -4137,7 +4137,7 @@ FRESULT f_getcwd (
 	UINT vl;
 #endif
 #if FF_STR_VOLUME_ID
-	const char *vp;
+//	const char *vp;
 #endif
 	FILINFO fno;
 	DEF_NAMBUF

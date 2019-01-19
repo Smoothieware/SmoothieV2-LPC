@@ -183,7 +183,7 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
     /* Concatenate key */
     memcpy(key, keystr, len);
     strcpy(&key[len], WS_GUID); // FIXME needs to be length checked
-    printf("Resulting key: %s\n", key);
+    //printf("Resulting key: %s\n", key);
 
     unsigned char sha1sum[20];
     mbedtls_sha1((unsigned char *) key, sizeof(WS_GUID) + len - 1, sha1sum);
@@ -193,18 +193,12 @@ static err_t handle_websocket(struct netconn *conn, const char *keystr)
     int ok = mbedtls_base64_encode(encoded_key, sizeof(encoded_key), &olen, sha1sum, 20);
     if (ok == 0) {
         encoded_key[olen] = '\0';
-        printf("Base64 encoded: %s\n", encoded_key);
+        //printf("Base64 encoded: %s\n", encoded_key);
     } else {
         printf("base64 encode failed\n");
         return ERR_VAL;
     }
 
-    /*
-    HTTP/1.1 101 Switching Protocols
-    Upgrade: websocket
-    Connection: Upgrade
-    Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
-    */
     write_header(conn, "HTTP/1.1 101 Switching Protocols\r\n");
     write_header(conn, "Upgrade: websocket\r\n");
     write_header(conn, "Connection: Upgrade\r\n");

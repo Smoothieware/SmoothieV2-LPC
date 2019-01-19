@@ -765,20 +765,20 @@ static void cmd_quit(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate 
 
 static void cmd_cwd(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate *fsm)
 {
-	// if (!vfs_chdir(fsm->vfs, arg)) {
-	// 	send_msg(pcb, fsm, msg250);
-	// } else {
+	if (!vfs_chdir(fsm->vfs, arg)) {
+		send_msg(pcb, fsm, msg250);
+	} else {
 		send_msg(pcb, fsm, msg550);
-	// }
+	}
 }
 
 static void cmd_cdup(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate *fsm)
 {
-	// if (!vfs_chdir(fsm->vfs, "..")) {
-	// 	send_msg(pcb, fsm, msg250);
-	// } else {
+	if (!vfs_chdir(fsm->vfs, "..")) {
+		send_msg(pcb, fsm, msg250);
+	} else {
 		send_msg(pcb, fsm, msg550);
-//	}
+	}
 }
 
 static void cmd_pwd(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate *fsm)

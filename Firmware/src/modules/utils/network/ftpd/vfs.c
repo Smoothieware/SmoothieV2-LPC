@@ -99,7 +99,7 @@ vfs_file_t* vfs_open(vfs_t* vfs, const char* filename, const char* mode) {
 }
 
 char* vfs_getcwd(vfs_t* vfs, void* dummy1, int dummy2) {
-#if 0
+#if 1
 	char* cwd = malloc(255);
 	FRESULT r = f_getcwd(cwd, 255);
 	if (r != FR_OK) {
