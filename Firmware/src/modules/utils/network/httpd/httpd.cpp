@@ -36,14 +36,18 @@
 #define http_content_type_png  "Content-Type: image/png\r\n\r\n"
 #define http_content_type_gif  "Content-Type: image/gif\r\n\r\n"
 #define http_content_type_jpg  "Content-Type: image/jpeg\r\n\r\n"
+#define http_content_type_js  "Content-Type: application/javascript\r\n\r\n"
 #define http_html ".html"
 #define http_css ".css"
 #define http_png ".png"
 #define http_gif ".gif"
 #define http_jpg ".jpg"
 #define http_txt ".txt"
+#define http_js ".js"
 
 using hdr_map_t = std::map<std::string, std::string>;
+
+static const char *webdir= "/sd/www";
 
 /* Send the HTML header
  * NETCONN_NOCOPY: our data is const static, so no need to copy it
@@ -54,12 +58,46 @@ static bool write_header(struct netconn *conn, const char *hdr)
     return err == ERR_OK;
 }
 
+static std::string test_file(const char *fn)
+{
+    std::string path(webdir);
+    path.append(fn);
+    FILE *fd = fopen(path.c_str(), "r");
+    if (fd == NULL) {
+        printf("Failed to open: %s\n", path.c_str());
+        return "";
+    }
+    fclose(fd);
+    return path;
+}
+
 static bool write_page(struct netconn *conn, const char *file)
 {
+    FILE *fd = fopen(file, "r");
+    if (fd == NULL) {
+        printf("Failed to open: %s\n", file);
+        return false;
+    }
 
-    err_t err = netconn_write(conn, file, strlen(file), NETCONN_COPY);
-    return err == ERR_OK;
+    while(!feof(fd)) {
+        char buf[1000];
+        int len = fread(buf, 1, sizeof(buf), fd);
+        if (len <= 0) {
+            break;
+
+        } else {
+            err_t err = netconn_write(conn, buf, len, NETCONN_COPY);
+            if(err != ERR_OK) {
+                printf("write_page: got write error: %d\n", err);
+                fclose(fd);
+                return false;
+            }
+        }
+    }
+    fclose(fd);
+    return true;
 }
+
 
 static err_t websocket_decode(char *buf, uint16_t& len)
 {
@@ -129,9 +167,9 @@ static int websocket_write(struct netconn *conn, const char *data, uint16_t len)
 static err_t handle_websocket(struct netconn *conn, const char *keystr)
 {
     unsigned char encoded_key[32];
-    char key[64];
-    const char WS_GUID[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     int len = strlen(keystr);
+    const char WS_GUID[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+    char key[len+sizeof(WS_GUID)];
 
     /* Concatenate key */
     memcpy(key, keystr, len);
@@ -308,8 +346,8 @@ static err_t parse_headers(struct netconn *conn, struct pbuf* &cp, std::string& 
     }
     methbuf[n + 1] = '\0';
 
-    printf("parse_headers: got method: %s\n", methbuf);
-    method = methbuf;
+    //printf("parse_headers: got method: %s\n", methbuf);
+    method.assign(methbuf, n);
 
     // get the request target
     uint16_t last_offset = offset + 1;
@@ -327,8 +365,8 @@ static err_t parse_headers(struct netconn *conn, struct pbuf* &cp, std::string& 
         return ERR_VAL;
     }
     reqbuf[n + 1] = '\0';
-    request_target = reqbuf;
-    printf("parse_headers: reqbuf: %s\n", reqbuf);
+    request_target.assign(reqbuf, len);
+    //printf("parse_headers: reqbuf: %s %d\n", request_target.c_str(), request_target.size());
 
     // read the rest of the line (will be the request version HTTP/1.1)
     last_offset = offset + 1;
@@ -351,7 +389,7 @@ static err_t parse_headers(struct netconn *conn, struct pbuf* &cp, std::string& 
             // NOTE real version of pbuf_free_header() will have issues with last_offset being > pbuf->tot_len
             // So:- if(last_offset > cp->tot_len) last_offset= cp->tot_len;
             cp = pbuf_free_header(cp, offset + 1);
-            printf("parse_headers: end of headers\n");
+            //printf("parse_headers: end of headers\n");
             return ERR_OK;
         }
 
@@ -364,7 +402,7 @@ static err_t parse_headers(struct netconn *conn, struct pbuf* &cp, std::string& 
         hdrbuf[n + 1] = '\0';
         last_offset = offset + 2;
 
-        printf("parse_headers: reading header: %s\n", hdrbuf);
+        //printf("parse_headers: reading header: %s\n", hdrbuf);
         char *o = strchr(hdrbuf, ':');
         if(o == nullptr || o + 2 >= &hdrbuf[len]) {
             printf("parse_headers: bad header\n");
@@ -393,7 +431,7 @@ static void http_server_netconn_serve(struct netconn *conn)
     } else {
 
         printf("method: %s\n", method.c_str());
-        printf("request_target: %s\n", request_target.c_str());
+        printf("request_target: <%s>\n", request_target.c_str());
         printf("Headers: \n");
         for(auto& x : hdrs) {
             printf(" %s = %s\n", x.first.c_str(), x.second.c_str());
@@ -426,18 +464,41 @@ static void http_server_netconn_serve(struct netconn *conn)
         } else if(method == "GET" && request_target == "/") {
             write_header(conn, http_header_200);
             write_header(conn, http_content_type_html);
-            write_page(conn, "index.html");
+            write_page(conn, "/index.html");
 
         } else if(method == "GET") {
-            write_header(conn, http_header_200);
-            write_header(conn, http_content_type_html);
-            write_page(conn, request_target.c_str());
+            std::string path= test_file(request_target.c_str());
+            if(!path.empty()) {
+                write_header(conn, http_header_200);
+                std::string ext;
+                auto o= request_target.find_last_of('.');
+                if(o != std::string::npos) {
+                    ext= request_target.substr(o);
+                }
+
+                printf("ext: <%s>\n", ext.c_str());
+
+                if(ext == http_html) {
+                    write_header(conn, http_content_type_html);
+                }else if(ext == http_css) {
+                    write_header(conn, http_content_type_css);
+                }else if(ext == http_jpg) {
+                    write_header(conn, http_content_type_jpg);
+                }else if(ext == http_js) {
+                    write_header(conn, http_content_type_js);
+                }else{
+                    write_header(conn, http_content_type_html);
+                }
+                write_page(conn, path.c_str());
+
+            }else{
+                write_header(conn, http_header_404);
+            }
 
         } else {
             printf("Unhandled request\n");
         }
     }
-
 }
 
 /** The main function, never returns! */
@@ -447,7 +508,7 @@ static void http_server_thread(void *arg)
     err_t err;
     LWIP_UNUSED_ARG(arg);
 
-    printf("http_server: thread started");
+    printf("http_server: thread started\n");
 
     /* Create a new TCP connection handle */
     /* Bind to port 80 (HTTP) with default IP address */
@@ -474,5 +535,5 @@ static void http_server_thread(void *arg)
 /** Initialize the HTTP server (start its thread) */
 void http_server_init(void)
 {
-    sys_thread_new("http_server_netconn", http_server_thread, NULL, DEFAULT_THREAD_STACKSIZE, DEFAULT_THREAD_PRIO);
+    sys_thread_new("http_server_netconn", http_server_thread, NULL, 1025, DEFAULT_THREAD_PRIO);
 }

@@ -127,7 +127,7 @@
 
 /* TCPIP thread must run at higher priority than MAC threads! */
 #define TCPIP_THREAD_PRIO               (tskIDLE_PRIORITY + 4)
-#define TCPIP_THREAD_STACKSIZE          (2048)
+#define TCPIP_THREAD_STACKSIZE          (1000)
 #define TCPIP_MBOX_SIZE                 6
 
 #define MEM_LIBC_MALLOC                 1
