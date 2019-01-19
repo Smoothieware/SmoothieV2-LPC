@@ -249,7 +249,6 @@ extern "C" void msDelay(uint32_t ms)
 	vTaskDelay(pdMS_TO_TICKS(ms));
 }
 
-extern "C" void http_server_init(void);
 
 /* LWIP kickoff and PHY link monitor thread */
 void Network::vSetupIFTask(void *pvParameters)
@@ -309,6 +308,7 @@ void Network::vSetupIFTask(void *pvParameters)
 	}
 
 	if(enable_httpd) {
+		extern void http_server_init(void);
 		http_server_init();
 	}
 
