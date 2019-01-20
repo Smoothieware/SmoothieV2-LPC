@@ -207,10 +207,10 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::rm_cmd(std::string& params, OutputStream& os)
 {
-    HELP("delete: file");
+    HELP("delete: file or directory");
     std::string fn = stringutils::shift_parameter( params );
     if(fn.empty()) {
-        os.puts("file name required\n");
+        os.puts("name required\n");
         return true;
     }
     int s = remove(fn.c_str());
@@ -227,7 +227,7 @@ bool CommandShell::cd_cmd(std::string& params, OutputStream& os)
         return true;
     }
     if(FR_OK != f_chdir(fn.c_str())){
-        os.puts("failed to change directory\n");
+        os.puts("failed to change to directory\n");
     }
     return true;
 }
