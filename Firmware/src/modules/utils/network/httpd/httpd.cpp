@@ -192,6 +192,7 @@ public:
 // buf is provided and buflen must contain the size of that buf
 // ERR_BUF is returned if it is not big enough and the size it would need to be is assigned to readlen
 // readlen is set to the actual number of bytes read
+// TODO need to be able to return partial buffers of payload
 static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen, uint16_t& readlen)
 {
     err_t err;
@@ -211,8 +212,8 @@ static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen
     }
     if((hdr[0] & 0x80) == 0) {
         // must have fin bit
-        printf("websocket_read: FIN bit not set\n");
-        return ERR_VAL;
+        printf("websocket_read: WARNING FIN bit not set\n");
+        //return ERR_VAL;
     }
     if((hdr[1] & 0x80) == 0) {
         // must have mask bit
@@ -229,7 +230,12 @@ static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen
         o= 8;
         m= 4;
     } else {
-        printf("websocket_read: unsupported length: %d\n", plen);
+        uint32_t s1, s2;
+        uint8_t hdr2[10];
+        pbuf_copy_partial(state.p, hdr2, 10, 0);
+        s1= ((uint32_t)hdr2[2]<<24) | ((uint32_t)hdr2[3]<<16) | ((uint32_t)hdr2[4]<<8) | ((uint32_t)hdr2[5]&0xFF);
+        s2= ((uint32_t)hdr2[6]<<24) | ((uint32_t)hdr2[7]<<16) | ((uint32_t)hdr2[8]<<8) | ((uint32_t)hdr2[9]&0xFF);
+        printf("websocket_read: unsupported length: %d - %08lX %08lX\n", plen, s1, s2);
         return ERR_VAL;
     }
 
@@ -238,9 +244,10 @@ static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen
     if(ERR_OK == (err=read_len_bytes(state.conn, state.p, plen+o))) {
         // read entire set of header bytes into hdr
         n = pbuf_copy_partial(state.p, hdr, o, 0);
-        // get buffer for payload
-         if(buflen < plen) {
+        // check buffer size for payload
+        if(buflen < plen) {
             // the buffer provided is not big enough, tell caller what size it needs to be
+            printf("websocket_read: buffer is not big enough %d for %d bytes\n", buflen, plen);
             readlen= plen;
             return ERR_BUF;
         }
@@ -257,6 +264,7 @@ static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen
         // now unmask the data
         uint8_t opcode = hdr[0] & 0x0F;
         switch (opcode) {
+            case 0x00: // continuation
             case 0x01: // text
             case 0x02: // bin
                 /* unmask */
@@ -280,65 +288,6 @@ static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen
 
     return ERR_VAL;
 }
-
-#if 0
-static err_t websocket_decode(WebsocketState& state, char *buf, uint16_t& len)
-{
-    unsigned char *data = (unsigned char*) buf;
-    u16_t data_len = len;
-    if (data != NULL && data_len > 2) {
-        if((data[0] & 0x80) == 0) {
-            // must have fin bit
-            printf("websocket_decode: FIN bit not set\n");
-            return ERR_VAL;
-        }
-        if((data[1] & 0x80) == 0) {
-            // must have mask bit
-            printf("websocket_decode: MASK bit not set\n");
-            return ERR_VAL;
-        }
-        uint16_t o, m;
-        uint16_t plen= data[1] & 0x7F;
-        if(plen < 126) {
-            o= 6;
-            m= 2;
-        } else if(plen == 126) {
-            plen= (data[2]<<8) | (data[3]&0xFF);
-            o= 8;
-            m= 4;
-        } else {
-            printf("websocket_decode: unsupported length: %d\n", plen);
-            return ERR_VAL;
-        }
-        if(plen != data_len-o) {
-            printf("websocket_decode: len does not match packet length: %d - %d\n", plen, data_len-o);
-            //return ERR_VAL;
-        }
-
-        uint8_t opcode = data[0] & 0x0F;
-        switch (opcode) {
-            case 0x01: // text
-            case 0x02: // bin
-                if (data_len > o) {
-                    data_len -= o;
-                    /* unmask */
-                    for (int i = 0; i < data_len; i++){
-                        data[i + o] ^= data[m + i % 4];
-                    }
-                    // decoded data
-                    memmove(buf, &data[o], data_len);
-                    len = data_len;
-                }
-                break;
-            case 0x08: // close
-                return ERR_CLSD;
-                break;
-        }
-        return ERR_OK;
-    }
-    return ERR_VAL;
-}
-#endif
 
 static int websocket_write(struct netconn *conn, const char *data, uint16_t len, uint8_t mode=0x01)
 {
@@ -462,7 +411,7 @@ static err_t handle_upload(struct netconn *conn)
         printf("websocket: got len %d\n", n);
         int cnt= 0;
         for (int i = 0; i < n; ++i) {
-            printf("%02X(%c) ", buf[i], buf[i]>' '?buf[i]:'\0');
+            printf("%02X(%c) ", buf[i], buf[i]>' '?buf[i]:'_');
             if(++cnt >= 8) {
                 printf("\n");
                 cnt= 0;
