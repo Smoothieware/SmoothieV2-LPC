@@ -179,17 +179,14 @@ public:
 
     struct netconn *conn;
     struct pbuf *p {nullptr};
-    uint16_t off{0};
     bool complete{false};
-    void reset() { off = 0; complete = false;}
 };
 
 // Read data from a websocket and decode it.
-// state should be clean
 // buf is provided and buflen must contain the size of that buf
 // ERR_BUF is returned if it is not big enough and the size it would need to be is assigned to readlen
 // readlen is set to the actual number of bytes read
-// TODO need to be able to return partial buffers of payload
+// TODO may need to be able to return partial buffers of payload
 static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen, uint16_t& readlen)
 {
     err_t err;
@@ -358,6 +355,8 @@ static err_t handle_incoming_websocket(struct netconn *conn, const char *keystr)
     return ERR_OK;
 }
 
+static const char endbuf[] = {0x88, 0x02, 0x03, 0xe8};
+
 // this may need to stay around until command thread is done with it so we do not delete it until we need to create another
 static OutputStream *os = nullptr;
 static err_t handle_command(struct netconn *conn)
@@ -376,19 +375,18 @@ static err_t handle_command(struct netconn *conn)
     uint16_t n;
     err_t err;
     WebsocketState state(conn);
-    // read from connection until it closes
-    while ((err = websocket_read(state, (uint8_t *)buf, bufsize, n)) == ERR_OK) {
+    // read packets from connection until it closes
+    while ((err = websocket_read(state, (uint8_t *)buf, bufsize-1, n)) == ERR_OK) {
         // we now have a decoded websocket payload in buf, that is n bytes long
-        process_command_buffer(n, buf, os, line, cnt, discard);
+        buf[n]= '\n';
+        process_command_buffer(n+1, buf, os, line, cnt, discard);
     }
 
     // make sure command thread does not try to write to the soon to be closed (and deleted) conn
     os->set_closed();
 
-    // exit string
-    const char ebuf[] = {0x88, 0x02, 0x03, 0xe8};
-    u16_t elen = sizeof(ebuf);
-    netconn_write(conn, ebuf, elen, NETCONN_COPY);
+    // send exit string
+    netconn_write(conn, endbuf, sizeof(endbuf), NETCONN_NOCOPY);
 
     printf("handle_command: websocket closing\n");
     return ERR_OK;
@@ -410,7 +408,7 @@ static err_t handle_upload(struct netconn *conn)
 
     // read from connection until it closes
     while ((err = websocket_read(state, buf, buflen, n)) == ERR_OK) {
-        printf("websocket: got len %d, complete: %d, state: %d\n", n, state.complete, uploadstate);
+        printf("handle_upload: got len %d, complete: %d, state: %d\n", n, state.complete, uploadstate);
         if(uploadstate == NAME) {
             name.assign((char*)buf, n);
             uploadstate= SIZE;
@@ -419,7 +417,9 @@ static err_t handle_upload(struct netconn *conn)
             size= strtoul(s.c_str(), nullptr, 10);
             uploadstate= BODY;
             filecnt= 0;
+            // TODO open file, if it fails send error message and close connection
         } else if(uploadstate == BODY) {
+            // TODO write to file, if it fails send error message and close connection
             int cnt = 0;
             for (int i = 0; i < n; ++i) {
                 printf("%02X(%c) ", buf[i], buf[i] > ' ' ? buf[i] : '_');
@@ -431,7 +431,9 @@ static err_t handle_upload(struct netconn *conn)
             printf("\n");
             filecnt += n;
             if(filecnt >= size) {
-                printf("Done upload of file %s, of size: %lu\n", name.c_str(), size);
+                // TODO close file
+                printf("handle_upload: Done upload of file %s, of size: %lu (%lu)\n", name.c_str(), size, filecnt);
+                websocket_write(conn, "upload successful", 17);
                 uploadstate= NAME;
                 break;
             }
@@ -441,11 +443,8 @@ static err_t handle_upload(struct netconn *conn)
     }
     free(buf);
 
-    // exit string
-    const char ebuf[] = {0x88, 0x02, 0x03, 0xe8};
-    u16_t elen = sizeof(ebuf);
-    netconn_write(conn, ebuf, elen, NETCONN_COPY);
-
+    // send exit string
+    netconn_write(conn, endbuf, sizeof(endbuf), NETCONN_NOCOPY);
     printf("handle_upload: websocket closing\n");
     return ERR_OK;
 }
