@@ -296,34 +296,26 @@ static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen
 
 static int websocket_write(struct netconn *conn, const char *data, uint16_t len, uint8_t mode = 0x01)
 {
-    // potentially large packets should not be put on the stack
-    unsigned char *buf = (unsigned char*)malloc(len + 4);
-    if(buf == NULL) {
-        printf("websocket_write: out of memory\n");
-        return -1;
-    }
-    buf[0] = 0x80 | mode; // binary/text
-    int o;
+    unsigned char hdr[4];
+    hdr[0] = 0x80 | mode; // binary/text
+    uint16_t l;
     if (len < 126) {
-        o = 1;
-        buf[1] = len;
+        l = 2;
+        hdr[1] = len;
     } else if(len < 65535) {
-        o = 3;
-        buf[1] = 126;
-        buf[2] = len >> 8;
-        buf[3] = len & 0xFF;
+        l = 4;
+        hdr[1] = 126;
+        hdr[2] = len >> 8;
+        hdr[3] = len & 0xFF;
     } else {
         printf("websocket_write: buffer too big\n");
-        free(buf);
         return -1;
     }
-    memcpy(&buf[o + 1], data, len);
-    len += o + 1;
-    err_t err = netconn_write(conn, buf, len, NETCONN_COPY);
+    err_t err = netconn_write(conn, hdr, l, NETCONN_COPY);
+    err = netconn_write(conn, data, len, NETCONN_COPY);
     if(err != ERR_OK) {
         printf("websocket_write: error writing: %d\n", err);
     }
-    free(buf);
     return len;
 }
 
