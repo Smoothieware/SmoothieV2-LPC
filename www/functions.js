@@ -35,7 +35,7 @@ function onClose(evt)
 
 function onMessage(evt)
 {
-	$( "#result" ).empty();
+	console.log(evt.data)
 	$.each(evt.data.split('\n'), function(index) {
 		$( "#result" ).append( this + '<br/>' );
 	});
@@ -131,27 +131,27 @@ function upload() {
 		// take the file from the input
 		var file = document.getElementById('files').files[0];
 		var reader = new FileReader();
-		reader.readAsBinaryString(file); // alternatively you can use readAsDataURL
-
 		var rawData = new ArrayBuffer();
+		reader.readAsArrayBuffer(file);
+
 		reader.loadend = function() { $( "#progress" ).empty().append("the File has been loaded.")}
 		reader.onload = function(e) {
-		  console.log("Uploading file: " + file.name + ", length: " + rawData.byteLength);
-		  rawData = e.target.result;
-		  ws.send(file.name);
-		  ws.send(rawData.byteLength);
-		  for (var i = 0; i < rawData.byteLength; i+=1024) {
-			if(i+1024 <= rawData.byteLength) {
-				//console.log("sending: " + i + " - " + (i + 1024));
-				ws.send(rawData.slice(i, i+1024));
-			}else{
-				//console.log("sending: " + i + " - " + (rawData.byteLength - i));
-				ws.send(rawData.slice(i));
-			}
-		  }
-		  //$( "#progress" ).empty().append("the File has been transferred.")
+			  rawData = e.target.result;
+			  console.log("Uploading file: " + file.name + ", length: " + rawData.byteLength);
+			  ws.send(file.name);
+			  ws.send(rawData.byteLength);
+			  for (var i = 0; i < rawData.byteLength; i+=1024) {
+				if(i+1024 <= rawData.byteLength) {
+					//console.log("sending: " + i + " - " + (i + 1024));
+					ws.send(rawData.slice(i, i+1024));
+				}else{
+					//console.log("sending: " + i + " - " + (rawData.byteLength - i));
+					ws.send(rawData.slice(i));
+				}
+			  }
+			  $( "#progress" ).empty().append("the File has been transferred.")
 		};
-	};
+	}
 
 	ws.onmessage = function(evt) {
 		//$( "#uploadresult" ).empty().append(evt.data);
