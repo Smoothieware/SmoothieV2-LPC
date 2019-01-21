@@ -402,18 +402,42 @@ static err_t handle_upload(struct netconn *conn)
     uint8_t *buf = (uint8_t *)malloc(buflen);
     if(buf == NULL) return ERR_MEM;
     uint16_t n;
+    std::string name;
+    uint32_t size= 0;
+    uint32_t filecnt= 0;
+    enum STATE { NAME, SIZE, BODY};
+    enum STATE uploadstate= NAME;
+
     // read from connection until it closes
     while ((err = websocket_read(state, buf, buflen, n)) == ERR_OK) {
-        printf("websocket: got len %d, complete: %d\n", n, state.complete);
-        int cnt = 0;
-        for (int i = 0; i < n; ++i) {
-            printf("%02X(%c) ", buf[i], buf[i] > ' ' ? buf[i] : '_');
-            if(++cnt >= 8) {
-                printf("\n");
-                cnt = 0;
+        printf("websocket: got len %d, complete: %d, state: %d\n", n, state.complete, uploadstate);
+        if(uploadstate == NAME) {
+            name.assign((char*)buf, n);
+            uploadstate= SIZE;
+        } else if(uploadstate == SIZE) {
+            std::string s((char*)buf, n);
+            size= strtoul(s.c_str(), nullptr, 10);
+            uploadstate= BODY;
+            filecnt= 0;
+        } else if(uploadstate == BODY) {
+            int cnt = 0;
+            for (int i = 0; i < n; ++i) {
+                printf("%02X(%c) ", buf[i], buf[i] > ' ' ? buf[i] : '_');
+                if(++cnt >= 8) {
+                    printf("\n");
+                    cnt = 0;
+                }
             }
+            printf("\n");
+            filecnt += n;
+            if(filecnt >= size) {
+                printf("Done upload of file %s, of size: %lu\n", name.c_str(), size);
+                uploadstate= NAME;
+                break;
+            }
+        } else {
+            printf("handle_upload: state error\n");
         }
-        printf("\n");
     }
     free(buf);
 
