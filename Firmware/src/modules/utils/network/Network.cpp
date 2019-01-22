@@ -108,14 +108,14 @@ static void netstat(OutputStream& os)
             os.printf("TCP");
             os.printf("        ");        //spacer
 
-            //OsIrqDisable();
+            portENTER_CRITICAL();
             //get all states during disabled preemption so that the pcb pointer can't be nulled in between
             eState = cpcb->state;
             local_port = cpcb->local_port;
             local_ip = cpcb->local_ip;
             remote_port = cpcb->remote_port;
             remote_ip = cpcb->remote_ip;
-            //OsIrqEnable();
+            portEXIT_CRITICAL();
 
 
             os.printf("%15s", inet_ntoa(local_ip));
@@ -123,13 +123,13 @@ static void netstat(OutputStream& os)
             os.printf("%5u", local_port);
             os.printf("        ");         //spacer
 
-            if(remote_ip.addr != 0) {
+            if(remote_ip.addr != 0 && eState != LISTEN) {
                 os.printf("%15s", inet_ntoa(remote_ip));
                 os.printf("   ");                     //spacer
                 os.printf("%5u", remote_port);
 
             } else {
-                os.printf("---.---.---.---");                   //empty IP
+                os.printf("---.---.---.---");         //empty IP
                 os.printf("   ");                     //spacer
                 os.printf("-----");                   //emtpy Port
             }
