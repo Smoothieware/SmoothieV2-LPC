@@ -119,7 +119,7 @@
 #define TCP_MSL 100 // added
 
 #define DEFAULT_THREAD_PRIO             (tskIDLE_PRIORITY + 3)
-#define DEFAULT_THREAD_STACKSIZE        (512)
+#define DEFAULT_THREAD_STACKSIZE        (200)
 #define DEFAULT_ACCEPTMBOX_SIZE         6
 #define DEFAULT_ACCEPTMBOX_SIZE         6
 #define DEFAULT_TCP_RECVMBOX_SIZE       6
@@ -127,7 +127,7 @@
 
 /* TCPIP thread must run at higher priority than MAC threads! */
 #define TCPIP_THREAD_PRIO               (tskIDLE_PRIORITY + 4)
-#define TCPIP_THREAD_STACKSIZE          (1000)
+#define TCPIP_THREAD_STACKSIZE          (450)
 #define TCPIP_MBOX_SIZE                 6
 
 #define MEM_LIBC_MALLOC                 1

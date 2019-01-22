@@ -394,6 +394,6 @@ void Network::vSetupIFTask(void *arg)
 bool Network::start()
 {
     printf("Network: running start\n");
-    xTaskCreate(vSetupIFTask, "SetupIFx", 512, this, (tskIDLE_PRIORITY + 1UL), (xTaskHandle *) NULL);
+    xTaskCreate(vSetupIFTask, "SetupIFx", 256, this, (tskIDLE_PRIORITY + 1UL), (xTaskHandle *) NULL);
     return true;
 }

@@ -883,8 +883,8 @@ static void smoothie_startup(void *)
 
     // Start comms threads Higher priority than the command thread
     // fixed stack size of 4k Bytes each
-    xTaskCreate(usb_comms, "USBCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
-    xTaskCreate(uart_comms, "UARTCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
+    xTaskCreate(usb_comms, "USBCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
+    xTaskCreate(uart_comms, "UARTCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
 
     // run any startup functions that have been registered
     for(auto f : startup_fncs) {
@@ -898,7 +898,7 @@ static void smoothie_startup(void *)
         if(setup_uart3(rpi_baudrate) < 0) {
             printf("ERROR: UART3/RPI setup failed\n");
         } else {
-            xTaskCreate(uart3_comms, "UART3CommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL
+            xTaskCreate(uart3_comms, "UART3CommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL
                 );
         }
     }
@@ -975,7 +975,7 @@ int main(int argc, char *argv[])
 
     // launch the startup thread which will become the command thread that executes all incoming commands
     // 10000 Bytes stack
-    xTaskCreate(smoothie_startup, "CommandThread", 10000/4, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
+    xTaskCreate(smoothie_startup, "CommandThread", 10000/4, NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
 
     /* Start the scheduler */
     vTaskStartScheduler();
