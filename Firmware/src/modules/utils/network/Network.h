@@ -13,7 +13,6 @@ class Network : public Module {
         bool configure(ConfigReader& cr);
 
     private:
-        static Network *instance;
         static void vSetupIFTask(void *pvParameters);
 
         void network_thread();
