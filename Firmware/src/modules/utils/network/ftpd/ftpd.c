@@ -348,6 +348,7 @@ struct ftpd_msgstate {
 	struct tcp_pcb *datapcb;
 	struct ftpd_datastate *datafs;
 	int passive;
+	char type;
 	char *renamefrom;
 };
 
@@ -443,7 +444,25 @@ static void send_file(struct ftpd_datastate *fsd, struct tcp_pcb *pcb)
 		}
 		if (len > 2000)
 			len = 2000;
-		len = vfs_read(buffer, 1, len, fsd->vfs_file);
+		// if ASCII type read one char at a time and expand LF to CRLF
+		if(fsd->msgfs->type == 'A') {
+			int j= 0;
+			while(j < len-1) {
+		    	int n= vfs_read(&buffer[j], 1, 1, fsd->vfs_file);
+		    	if(n != 1) break;
+		    	if(buffer[j] == '\n') {
+		    		buffer[j] = '\r';
+		    		buffer[j+1] = '\n';
+		    		j+=2;
+		    	}else{
+		    		++j;
+		    	}
+			}
+			len= j;
+		} else {
+			len = vfs_read(buffer, 1, len, fsd->vfs_file);
+		}
+
 		if (len == 0) {
 			if (vfs_eof(fsd->vfs_file) == 0){
 				free(buffer);
@@ -574,6 +593,18 @@ static err_t ftpd_datasent(void *arg, struct tcp_pcb *pcb, u16_t len)
 	return ERR_OK;
 }
 
+static u16_t convert_from_ascii(void *buf, u16_t len)
+{
+	u16_t j= 0;
+	char *p = (char *)buf;
+	for (int i = 0; i < len; ++i) {
+		char c= p[i];
+	    if(c == '\r') continue;
+	    p[j++] = c;
+	}
+	return j;
+}
+
 static err_t ftpd_datarecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
 {
 	struct ftpd_datastate *fsd = arg;
@@ -590,13 +621,16 @@ static err_t ftpd_datarecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t
 
 		struct pbuf *q;
 		u16_t tot_len = 0;
-
 		for (q = p; q != NULL; q = q->next) {
-			int len;
-
-			len = vfs_write(q->payload, 1, q->len, fsd->vfs_file);
+			u16_t ql= q->len;
+			if(fsd->msgfs->type == 'A') {
+				// we need to convert CRLF to LF
+				// we can do this in place as the buffer will be smaller
+				ql= convert_from_ascii(q->payload, q->len);
+			}
+			int len = vfs_write(q->payload, 1, ql, fsd->vfs_file);
 			tot_len += len;
-			if (len != q->len)
+			if (len != ql)
 				break;
 		}
 
@@ -1002,12 +1036,17 @@ static void cmd_type(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate 
 {
 	dbg_printf("Got TYPE -%s-\n", arg);
 
-	if(strcmp(arg, "I") != 0) {
-		send_msg(pcb, fsm, msg502);
+	if(strcmp(arg, "I") == 0) {
+		fsm->type= 'I';
+		send_msg(pcb, fsm, msg200);
+		return;
+	} else if(strcmp(arg, "A") == 0) {
+		fsm->type= 'A';
+		send_msg(pcb, fsm, msg200);
 		return;
 	}
 
-	send_msg(pcb, fsm, msg200);
+	send_msg(pcb, fsm, msg502);
 }
 
 static void cmd_mode(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate *fsm)
@@ -1390,6 +1429,7 @@ static err_t ftpd_msgaccept(void *arg, struct tcp_pcb *pcb, err_t err)
 		free(fsm);
 		return ERR_CLSD;
 	}
+	fsm->type= 'A'; // ascii is the default type
 
 	/* Tell TCP that this is the structure we wish to be passed for our
 	   callbacks. */
