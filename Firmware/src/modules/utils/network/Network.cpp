@@ -31,14 +31,22 @@
 #define shell_enable_key "shell_enable"
 #define ftp_enable_key "ftp_enable"
 #define webserver_enable_key "webserver_enable"
+#define ip_address_key  "ip_address"
+#define ip_mask_key "ip_mask"
+#define ip_gateway_key "ip_gateway"
 
 REGISTER_MODULE(Network, Network::create)
 
 /* NETIF data */
 static struct netif lpc_netif;
+
 bool Network::enable_shell = false;
 bool Network::enable_httpd = false;
 bool Network::enable_ftpd = false;
+
+static char *ip_address= nullptr;
+static char *ip_mask= nullptr;
+static char *ip_gateway= nullptr;
 
 bool Network::create(ConfigReader& cr)
 {
@@ -68,6 +76,15 @@ bool Network::configure(ConfigReader& cr)
 	bool enable = cr.get_bool(m, network_enable_key, false);
 	if(!enable) {
 		return false;
+	}
+
+	std::string ip_address_str = cr.get_string(m, ip_address_key, "auto");
+	if(!ip_address_str.empty() && ip_address_str != "auto") {
+		std::string ip_mask_str = cr.get_string(m, ip_mask_key, "255.255.255.0");
+		std::string ip_gateway_str = cr.get_string(m, ip_gateway_key, "192.168.1.254");
+		ip_address= strdup(ip_address_str.c_str());
+		ip_mask= strdup(ip_mask_str.c_str());
+		ip_gateway= strdup(ip_gateway_str.c_str());
 	}
 
 	enable_shell = cr.get_bool(m, shell_enable_key, false);
@@ -268,20 +285,30 @@ void Network::vSetupIFTask(void *pvParameters)
 		printf("Network: TCPIP thread has started...\n");
 	}
 
-	/* Static IP assignment */
-#if LWIP_DHCP
-	IP4_ADDR(&gw, 0, 0, 0, 0);
-	IP4_ADDR(&ipaddr, 0, 0, 0, 0);
-	IP4_ADDR(&netmask, 0, 0, 0, 0);
-#else
-	IP4_ADDR(&gw, 10, 1, 10, 1);
-	IP4_ADDR(&ipaddr, 10, 1, 10, 234);
-	IP4_ADDR(&netmask, 255, 255, 255, 0);
-#endif
+	if(ip_address == nullptr) {
+		// dhcp
+		IP4_ADDR(&gw, 0, 0, 0, 0);
+		IP4_ADDR(&ipaddr, 0, 0, 0, 0);
+		IP4_ADDR(&netmask, 0, 0, 0, 0);
+
+	} else {
+		/* Static IP assignment */
+		if(ipaddr_aton(ip_address, &ipaddr) == 0) {
+			printf("Network: invalid ip address: %s\n", ip_address);
+		}
+		if(ipaddr_aton(ip_mask, &netmask) == 0) {
+			printf("Network: invalid ip netmask: %s\n", ip_mask);
+		}
+		if(ipaddr_aton(ip_gateway, &gw) == 0) {
+			printf("Network: invalid ip gateway: %s\n", ip_gateway);
+		}
+		// IP4_ADDR(&ipaddr, 10, 1, 10, 234);
+		// IP4_ADDR(&netmask, 255, 255, 255, 0);
+		// IP4_ADDR(&gw, 10, 1, 10, 1);
+	}
 
 	/* Add netif interface for lpc17xx_8x */
-	if (!netifapi_netif_add(&lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init,
-	                        tcpip_input)) {
+	if (!netifapi_netif_add(&lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init, tcpip_input)) {
 		printf("Network: Net interface failed to initialize\n");
 	}
 
@@ -292,10 +319,10 @@ void Network::vSetupIFTask(void *pvParameters)
 	NVIC_SetPriority(ETHERNET_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
 	NVIC_EnableIRQ(ETHERNET_IRQn);
 
-#if LWIP_DHCP
-	netifapi_dhcp_start(&lpc_netif);
-	//dhcp_start(&lpc_netif);
-#endif
+	if(ip_address == nullptr) {
+		netifapi_dhcp_start(&lpc_netif);
+		//dhcp_start(&lpc_netif);
+	}
 
 	/* Initialize application(s) */
 	if(enable_shell) {

@@ -159,7 +159,7 @@ function upload() {
 	};
 
 	ws.onclose = function(e) {
-		$( "#progress" ).empty().append("Connection is closed..." + e.code + " " + e.reason);
+		$( "#progress" ).empty().append("Connection is closed..." + e.code);
 	};
 
 	ws.onerror = function(e) {
