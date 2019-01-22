@@ -36,13 +36,6 @@ REGISTER_MODULE(Network, Network::create)
 
 Network* Network::instance= nullptr;
 
-/* NETIF data */
-static struct netif lpc_netif;
-
-bool Network::enable_shell = false;
-bool Network::enable_httpd = false;
-bool Network::enable_ftpd = false;
-
 bool Network::create(ConfigReader& cr)
 {
     printf("DEBUG: configure network\n");
@@ -62,6 +55,12 @@ bool Network::create(ConfigReader& cr)
 Network::Network() : Module("network")
 {
     instance= this;
+    lpc_netif= (struct netif*)malloc(sizeof(struct netif));
+}
+
+Network::~Network()
+{
+    free(lpc_netif);
 }
 
 bool Network::configure(ConfigReader& cr)
@@ -216,13 +215,13 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
 {
     HELP("net - show network status, -v also shows netstat");
 
-    if(lpc_netif.flags & NETIF_FLAG_LINK_UP) {
+    if(lpc_netif->flags & NETIF_FLAG_LINK_UP) {
         os.printf("Link UP\n");
-        if (lpc_netif.ip_addr.addr) {
+        if (lpc_netif->ip_addr.addr) {
             static char tmp_buff[16];
-            os.printf("IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.ip_addr, tmp_buff, 16));
-            os.printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.netmask, tmp_buff, 16));
-            os.printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.gw, tmp_buff, 16));
+            os.printf("IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->ip_addr, tmp_buff, 16));
+            os.printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
+            os.printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
 
         } else {
             os.printf("no ip set\n");
@@ -309,20 +308,20 @@ void Network::network_thread()
     }
 
     /* Add netif interface for lpc17xx_8x */
-    if (!netifapi_netif_add(&lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init, tcpip_input)) {
+    if (!netifapi_netif_add(lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init, tcpip_input)) {
         printf("Network: Net interface failed to initialize\n");
     }
 
-    netifapi_netif_set_default(&lpc_netif);
-    netifapi_netif_set_up(&lpc_netif);
+    netifapi_netif_set_default(lpc_netif);
+    netifapi_netif_set_up(lpc_netif);
 
     /* Enable MAC interrupts only after LWIP is ready */
     NVIC_SetPriority(ETHERNET_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
     NVIC_EnableIRQ(ETHERNET_IRQn);
 
     if(ip_address == nullptr) {
-        netifapi_dhcp_start(&lpc_netif);
-        //dhcp_start(&lpc_netif);
+        netifapi_dhcp_start(lpc_netif);
+        //dhcp_start(lpc_netif);
     }
 
     /* Initialize application(s) */
@@ -355,11 +354,11 @@ void Network::network_thread()
                 /* Set interface speed and duplex */
                 if (physts & PHY_LINK_SPEED100) {
                     Chip_ENET_SetSpeed(LPC_ETHERNET, 1);
-                    NETIF_INIT_SNMP(&lpc_netif, snmp_ifType_ethernet_csmacd, 100000000);
+                    NETIF_INIT_SNMP(lpc_netif, snmp_ifType_ethernet_csmacd, 100000000);
                     printf("Network::start() - 100Mbit/s ");
                 } else {
                     Chip_ENET_SetSpeed(LPC_ETHERNET, 0);
-                    NETIF_INIT_SNMP(&lpc_netif, snmp_ifType_ethernet_csmacd, 10000000);
+                    NETIF_INIT_SNMP(lpc_netif, snmp_ifType_ethernet_csmacd, 10000000);
                     printf("Network::start() - 10Mbit/s ");
                 }
                 if (physts & PHY_LINK_FULLDUPLX) {
@@ -371,23 +370,23 @@ void Network::network_thread()
                 }
 
                 tcpip_callback_with_block((tcpip_callback_fn) netif_set_link_up,
-                                          (void *) &lpc_netif, 1);
+                                          (void *) lpc_netif, 1);
                 printf("Network::start() - Link connect status: UP\r\n");
 
             } else {
                 tcpip_callback_with_block((tcpip_callback_fn) netif_set_link_down,
-                                          (void *) &lpc_netif, 1);
+                                          (void *) lpc_netif, 1);
                 printf("Network::start() - Link connect status: DOWN\r\n");
             }
         }
 
         /* Print IP address info */
         if (!prt_ip) {
-            if (lpc_netif.ip_addr.addr) {
+            if (lpc_netif->ip_addr.addr) {
                 char tmp_buff[16];
-                printf("IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.ip_addr, tmp_buff, 16));
-                printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.netmask, tmp_buff, 16));
-                printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif.gw, tmp_buff, 16));
+                printf("IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->ip_addr, tmp_buff, 16));
+                printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
+                printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
                 prt_ip = 1;
             }
         }
