@@ -151,6 +151,7 @@
 #define msg502 "502 Command not implemented."
 #define msg503 "503 Bad sequence of commands."
 #define msg504 "504 Command not implemented for that parameter."
+#define msg520 "520 Too many connections.\r\n"
 #define msg530 "530 Not logged in."
 #define msg532 "532 Need account for storing files."
 #define msg550 "550 Requested action not taken."
@@ -194,6 +195,9 @@ static const char *month_table[12] = {
 	"Nov",
 	"Dec"
 };
+
+// count of number of conenctions, we only allow one
+static int conn_cnt= 0;
 
 /*
 ------------------------------------------------------------
@@ -1311,6 +1315,7 @@ static void ftpd_msgclose(struct tcp_pcb *pcb, struct ftpd_msgstate *fsm)
 	free(fsm);
 	tcp_arg(pcb, NULL);
 	tcp_close(pcb);
+	--conn_cnt;
 }
 
 static err_t ftpd_msgsent(void *arg, struct tcp_pcb *pcb, u16_t len)
@@ -1416,6 +1421,14 @@ static err_t ftpd_msgpoll(void *arg, struct tcp_pcb *pcb)
 static err_t ftpd_msgaccept(void *arg, struct tcp_pcb *pcb, err_t err)
 {
 	struct ftpd_msgstate *fsm;
+
+	// refuse connection if there is already a connection
+	if(conn_cnt >= 1) {
+		tcp_write(pcb, msg520, sizeof(msg520), 0);
+		tcp_output(pcb);
+		return ERR_MEM;
+	}
+	++conn_cnt;
 
 	/* Allocate memory for the structure that holds the state of the
 	   connection. */
