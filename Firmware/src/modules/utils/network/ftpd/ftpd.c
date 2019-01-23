@@ -76,8 +76,10 @@
 #define msg120 "120 Service ready in nnn minutes."
 #define msg125 "125 Data connection already open; transfer starting."
 #define msg150 "150 File status okay; about to open data connection."
-#define msg150recv "150 Opening BINARY mode data connection for %s (%i bytes)."
-#define msg150stor "150 Opening BINARY mode data connection for %s."
+#define msg150recvb "150 Opening BINARY mode data connection for %s (%i bytes)."
+#define msg150recva "150 Opening ASCII mode data connection for %s (%i bytes)."
+#define msg150storb "150 Opening BINARY mode data connection for %s."
+#define msg150stora "150 Opening ASCII mode data connection for %s."
 #define msg200 "200 Command okay."
 #define msg202 "202 Command not implemented, superfluous at this site."
 #define msg211 "211 System status, or system help reply."
@@ -629,7 +631,7 @@ static err_t ftpd_datarecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t
 				ql= convert_from_ascii(q->payload, q->len);
 			}
 			int len = vfs_write(q->payload, 1, ql, fsd->vfs_file);
-			tot_len += len;
+			tot_len += q->len;
 			if (len != ql)
 				break;
 		}
@@ -898,7 +900,11 @@ static void cmd_retr(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate 
 		return;
 	}
 
-	send_msg(pcb, fsm, msg150recv, arg, st.st_size);
+	if(fsm->type == 'A') {
+		send_msg(pcb, fsm, msg150recva, arg, st.st_size);
+	}else{
+		send_msg(pcb, fsm, msg150recvb, arg, st.st_size);
+	}
 
 	if (open_dataconnection(pcb, fsm) != 0) {
 		vfs_close(vfs_file);
@@ -919,7 +925,11 @@ static void cmd_stor(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate 
 		return;
 	}
 
-	send_msg(pcb, fsm, msg150stor, arg);
+	if(fsm->type == 'A') {
+		send_msg(pcb, fsm, msg150stora, arg);
+	}else{
+		send_msg(pcb, fsm, msg150storb, arg);
+	}
 
 	if (open_dataconnection(pcb, fsm) != 0) {
 		vfs_close(vfs_file);
