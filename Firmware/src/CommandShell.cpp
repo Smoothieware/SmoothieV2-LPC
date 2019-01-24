@@ -109,15 +109,15 @@ bool CommandShell::m20_cmd(GCode& gcode, OutputStream& os)
     if(THEDISPATCHER->is_grbl_mode()) return false;
 
     os.printf("Begin file list\n");
-    std::string cmd("/sd");
-    ls_cmd(cmd, os);
+    std::string params("-1 /sd");
+    ls_cmd(params, os);
     os.printf("End file list\n");
     return true;
 }
 
 bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
 {
-    HELP("list files: dir [folder]");
+    HELP("list files: dir [-1] [folder]");
     std::string path;
     std::string opts;
     while(!params.empty()) {
@@ -173,16 +173,28 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
 
     DWORD p1, s1, s2;
     p1 = s1 = s2 = 0;
+    bool simple= false;
+    if(opts.find("-1", 0, 2) != std::string::npos) {
+        simple= true;
+    }
+
     for(;;) {
         //if(Module::is_halted()) {f_closedir(&dir); return true; }
         res = f_readdir(&dir, &finfo);
         if ((res != FR_OK) || !finfo.fname[0]) break;
-        if (finfo.fattrib & AM_DIR) {
-            s2++;
-        } else {
-            s1++; p1 += finfo.fsize;
-        }
-        os.printf("%c%c%c%c%c %u/%02u/%02u %02u:%02u %9lu  %s\n",
+        if(simple) {
+           if(finfo.fattrib & AM_DIR) {
+                os.printf("%s/\n", finfo.fname);
+            }else{
+                os.printf("%s\n", finfo.fname);
+            }
+        }else{
+            if (finfo.fattrib & AM_DIR) {
+                s2++;
+            } else {
+                s1++; p1 += finfo.fsize;
+            }
+            os.printf("%c%c%c%c%c %u/%02u/%02u %02u:%02u %9lu  %s\n",
                 (finfo.fattrib & AM_DIR) ? 'D' : '-',
                 (finfo.fattrib & AM_RDO) ? 'R' : '-',
                 (finfo.fattrib & AM_HID) ? 'H' : '-',
@@ -191,13 +203,16 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
                 (finfo.fdate >> 9) + 1980, (finfo.fdate >> 5) & 15, finfo.fdate & 31,
                 (finfo.ftime >> 11), (finfo.ftime >> 5) & 63,
                 (DWORD)finfo.fsize, finfo.fname);
+        }
     }
-    os.printf("%4lu File(s),%10lu bytes total\n%4lu Dir(s)", s1, p1, s2);
-    res = f_getfree("/sd", (DWORD*)&p1, &fs);
-    if(FR_OK == res) {
-        os.printf(", %10lu bytes free\n", p1 * fs->csize * 512);
-    }else{
-        os.printf("\n");
+    if(!simple) {
+        os.printf("%4lu File(s),%10lu bytes total\n%4lu Dir(s)", s1, p1, s2);
+        res = f_getfree("/sd", (DWORD*)&p1, &fs);
+        if(FR_OK == res) {
+            os.printf(", %10lu bytes free\n", p1 * fs->csize * 512);
+        }else{
+            os.printf("\n");
+        }
     }
     f_closedir(&dir);
 #endif

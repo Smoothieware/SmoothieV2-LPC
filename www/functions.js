@@ -1,6 +1,10 @@
-var wsUri = "ws://192.168.1.101";
+//var wsUri = "ws://192.168.1.101";
+var wsUri = "ws://localhost:8765";
 //var wsUri = "ws://demos.kaazing.com";
 var websocket;
+var silent= false;
+var capture_cb= null;
+
 function connectCommand() {
 	if(websocket && websocket.readyState == 1) {
 		websocket.close();
@@ -36,9 +40,14 @@ function onClose(evt)
 function onMessage(evt)
 {
 	console.log(evt.data)
-	$.each(evt.data.split('\n'), function(index) {
-		$( "#result" ).append( this + '<br/>' );
-	});
+	if(silent) return;
+	if(capture_cb == null) {
+		$.each(evt.data.split('\n'), function(index) {
+			$( "#result" ).append( this + '<br/>' );
+		});
+	}else{
+		capture_cb(evt.data);
+	}
 }
 
 function onError(evt)
@@ -51,20 +60,13 @@ function doSend(message)
   websocket.send(message);
 }
 
-function runCommand(cmd, silent) {
-	// TODO implement silent
-  //url = silent ? "/command_silent" : "/command"; // $form.attr( "action" );
-  // Send the data using post
-  doSend(cmd);
+function runCommand(cmd, sil=false) {
+	silent= sil;
+  	doSend(cmd);
 }
 
 function runCommandSilent(cmd) {
   runCommand(cmd, true);
-}
-
-function runCommandCallback(cmd,callback) {
-	// TODO how to do this?
-	//var posting = $.post( url, cmd, callback);
 }
 
 function jogXYClick (cmd) {
@@ -174,10 +176,14 @@ function playFile(filename) {
 
 function refreshFiles() {
   document.getElementById('fileList').innerHTML = '';
-  runCommandCallback("M20", function(data){
+  capture_cb= function(data){
 	$.each(data.split('\n'), function(index) {
 	  var item = this.trim();
-		if (item.match(/\.g(code)?$/)) {
+	    if(item.match(/End file list/)) {
+	    	capture_cb= null;
+	    	return;
+	    }
+		if (item.match(/(\.g(code)?|\.nc|\.gc)$/)) {
 		  var table = document.getElementById('fileList');
 		  var row = table.insertRow(-1);
 		  var cell = row.insertCell(0);
@@ -188,5 +194,6 @@ function refreshFiles() {
 		}
 		//$( "#result" ).append( this + '<br/>' );
 	  });
-  });
+  };
+  runCommand("M20", false);
 }
