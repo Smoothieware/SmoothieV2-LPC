@@ -228,16 +228,16 @@ static void Board_LED_Init()
 void Board_LED_Set(uint8_t LEDNumber, bool On)
 {
 	switch(LEDNumber) {
-		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, !On); break;
 		case 0: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, !On); break;
+		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, !On); break;
 	}
 }
 
 bool Board_LED_Test(uint8_t LEDNumber)
 {
 	switch(LEDNumber) {
-		case 1: return (bool)!Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 7);
 		case 0: return (bool)!Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 5);
+		case 1: return (bool)!Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 7);
 	}
 
 	return false;

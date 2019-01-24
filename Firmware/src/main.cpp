@@ -1036,10 +1036,10 @@ extern "C" void vApplicationMallocFailedHook( void )
 }
 
 extern "C" void HardFault_Handler(void) {
-    Board_LED_Set(0, false);
-    Board_LED_Set(1, false);
-    Board_LED_Set(2, true);
-    Board_LED_Set(3, true);
+    Board_LED_Set(0, true);
+    Board_LED_Set(1, true);
+    Board_LED_Set(2, false);
+    Board_LED_Set(3, false);
     __asm("bkpt #0");
     for( ;; );
 }
