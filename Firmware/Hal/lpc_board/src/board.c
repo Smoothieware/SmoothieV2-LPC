@@ -247,17 +247,59 @@ void Board_LED_Toggle(uint8_t LEDNumber)
 {
 	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
 }
+
 #else
+
+#warning "No Board LEDS defined"
 static void Board_LED_Init(){}
 void Board_LED_Set(uint8_t LEDNumber, bool On){}
 bool Board_LED_Test(uint8_t LEDNumber){return false;}
 void Board_LED_Toggle(uint8_t LEDNumber){}
 #endif
 
+static uint32_t crc32(uint8_t* buf, int length)
+{
+    static const uint32_t crc32_table[] =
+    {
+        0x4DBDF21C, 0x500AE278, 0x76D3D2D4, 0x6B64C2B0,
+        0x3B61B38C, 0x26D6A3E8, 0x000F9344, 0x1DB88320,
+        0xA005713C, 0xBDB26158, 0x9B6B51F4, 0x86DC4190,
+        0xD6D930AC, 0xCB6E20C8, 0xEDB71064, 0xF0000000
+    };
+
+    int n;
+    uint32_t crc=0;
+
+    for (n = 0; n < length; n++)
+    {
+        crc = (crc >> 4) ^ crc32_table[(crc ^ (buf[n] >> 0)) & 0x0F];  /* lower nibble */
+        crc = (crc >> 4) ^ crc32_table[(crc ^ (buf[n] >> 4)) & 0x0F];  /* upper nibble */
+    }
+
+    return crc;
+}
+
+static uint32_t getSerialNumberHash()
+{
+	uint32_t uid[4];
+    __disable_irq();
+	uint32_t n= Chip_IAP_ReadUID(uid);
+    __enable_irq();
+    if(n == 0) return crc32((uint8_t *)&uid, 4*4);
+    return 0;
+}
+
 /* Returns the MAC address assigned to this board */
 void Board_ENET_GetMacADDR(uint8_t *mcaddr)
 {
-	uint8_t boardmac[] = {0x00, 0x60, 0x37, 0x12, 0x34, 0x56};
+	uint8_t boardmac[6];
+    uint32_t h = getSerialNumberHash();
+    boardmac[0] = 0x00;   // OUI
+    boardmac[1] = 0x1F;   // OUI
+    boardmac[2] = 0x11;   // OUI
+    boardmac[3] = 0x02;   // Openmoko allocation for smoothie board
+    boardmac[4] = 0x05;   // 04-14  03 bits -> chip id, 1 bits -> hashed serial
+    boardmac[5] = h & 0xFF; // 00-FF  8bits -> hashed serial
 
 	memcpy(mcaddr, boardmac, 6);
 }
