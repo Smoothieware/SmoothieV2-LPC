@@ -212,7 +212,7 @@ static void Board_LED_Init()
     const PINMUX_GRP_T ledpinmuxing[] = {
 		/* Board LEDs */
 		{0x6, 11, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_7
-		{0x2, 5, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO5_5
+		{0x2, 5, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC4)}, // GPIO5_5
 	};
 	Chip_SCU_SetPinMuxing(ledpinmuxing, sizeof(ledpinmuxing) / sizeof(PINMUX_GRP_T));
 
@@ -221,23 +221,23 @@ static void Board_LED_Init()
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 5);
 
 	/* Set initial states to off */
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, (bool) false);
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, true);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, true);
 }
 
 void Board_LED_Set(uint8_t LEDNumber, bool On)
 {
 	switch(LEDNumber) {
-		case 0: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, (bool)On); break;
-		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, (bool)On); break;
+		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, !On); break;
+		case 0: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, !On); break;
 	}
 }
 
 bool Board_LED_Test(uint8_t LEDNumber)
 {
 	switch(LEDNumber) {
-		case 0: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 7);
-		case 1: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 5);
+		case 1: return (bool)!Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 7);
+		case 0: return (bool)!Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 5);
 	}
 
 	return false;
@@ -282,11 +282,11 @@ static uint32_t crc32(uint8_t* buf, int length)
 static uint32_t getSerialNumberHash()
 {
 	uint32_t uid[4];
-    __disable_irq();
-	uint32_t n= Chip_IAP_ReadUID(uid);
-    __enable_irq();
-    if(n == 0) return crc32((uint8_t *)&uid, 4*4);
-    return 0;
+	uint32_t *p= (uint32_t *)0x40045000;
+	for (int i = 0; i < 4; ++i) {
+	    uid[i]= *p++;
+	}
+	return crc32((uint8_t *)&uid, 4*4);
 }
 
 /* Returns the MAC address assigned to this board */
