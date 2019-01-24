@@ -11,9 +11,13 @@ function connectCommand() {
 		return;
 	}
 
+	ip = location.host;
+	if(ip) {
+		wsUri= "ws://" + ip;
+	}
+
 	$( "#connectionStatus" ).empty().append("Connecting...");
 	//ws = new WebSocket("ws://demos.kaazing.com/echo");
-	console.log("Location: " + location);
 	websocket = new WebSocket(wsUri + "/command");
 	websocket.onopen = function(evt) { onOpen(evt) };
 	websocket.onclose = function(evt) { onClose(evt) };
@@ -125,7 +129,13 @@ function upload() {
 
 	if(websocket && websocket.readyState != 3) {
 	  websocket.close();
+	}else{
+		ip = location.host;
+		if(ip) {
+			wsUri= "ws://" + ip;
+		}
 	}
+
 	//ws = new WebSocket("ws://demos.kaazing.com/echo");
 	ws = new WebSocket(wsUri + "/upload");
 	ws.binaryType = "arraybuffer";

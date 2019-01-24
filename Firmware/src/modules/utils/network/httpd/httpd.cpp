@@ -73,9 +73,16 @@ static bool write_page(struct netconn *conn, const char *file)
         return false;
     }
 
+    size_t bufsize= 2000;
+    char *buf= (char *)malloc(bufsize);
+    if(buf == NULL) {
+        printf("write_page: out of memory\n");
+        fclose(fd);
+        return false;
+    }
+
     while(!feof(fd)) {
-        char buf[1000];
-        int len = fread(buf, 1, sizeof(buf), fd);
+        int len = fread(buf, 1, bufsize, fd);
         if (len <= 0) {
             break;
 
@@ -83,12 +90,12 @@ static bool write_page(struct netconn *conn, const char *file)
             err_t err = netconn_write(conn, buf, len, NETCONN_COPY);
             if(err != ERR_OK) {
                 printf("write_page: got write error: %d\n", err);
-                fclose(fd);
-                return false;
+                break;
             }
         }
     }
     fclose(fd);
+    free(buf);
     return true;
 }
 
@@ -688,11 +695,11 @@ static void http_server_netconn_serve(struct netconn *conn)
 
             } else {
                 write_header(conn, http_header_404);
-                path = make_path("404.html");
-                if(!path.empty()) {
-                    write_header(conn, http_content_type_html);
-                    write_page(conn, path.c_str());
-                }
+                // path = make_path("404.html");
+                // if(!path.empty()) {
+                //     write_header(conn, http_content_type_html);
+                //     write_page(conn, path.c_str());
+                // }
             }
 
         } else {
@@ -738,5 +745,5 @@ static void http_server_thread(void *arg)
 /** Initialize the HTTP server (start its thread) */
 void http_server_init(void)
 {
-    sys_thread_new("http_server_netconn", http_server_thread, NULL, 700, DEFAULT_THREAD_PRIO);
+    sys_thread_new("http_server_netconn", http_server_thread, NULL, 450, DEFAULT_THREAD_PRIO);
 }
