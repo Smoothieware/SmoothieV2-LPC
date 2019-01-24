@@ -950,7 +950,7 @@ int main(int argc, char *argv[])
     return 1;
 }
 
-#define TICKS2MS( xTicks ) ( (uint32_t) ( ((uint64_t)(xTicks) * 1000) / configTICK_RATE_HZ ) )
+#define TICKS2MS( xTicks ) ( ((xTicks) * 1000.0F) / configTICK_RATE_HZ )
 
 // hooks from freeRTOS
 extern "C" void vApplicationIdleHook( void )

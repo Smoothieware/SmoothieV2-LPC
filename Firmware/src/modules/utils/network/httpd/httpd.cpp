@@ -405,6 +405,7 @@ static err_t handle_upload(struct netconn *conn)
     uint32_t filecnt= 0;
     enum STATE { NAME, SIZE, BODY};
     enum STATE uploadstate= NAME;
+    FILE *fp= nullptr;
 
     // read from connection until it closes
     while ((err = websocket_read(state, buf, buflen, n)) == ERR_OK) {
@@ -412,31 +413,48 @@ static err_t handle_upload(struct netconn *conn)
         if(uploadstate == NAME) {
             name.assign((char*)buf, n);
             uploadstate= SIZE;
+
         } else if(uploadstate == SIZE) {
             std::string s((char*)buf, n);
             size= strtoul(s.c_str(), nullptr, 10);
+            // open file, if it fails send error message and close connection
+            fp= fopen(name.c_str(), "wb");
+            if(fp == NULL) {
+                printf("handle_upload: failed to open file for write\n");
+                websocket_write(conn, "error file open failed", 22);
+                break;
+            }
             uploadstate= BODY;
             filecnt= 0;
-            // TODO open file, if it fails send error message and close connection
+
         } else if(uploadstate == BODY) {
-            // TODO write to file, if it fails send error message and close connection
-            int cnt = 0;
-            for (int i = 0; i < n; ++i) {
-                printf("%02X(%c) ", buf[i], buf[i] > ' ' ? buf[i] : '_');
-                if(++cnt >= 8) {
-                    printf("\n");
-                    cnt = 0;
-                }
+            // write to file, if it fails send error message and close connection
+            size_t l= fwrite(buf, 1, n, fp);
+            if(l != n) {
+                printf("handle_upload: failed to write to file\n");
+                websocket_write(conn, "error file write failed", 23);
+                fclose(fp);
+                break;
             }
-            printf("\n");
+            // int cnt = 0;
+            // for (int i = 0; i < n; ++i) {
+            //     printf("%02X(%c) ", buf[i], buf[i] > ' ' ? buf[i] : '_');
+            //     if(++cnt >= 8) {
+            //         printf("\n");
+            //         cnt = 0;
+            //     }
+            // }
+            // printf("\n");
             filecnt += n;
             if(filecnt >= size) {
-                // TODO close file
+                // close file
+                fclose(fp);
                 printf("handle_upload: Done upload of file %s, of size: %lu (%lu)\n", name.c_str(), size, filecnt);
-                websocket_write(conn, "upload successful", 17);
+                websocket_write(conn, "ok upload successful", 17);
                 uploadstate= NAME;
                 break;
             }
+
         } else {
             printf("handle_upload: state error\n");
         }
