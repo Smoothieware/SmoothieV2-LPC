@@ -509,11 +509,6 @@ void handle_query()
 }
 
 #include "Conveyor.h"
-#include "Pin.h"
-
-// Define the activity/idle indicator led
-static Pin *idle_led = nullptr;
-static Pin *play_led = nullptr;
 
 /*
  * All commands must be executed in the context of this thread. It is equivalent to the main_loop in v1.
@@ -544,9 +539,9 @@ static void command_handler()
         } else {
             // timed out or other error
             idle = true;
-            if(idle_led != nullptr && config_error_msg.empty()) {
+            if(config_error_msg.empty()) {
                 // toggle led to show we are alive, but idle
-                idle_led->set(!idle_led->get());
+                Board_LED_Toggle(0);
             }
         }
 
@@ -705,25 +700,6 @@ static void smoothie_startup(void *)
         ConfigReader cr(ss);
         printf("DEBUG: Starting configuration of modules from memory...\n");
 #endif
-        {
-            // configure system leds (if any)
-            // TODO these should be hard coded and only disabled if disable_leds is set.
-            ConfigReader::section_map_t m;
-            if(cr.get_section("system leds", m)) {
-                std::string p = cr.get_string(m, "idle_led", "nc");
-                idle_led = new Pin(p.c_str(), Pin::AS_OUTPUT);
-                if(!idle_led->connected()) {
-                    delete idle_led;
-                    idle_led = nullptr;
-                }
-                p = cr.get_string(m, "play_led", "nc");
-                play_led = new Pin(p.c_str(), Pin::AS_OUTPUT);
-                if(!play_led->connected()) {
-                    delete play_led;
-                    play_led = nullptr;
-                }
-            }
-        }
 
         {
             // get general system settings
@@ -902,16 +878,6 @@ static void smoothie_startup(void *)
                 );
         }
     }
-
-    // if we got a config error and system leds were not configured, then configure them
-    if(!config_error_msg.empty()) {
-        if(idle_led == nullptr) {
-            idle_led= new Pin("p7.4", Pin::AS_OUTPUT);
-        }
-        if(play_led == nullptr) {
-            play_led= new Pin("p7.5", Pin::AS_OUTPUT);
-        }
-    }
 #endif
 
     // wait for command thread to start
@@ -999,19 +965,22 @@ extern "C" void vApplicationIdleHook( void )
     function, because it is the responsibility of the idle task to clean up
     memory allocated by the kernel to any task that has since been deleted. */
 
-    // handle play led
     static TickType_t last_time_check = xTaskGetTickCount();
-    if(system_running && play_led != nullptr) {
-        if(TICKS2MS(xTaskGetTickCount() - last_time_check) >= 300) {
-            last_time_check = xTaskGetTickCount();
-            if(Module::is_halted()) {
-                play_led->set(!play_led->get());
-            }else{
-                play_led->set(!Conveyor::getInstance()->is_idle());
-            }
+    if(TICKS2MS(xTaskGetTickCount() - last_time_check) >= 300) {
+        last_time_check = xTaskGetTickCount();
+        if(!config_error_msg.empty()) {
             // handle config error
-            if(!config_error_msg.empty() && idle_led != nullptr) {
-                idle_led->set(!idle_led->get());
+            // flash both leds
+            Board_LED_Toggle(0);
+            Board_LED_Toggle(1);
+        } else {
+            // handle play led
+            if(system_running) {
+                if(Module::is_halted()) {
+                    Board_LED_Toggle(1);
+                }else{
+                    Board_LED_Set(1, !Conveyor::getInstance()->is_idle());
+                }
             }
         }
     }

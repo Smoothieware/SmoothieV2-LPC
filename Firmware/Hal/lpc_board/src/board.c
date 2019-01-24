@@ -204,6 +204,49 @@ void Board_LED_Toggle(uint8_t LEDNumber)
 {
 	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
 }
+
+#elif defined(BOARD_BAMBINO)
+
+static void Board_LED_Init()
+{
+    const PINMUX_GRP_T ledpinmuxing[] = {
+		/* Board LEDs */
+		{0x6, 11, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_7
+		{0x2, 5, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO5_5
+	};
+	Chip_SCU_SetPinMuxing(ledpinmuxing, sizeof(ledpinmuxing) / sizeof(PINMUX_GRP_T));
+
+	// setup the 2 system leds
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 7);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 5);
+
+	/* Set initial states to off */
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, (bool) false);
+}
+
+void Board_LED_Set(uint8_t LEDNumber, bool On)
+{
+	switch(LEDNumber) {
+		case 0: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 7, (bool)On); break;
+		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 5, (bool)On); break;
+	}
+}
+
+bool Board_LED_Test(uint8_t LEDNumber)
+{
+	switch(LEDNumber) {
+		case 0: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 7);
+		case 1: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 5);
+	}
+
+	return false;
+}
+
+void Board_LED_Toggle(uint8_t LEDNumber)
+{
+	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
+}
 #else
 static void Board_LED_Init(){}
 void Board_LED_Set(uint8_t LEDNumber, bool On){}

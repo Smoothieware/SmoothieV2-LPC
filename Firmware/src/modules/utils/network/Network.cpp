@@ -208,7 +208,7 @@ static void netstat(OutputStream& os)
 #define HELP(m) if(params == "-h") { os.printf("%s\n", m); return true; }
 bool Network::handle_net_cmd( std::string& params, OutputStream& os )
 {
-    HELP("net - show network status, -v also shows netstat");
+    HELP("net - show network status, -n also shows netstat");
 
     if(lpc_netif->flags & NETIF_FLAG_LINK_UP) {
         os.printf("Link UP\n");
