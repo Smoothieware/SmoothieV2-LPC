@@ -213,10 +213,10 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
         }else{
             os.printf("\n");
         }
+        os.set_no_response();
     }
     f_closedir(&dir);
 #endif
-    os.set_no_response();
     return true;
 }
 

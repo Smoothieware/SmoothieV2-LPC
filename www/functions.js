@@ -1,5 +1,5 @@
-//var wsUri = "ws://192.168.1.101";
-var wsUri = "ws://localhost:8765";
+var wsUri = "ws://192.168.1.101";
+//var wsUri = "ws://localhost:8765";
 //var wsUri = "ws://demos.kaazing.com";
 var websocket;
 var silent= false;
@@ -13,6 +13,7 @@ function connectCommand() {
 
 	$( "#connectionStatus" ).empty().append("Connecting...");
 	//ws = new WebSocket("ws://demos.kaazing.com/echo");
+	console.log("Location: " + location);
 	websocket = new WebSocket(wsUri + "/command");
 	websocket.onopen = function(evt) { onOpen(evt) };
 	websocket.onclose = function(evt) { onClose(evt) };
@@ -29,6 +30,7 @@ function onOpen(evt)
 	displayConnectionStatus("CONNECTED");
 	// FIXME this does not work... why?
  	$('#ConnectButton').text("Disconnect")
+ 	$( "#connectionError" ).empty();
 }
 
 function onClose(evt)
@@ -52,7 +54,7 @@ function onMessage(evt)
 
 function onError(evt)
 {
-  displayConnectionStatus('Error:' + evt.data);
+  $( "#connectionError" ).empty().append('Error:' + evt.data);
 }
 
 function doSend(message)

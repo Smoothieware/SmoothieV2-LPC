@@ -436,15 +436,17 @@ static err_t handle_upload(struct netconn *conn)
                 fclose(fp);
                 break;
             }
-            // int cnt = 0;
-            // for (int i = 0; i < n; ++i) {
-            //     printf("%02X(%c) ", buf[i], buf[i] > ' ' ? buf[i] : '_');
-            //     if(++cnt >= 8) {
-            //         printf("\n");
-            //         cnt = 0;
-            //     }
-            // }
-            // printf("\n");
+#if 0
+            int cnt = 0;
+            for (int i = 0; i < n; ++i) {
+                printf("%02X(%c) ", buf[i], buf[i] >= ' ' && buf[i] <= '~' ? buf[i] : '_');
+                if(++cnt >= 8) {
+                    printf("\n");
+                    cnt = 0;
+                }
+            }
+            printf("\n");
+#endif
             filecnt += n;
             if(filecnt >= size) {
                 // close file
@@ -686,6 +688,11 @@ static void http_server_netconn_serve(struct netconn *conn)
 
             } else {
                 write_header(conn, http_header_404);
+                path = make_path("404.html");
+                if(!path.empty()) {
+                    write_header(conn, http_content_type_html);
+                    write_page(conn, path.c_str());
+                }
             }
 
         } else {
@@ -731,5 +738,5 @@ static void http_server_thread(void *arg)
 /** Initialize the HTTP server (start its thread) */
 void http_server_init(void)
 {
-    sys_thread_new("http_server_netconn", http_server_thread, NULL, 300, DEFAULT_THREAD_PRIO);
+    sys_thread_new("http_server_netconn", http_server_thread, NULL, 700, DEFAULT_THREAD_PRIO);
 }
