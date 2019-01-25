@@ -579,7 +579,7 @@ static err_t parse_headers(struct netconn *conn, struct pbuf* &cp, std::string& 
             cp = pbuf_free_header(cp, offset + 1);
             //printf("parse_headers: end of headers\n");
             return ERR_OK;
-        }
+            }
 
         char hdrbuf[len + 1];
         n = pbuf_copy_partial(cp, hdrbuf, len, last_offset);
@@ -629,29 +629,18 @@ static void http_server_netconn_serve(struct netconn *conn)
 
         if(cp != NULL) pbuf_free(cp);
 
-        if(method == "GET" && request_target == "/command") {
+        if(method == "GET" && (request_target == "/command" || request_target == "/upload")) {
             auto i = hdrs.find("Upgrade");
             if(i != hdrs.end() && i->second == "websocket") {
                 auto k = hdrs.find("Sec-WebSocket-Key");
                 if(k != hdrs.end()) {
                     std::string key = k->second;
                     if(handle_incoming_websocket(conn, key.c_str()) == ERR_OK) {
-                        handle_command(conn);
-                        return;
-                    }
-                }
-            }
-            printf("http_server_netconn_serve: badly formatted websocket request\n");
-            write_header(conn, http_header_400);
-
-        } else if(method == "GET" && request_target == "/upload") {
-            auto i = hdrs.find("Upgrade");
-            if(i != hdrs.end() && i->second == "websocket") {
-                auto k = hdrs.find("Sec-WebSocket-Key");
-                if(k != hdrs.end()) {
-                    std::string key = k->second;
-                    if(handle_incoming_websocket(conn, key.c_str()) == ERR_OK) {
-                        handle_upload(conn);
+                        if(request_target == "/command") {
+                            handle_command(conn);
+                        }else{
+                            handle_upload(conn);
+                        }
                         return;
                     }
                 }
