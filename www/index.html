@@ -16,6 +16,8 @@ Smoothie IP: <input type="text" id="ipaddr" size=4 style="width:100px"/>
 <div id="connectionStatus">Not Connected</div>
 
 <hr/>
+<button id="killBut" onclick="kill(event)">Kill</button>
+<button id="unkillBut" onclick="unKill(event)">unKill</button>
 <button id="motors_off" onclick="motorsOff(event)">Motors Off</button>
 
 XY:<input type="text" id="xy_velocity" size=4 value=3000 style="width:50px" />mm/min
@@ -339,6 +341,10 @@ Z:<input type="text" id="z_velocity" size=3 value=200 style="width:40px">
 mm @
 <input type="text" id="extrude_velocity" value=100 size=3 style="width:40px">
 mm/min
+
+<br/>
+<button id="queryBut" onclick="query(event)">Query</button>
+<div id="queryResult"></div>
 
 <h2>Commands</h2>
 <input id="commandText" type="text" name="commandText" placeholder="Send Command...">

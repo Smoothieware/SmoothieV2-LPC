@@ -383,10 +383,9 @@ static err_t handle_command(struct netconn *conn)
     err_t err;
     WebsocketState state(conn);
     // read packets from connection until it closes
-    while ((err = websocket_read(state, (uint8_t *)buf, bufsize-1, n)) == ERR_OK) {
+    while ((err = websocket_read(state, (uint8_t *)buf, bufsize, n)) == ERR_OK) {
         // we now have a decoded websocket payload in buf, that is n bytes long
-        buf[n]= '\n';
-        process_command_buffer(n+1, buf, os, line, cnt, discard);
+        process_command_buffer(n, buf, os, line, cnt, discard);
     }
 
     // make sure command thread does not try to write to the soon to be closed (and deleted) conn

@@ -9,9 +9,9 @@ $( window ).load(function() {
 		$( "#ipaddr" ).val(ip);
 	}else{
 		// local development server
-		$( "#ipaddr" ).val("localhost:8765");
+		//$( "#ipaddr" ).val("localhost:8765");
 		// smoothie
-		//$( "#ipaddr" ).val("192.168.1.101");
+		$( "#ipaddr" ).val("192.168.1.101");
 	}
 });
 
@@ -59,6 +59,11 @@ function onClose(evt)
 function onMessage(evt)
 {
 	console.log(evt.data)
+	if(evt.data.startsWith('<')) {
+		parseQuery(evt.data);
+		return;
+	}
+
 	if(silent) return;
 	if(capture_cb == null) {
 		$.each(evt.data.split('\n'), function(index) {
@@ -74,14 +79,33 @@ function onError(evt)
   $( "#connectionError" ).empty().append('Error:' + evt.data);
 }
 
+function parseQuery(q) {
+	q= q.substr(1, q.length-3);
+	$( "#queryResult" ).empty().append(q);
+}
+
 function doSend(message)
 {
   websocket.send(message);
 }
 
+function query() {
+	doSend('?');
+}
+
+function kill() {
+	buf= new Uint8Array(1);
+	buf[0]= 24;
+	doSend(buf); // ^X
+}
+
+function unKill() {
+	doSend("$X\n"); // $X
+}
+
 function runCommand(cmd, sil=false) {
 	silent= sil;
-  	doSend(cmd);
+  	doSend(cmd + '\n');
 }
 
 function runCommandSilent(cmd) {
