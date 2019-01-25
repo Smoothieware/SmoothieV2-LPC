@@ -7,6 +7,7 @@ $( window ).load(function() {
 	ip = location.host;
 	if(ip) {
 		$( "#ipaddr" ).val(ip);
+		console.log("ip: "+ip);
 	}else{
 		// local development server
 		//$( "#ipaddr" ).val("localhost:8765");
