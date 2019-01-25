@@ -54,7 +54,7 @@ static void shell_thread(void *arg)
                 int n= pbuf_copy_partial(p, buf, bufsize, 0);
                 pbuf_free(p);
                 if(n > 0) {
-                    if(strncmp(buf, "quit\n", 5) == 0) {
+                    if(strncmp(buf, "quit\n", 5) == 0 || strncmp(buf, "quit\r\n", 6) == 0) {
                         netconn_write(newconn, "Goodbye!\n", 9, NETCONN_COPY);
                         break;
                     }
