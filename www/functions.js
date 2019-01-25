@@ -1,23 +1,36 @@
-var wsUri = "ws://192.168.1.101";
-//var wsUri = "ws://localhost:8765";
 //var wsUri = "ws://demos.kaazing.com";
+var wsUri;
 var websocket;
 var silent= false;
 var capture_cb= null;
+$( window ).load(function() {
+	ip = location.host;
+	if(ip) {
+		$( "#ipaddr" ).val(ip);
+	}else{
+		// local development server
+		$( "#ipaddr" ).val("localhost:8765");
+		// smoothie
+		//$( "#ipaddr" ).val("192.168.1.101");
+	}
+});
+
+function getwsuri() {
+	ip= $("#ipaddr").val();
+	wsUri= "ws://" + ip;
+}
 
 function connectCommand() {
 	if(websocket && websocket.readyState == 1) {
 		websocket.close();
 		return;
 	}
-
-	ip = location.host;
-	if(ip) {
-		wsUri= "ws://" + ip;
-	}
+	getwsuri();
+	console.log("webconnect to: " + wsUri);
 
 	$( "#connectionStatus" ).empty().append("Connecting...");
-	//ws = new WebSocket("ws://demos.kaazing.com/echo");
+
+	//websocket = new WebSocket("ws://demos.kaazing.com/echo");
 	websocket = new WebSocket(wsUri + "/command");
 	websocket.onopen = function(evt) { onOpen(evt) };
 	websocket.onclose = function(evt) { onClose(evt) };
@@ -127,15 +140,16 @@ function upload() {
 	$( "#uploadresult" ).empty();
 	$( "#uploadError" ).empty();
 
+	var wasopen;
+
 	if(websocket && websocket.readyState != 3) {
 	  websocket.close();
+	  wasopen= true;
 	}else{
-		ip = location.host;
-		if(ip) {
-			wsUri= "ws://" + ip;
-		}
+		wasopen= false;
 	}
 
+	getwsuri();
 	//ws = new WebSocket("ws://demos.kaazing.com/echo");
 	ws = new WebSocket(wsUri + "/upload");
 	ws.binaryType = "arraybuffer";
@@ -148,7 +162,10 @@ function upload() {
 		var rawData = new ArrayBuffer();
 		reader.readAsArrayBuffer(file);
 
-		reader.loadend = function() { $( "#progress" ).empty().append("the File has been loaded.")}
+		reader.loadend = function() {
+			$( "#progress" ).empty().append("the File has been loaded.")
+		}
+
 		reader.onload = function(e) {
 			  rawData = e.target.result;
 			  console.log("Uploading file: " + file.name + ", length: " + rawData.byteLength);
@@ -174,6 +191,9 @@ function upload() {
 
 	ws.onclose = function(e) {
 		$( "#progress" ).empty().append("Connection is closed..." + e.code);
+		if(wasopen) {
+			connectCommand();
+		}
 	};
 
 	ws.onerror = function(e) {

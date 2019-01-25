@@ -416,7 +416,7 @@ static err_t handle_upload(struct netconn *conn)
 
     // read from connection until it closes
     while ((err = websocket_read(state, buf, buflen, n)) == ERR_OK) {
-        printf("handle_upload: got len %d, complete: %d, state: %d\n", n, state.complete, uploadstate);
+        //printf("handle_upload: got len %d, complete: %d, state: %d\n", n, state.complete, uploadstate);
         if(uploadstate == NAME) {
             name.assign((char*)buf, n);
             uploadstate= SIZE;
