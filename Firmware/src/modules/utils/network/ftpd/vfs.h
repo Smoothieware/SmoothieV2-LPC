@@ -50,6 +50,7 @@ typedef struct {
 } vfs_dirent_t;
 typedef FIL vfs_t;
 
+#if 0
 struct tm {
   int tm_year;
   int tm_mon;
@@ -57,6 +58,7 @@ struct tm {
   int tm_hour;
   int tm_min;
 };
+#endif
 
 #define time(x)
 #define vfs_eof f_eof
@@ -80,6 +82,6 @@ void vfs_close(vfs_t* vfs);
 int vfs_stat(vfs_t* vfs, const char* filename, vfs_stat_t* st);
 void vfs_closedir(vfs_dir_t* dir);
 vfs_dir_t* vfs_opendir(vfs_t* vfs, const char* path);
-struct tm* gmtime(mtime_t *c_t);
+//struct tm* gmtime(mtime_t *c_t);
 
 #endif /* INCLUDE_VFS_H */

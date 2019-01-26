@@ -133,6 +133,8 @@
 #define LWIP_NETCONN_SEM_PER_THREAD     1
 
 #define LWIP_ERRNO_STDINCLUDE
+#define LWIP_TIMEVAL_PRIVATE            0
+#define LWIP_COMPAT_SOCKETS             0
 
 /* TCPIP thread must run at higher priority than MAC threads! */
 #define TCPIP_THREAD_PRIO               (tskIDLE_PRIORITY + 4)

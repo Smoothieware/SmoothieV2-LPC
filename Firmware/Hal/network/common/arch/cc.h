@@ -34,6 +34,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 /** @ingroup NET_LWIP_ARCH
  * @{
