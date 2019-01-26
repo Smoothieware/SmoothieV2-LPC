@@ -14,7 +14,7 @@ See the tools/example-config.ini file
 Checksums are no longer used and the #defines are renamed to xxx_key instead and are strings.
 There is a helper script that converts many of the checksums into keys and calls to the new config library are converted too.
 tools/convert-config.rb is the script and you need to install ruby and the gem rio to use it. You can also do it manually and use an existing ported module for examples.
-```ruby convert-config.rb mymodule.cpp > my converted-module.cpp```
+```ruby convert-config.rb mymodule.cpp > my_converted-module.cpp```
 
 An example of reading config entries is below:-
 ```
@@ -65,6 +65,22 @@ There are no longer any events to subscribe to, and modules are more flexible no
     }
     os.printf("switch %s is %d\n", name.c_str(), state);
 ```
+
+Modules can self register themselves so adding them to main.cpp is no longer required...
+
+```
+    REGISTER_MODULE(CurrentControl, CurrentControl::create)
+```
+
+This tells the startup code to call ```bool CurrentControl::create(ConfigReader& cr)``` where the module can configure itself. It should return false if there were any errors or it decided to not load itself.
+
+Additionally if the module needs to be started up after everything has been initialised it can add itelf to a startup callback list...
+```
+    // register a startup function
+    register_startup(std::bind(&Network::start, network));
+```
+Here ```bool Network::start(void)``` is called once the boot phase is complete.
+
 
 All gcodes and mcodes need to be registered with the Dispatcher, examples can be found in the many ported modules.
 ```
