@@ -32,6 +32,7 @@ elsif TARGET == 'Primealpha'
   # on G5
   target_defines << '-DUSE_UART0'
   target_defines << "-DUART0_PINSET=15"
+  ENV['nonetwork'] = '1' # for now until ethernet is fixed on H/W
 elsif TARGET == 'Bambino'
   target_defines << '-DUSE_UART0'
   target_defines << '-DUART0_PINSET=6'
