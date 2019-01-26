@@ -56,9 +56,15 @@ static void close_shell(shell_t *p_shell)
 {
     shell_t *p_search_shell;
     p_shell->magic= 0; // safety
-    // FIXME if we delete this now and command thread is still outputing stuff we will crash
+    // FIXME if we delete this now and command thread is still outputting stuff we will crash
     //   it needs to stick around until the command has completed
-    delete p_shell->os;
+    if(p_shell->os->is_done()) {
+        printf("shell: releasing output stream\n");
+        delete p_shell->os;
+    }else{
+        printf("shell: delaying releasing output stream: %p\n", p_shell->os);
+        p_shell->os->set_closed();
+    }
 
     printf("shell: closing shell connection: %d\n", p_shell->socket);
     lwip_close(p_shell->socket);

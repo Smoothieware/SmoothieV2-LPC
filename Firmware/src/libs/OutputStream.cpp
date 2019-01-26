@@ -5,8 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-OutputStream::OutputStream(wrfnc f) : append_nl(false), prepend_ok(false), deleteos(true), no_response(false)
+OutputStream::OutputStream(wrfnc f) : deleteos(true)
 {
+	clear_flags();
 	// create an output stream using the given write fnc
 	fdbuf = new FdBuf(this, f);
 	os = new std::ostream(fdbuf);
