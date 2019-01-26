@@ -9,6 +9,9 @@
 static struct netconn *newconn= NULL;
 static int write_back(const char *rbuf, size_t len)
 {
+    // FIXME netconn calls are not thread safe so must be called in the app thread
+    // however OutputStream is called from the command thread
+    // A quick workaround is to store in a string, then use select and write when string is not empty
     if(newconn != NULL) {
         netconn_write(newconn, rbuf, len, NETCONN_COPY);
     }

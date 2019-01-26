@@ -136,9 +136,9 @@ size_t write_uart(const char *buf, size_t length)
 	}
 	return length;
 	#else
-	taskENTER_CRITICAL();
+	//taskENTER_CRITICAL();
 	size_t n= Chip_UART_SendBlocking(LPC_UARTX, buf, length);
-	taskEXIT_CRITICAL();
+	//taskEXIT_CRITICAL();
 	return n;
 	#endif
 }
