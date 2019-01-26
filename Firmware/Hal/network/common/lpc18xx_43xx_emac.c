@@ -37,7 +37,7 @@
 #include "lwip/stats.h"
 #include "lwip/snmp.h"
 #include "netif/etharp.h"
-#include "netif/ppp_oe.h"
+//#include "netif/ppp_oe.h"
 
 #include "lpc_18xx43xx_emac_config.h"
 #include "arch/lpc18xx_43xx_emac.h"
@@ -706,7 +706,7 @@ void lpc_enetif_input(struct netif *netif)
 	switch (htons(ethhdr->type)) {
 	case ETHTYPE_IP:
 	case ETHTYPE_ARP:
-#if PPPOE_SUPPORT
+#ifdef PPPOE_SUPPORT
 	case ETHTYPE_PPPOEDISC:
 	case ETHTYPE_PPPOE:
 #endif /* PPPOE_SUPPORT */
@@ -826,14 +826,14 @@ void ETH_IRQHandler(void)
 	if (ints & (DMA_ST_RI | DMA_ST_OVF | DMA_ST_RU)) {
 		/* Give semaphore to wakeup RX receive task. Note the FreeRTOS
 		   method is used instead of the LWIP arch method. */
-		xSemaphoreGiveFromISR(lpc_enetdata.RxSem, &xRecTaskWoken);
+		xSemaphoreGiveFromISR(lpc_enetdata.RxSem.sem, &xRecTaskWoken);
 	}
 
 	/* TX group interrupt(s) */
 	if (ints & (DMA_ST_TI | DMA_ST_UNF | DMA_ST_TU)) {
 		/* Give semaphore to wakeup TX cleanup task. Note the FreeRTOS
 		   method is used instead of the LWIP arch method. */
-		xSemaphoreGiveFromISR(lpc_enetdata.TxCleanSem, &XTXTaskWoken);
+		xSemaphoreGiveFromISR(lpc_enetdata.TxCleanSem.sem, &XTXTaskWoken);
 	}
 
 	/* Clear pending interrupts */

@@ -7,7 +7,8 @@
 #include "lwip/tcpip.h"
 #include "lwip/ip_addr.h"
 #include "lwip/netif.h"
-#include "lwip/timers.h"
+#include "lwip/netifapi.h"
+//#include "lwip/timers.h"
 #include "netif/etharp.h"
 #include "lwip/dhcp.h"
 
@@ -272,6 +273,9 @@ void Network::network_thread()
         printf("Network: TCPIP thread has started...\n");
     }
 
+    // needed for LWIP_NETCONN_SEM_PER_THREAD which is needed for LWIP_NETCONN_FULLDUPLEX
+    netconn_thread_init();
+
     if(ip_address == nullptr) {
         // dhcp
         IP4_ADDR(&gw, 0, 0, 0, 0);
@@ -346,11 +350,11 @@ void Network::network_thread()
                 /* Set interface speed and duplex */
                 if (physts & PHY_LINK_SPEED100) {
                     Chip_ENET_SetSpeed(LPC_ETHERNET, 1);
-                    NETIF_INIT_SNMP(lpc_netif, snmp_ifType_ethernet_csmacd, 100000000);
+                    //NETIF_INIT_SNMP(lpc_netif, snmp_ifType_ethernet_csmacd, 100000000);
                     printf("Network::start() - 100Mbit/s ");
                 } else {
                     Chip_ENET_SetSpeed(LPC_ETHERNET, 0);
-                    NETIF_INIT_SNMP(lpc_netif, snmp_ifType_ethernet_csmacd, 10000000);
+                    //NETIF_INIT_SNMP(lpc_netif, snmp_ifType_ethernet_csmacd, 10000000);
                     printf("Network::start() - 10Mbit/s ");
                 }
                 if (physts & PHY_LINK_FULLDUPLX) {
@@ -390,6 +394,8 @@ void Network::network_thread()
         /* Delay for link detection (250mS) */
         vTaskDelay(pdMS_TO_TICKS(250));
     }
+
+    netconn_thread_cleanup();
 }
 
 void Network::vSetupIFTask(void *arg)

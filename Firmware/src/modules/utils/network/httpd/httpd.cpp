@@ -99,7 +99,7 @@ static bool write_page(struct netconn *conn, const char *file)
     return true;
 }
 
-#if 1
+#if 0
 // for older version of lwip (1.4.1) back port these
 u8_t pbuf_remove_header(struct pbuf *p, size_t header_size_decrement)
 {

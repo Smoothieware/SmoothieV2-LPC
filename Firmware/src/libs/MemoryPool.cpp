@@ -265,6 +265,7 @@ uint32_t MemoryPool::available()
 
 // convenience routines to allow alloc/dealloc in _RAMx from C
 #include "main.h"
+
 extern "C" void *AllocRAM2(size_t size) { return _RAM2->alloc(size); }
 extern "C" void DeallocRAM2(void *mem) { _RAM2->dealloc(mem); }
 extern "C" void *AllocRAM3(size_t size) { return _RAM3->alloc(size); }

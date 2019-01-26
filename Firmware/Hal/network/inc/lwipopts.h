@@ -125,6 +125,14 @@
 #define DEFAULT_TCP_RECVMBOX_SIZE       6
 #define DEFAULT_UDP_RECVMBOX_SIZE       6
 
+#define LWIP_FREERTOS_THREAD_STACKSIZE_IS_STACKWORDS 1
+#define LWIP_COMPAT_MUTEX 0
+
+#define LWIP_NETCONN_FULLDUPLEX 1
+#define LWIP_NETCONN_SEM_PER_THREAD     1
+
+#define LWIP_ERRNO_STDINCLUDE
+
 /* TCPIP thread must run at higher priority than MAC threads! */
 #define TCPIP_THREAD_PRIO               (tskIDLE_PRIORITY + 4)
 #define TCPIP_THREAD_STACKSIZE          (450)
@@ -140,28 +148,38 @@
 #include "lpc_types.h"
 #include "FreeRTOS.h"
 
-#if 0
-/* use Reentrant malloc and free from newlib */
-#define mem_free free
-#define mem_malloc  malloc
-#else
+#if  1
 // use RAMn for Network allocations
-extern void *AllocRAM2(size_t);
-extern void DeallocRAM2(void*);
-#define mem_free DeallocRAM2
-#define mem_malloc AllocRAM2
+#ifdef __cplusplus
+extern "C" {
+#endif
+void *AllocRAM2(size_t);
+void DeallocRAM2(void*);
+#ifdef __cplusplus
+}
+#endif
+
+#define mem_clib_free DeallocRAM2
+#define mem_clib_malloc AllocRAM2
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /* Reentrant Calloc */
 STATIC INLINE void *pvPortCalloc(size_t nmemb, size_t size)
 {
-	void *x = mem_malloc(nmemb * size);
+	void *x = mem_clib_malloc(nmemb * size);
 	if (x != NULL)
 		memset(x, 0, nmemb * size);
 	return x;
 }
+#ifdef __cplusplus
+}
+#endif
 
-#define mem_calloc pvPortCalloc
+#define mem_clib_calloc pvPortCalloc
 
 #endif /* __LWIPOPTS_H_ */
 

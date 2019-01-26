@@ -348,7 +348,7 @@ struct ftpd_msgstate {
 	enum ftpd_state_e state;
 	sfifo_t fifo;
 	vfs_t *vfs;
-	struct ip_addr dataip;
+	struct ip4_addr dataip;
 	u16_t dataport;
 	struct tcp_pcb *datalistenpcb;
 	struct tcp_pcb *datapcb;
