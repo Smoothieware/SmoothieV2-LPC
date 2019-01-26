@@ -304,10 +304,10 @@ void set_capture(std::function<void(char)> cf)
 static std::vector<OutputStream*> output_streams;
 
 // this is here so we do not need to duplicate this logic for USB and UART
-void process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, size_t& cnt, bool& discard)
+void process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line, size_t& cnt, bool& discard)
 {
     for (size_t i = 0; i < n; ++i) {
-        line[cnt] = rxBuf[i];
+        line[cnt] = rx_buf[i];
         if(capture_fnc) {
             capture_fnc(line[cnt]);
             continue;
@@ -345,6 +345,7 @@ void process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line,
                 xSemaphoreGive(queries_mutex);
 
             }else{
+                os->clear_flags(); // clear the done flag here to avoid race conditions
                 send_message_queue(line, os);
             }
             cnt = 0;
@@ -380,17 +381,17 @@ static void usb_comms(void *)
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
     size_t n;
-    char rxBuf[256];
+    char rx_buf[256];
     bool done = false;
 
     // first we wait for an initial '\n' sent from host
     while (!done) {
         // Wait to be notified that there has been a USB irq.
         ulTaskNotifyTake( pdTRUE, waitms );
-        n = read_cdc(rxBuf, sizeof(rxBuf));
+        n = read_cdc(rx_buf, sizeof(rx_buf));
         if(n > 0) {
             for (size_t i = 0; i < n; ++i) {
-                if(rxBuf[i] == '\n') {
+                if(rx_buf[i] == '\n') {
                     if(config_error_msg.empty()) {
                         write_cdc(welcome_message, strlen(welcome_message));
                     }else{
@@ -419,9 +420,9 @@ static void usb_comms(void *)
             /* The call to ulTaskNotifyTake() timed out. check anyway */
         }
 
-        n = read_cdc(rxBuf, sizeof(rxBuf));
+        n = read_cdc(rx_buf, sizeof(rx_buf));
         if(n > 0) {
-            process_command_buffer(n, rxBuf, &os, line, cnt, discard);
+            process_command_buffer(n, rx_buf, &os, line, cnt, discard);
         }
     }
 }
@@ -437,7 +438,7 @@ static void uart_comms(void *)
 
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
-    char rxBuf[256];
+    char rx_buf[256];
     char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
     bool discard = false;
@@ -449,9 +450,9 @@ static void uart_comms(void *)
             /* The call to ulTaskNotifyTake() timed out. check anyway */
         }
 
-        size_t n = read_uart(rxBuf, sizeof(rxBuf));
+        size_t n = read_uart(rx_buf, sizeof(rx_buf));
         if(n > 0) {
-           process_command_buffer(n, rxBuf, &os, line, cnt, discard);
+           process_command_buffer(n, rx_buf, &os, line, cnt, discard);
         }
     }
 }
@@ -467,7 +468,7 @@ static void uart3_comms(void *)
 
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
-    char rxBuf[256];
+    char rx_buf[256];
     char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
     bool discard = false;
@@ -479,9 +480,9 @@ static void uart3_comms(void *)
             /* The call to ulTaskNotifyTake() timed out. check anyway */
         }
 
-        size_t n = read_uart3(rxBuf, sizeof(rxBuf));
+        size_t n = read_uart3(rx_buf, sizeof(rx_buf));
         if(n > 0) {
-           process_command_buffer(n, rxBuf, &os, line, cnt, discard);
+           process_command_buffer(n, rx_buf, &os, line, cnt, discard);
         }
     }
 }

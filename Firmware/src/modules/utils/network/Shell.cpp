@@ -58,13 +58,14 @@ static void close_shell(shell_t *p_shell)
     p_shell->magic= 0; // safety
     // FIXME if we delete this now and command thread is still outputting stuff we will crash
     //   it needs to stick around until the command has completed
-    if(p_shell->os->is_done()) {
+    //if(p_shell->os->is_done()) {
         printf("shell: releasing output stream\n");
         delete p_shell->os;
-    }else{
-        printf("shell: delaying releasing output stream: %p\n", p_shell->os);
-        p_shell->os->set_closed();
-    }
+    // }else{
+    //     printf("shell: delaying releasing output stream: %p\n", p_shell->os);
+    //     p_shell->os->set_closed();
+        // TODO put it on a garbage collector? to delete it when it is done
+    // }
 
     printf("shell: closing shell connection: %d\n", p_shell->socket);
     lwip_close(p_shell->socket);
@@ -93,6 +94,8 @@ static void shell_thread(void *arg)
     int i, maxfdp1;
     shell_t *p_shell;
 
+    printf("Shell thread started\n");
+
     lwip_socket_thread_init();
 
     memset(&shell_saddr, 0, sizeof (shell_saddr));
@@ -103,15 +106,15 @@ static void shell_thread(void *arg)
     shell_saddr.sin_addr.s_addr = PP_HTONL(INADDR_ANY);
     shell_saddr.sin_port = lwip_htons(23); /* telnet server port */
 
-    LWIP_ASSERT("shell_thread(): Socket create failed.", listenfd >= 0);
+    LWIP_ASSERT("shell_thread: Socket create failed.", listenfd >= 0);
 
     if (lwip_bind(listenfd, (struct sockaddr *) &shell_saddr, sizeof (shell_saddr)) == -1) {
-        LWIP_ASSERT("shell_thread(): Socket bind failed.", 0);
+        LWIP_ASSERT("shell_thread: Socket bind failed.", 0);
     }
 
     /* Put socket into listening mode */
     if (lwip_listen(listenfd, MAX_SERV) == -1) {
-        LWIP_ASSERT("shell_thread(): Listen failed.", 0);
+        LWIP_ASSERT("shell_thread: Listen failed.", 0);
     }
 
     /* Wait forever for network input: This could be connections or data */
