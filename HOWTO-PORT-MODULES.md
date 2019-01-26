@@ -72,9 +72,9 @@ Modules can self register themselves so adding them to main.cpp is no longer req
     REGISTER_MODULE(CurrentControl, CurrentControl::create)
 ```
 
-This tells the startup code to call ```bool CurrentControl::create(ConfigReader& cr)``` where the module can configure itself. It should return false if there were any errors or it decided to not load itself.
+This tells the startup code to call the static method ```bool CurrentControl::create(ConfigReader& cr)``` where the module can configure itself. It should return false if there were any errors or it decided to not load itself.
 
-Additionally if the module needs to be started up after everything has been initialised it can add itelf to a startup callback list...
+Optionally if the module needs to be started up after everything has been initialised it can add itself to a startup callback list...
 ```
     // register a startup function
     register_startup(std::bind(&Network::start, network));

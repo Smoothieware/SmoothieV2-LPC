@@ -16,6 +16,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "ff.h"
+#include "semphr.h"
 
 #include "uart_comms.h"
 #include "uart3_comms.h"
@@ -36,8 +37,15 @@ static uint32_t rpi_baudrate= 115200;
 
 // set in comms threads to signal command_thread to print a query response
 static volatile bool do_query = false; // for ? query
-static char *query_line = nullptr; // for certain $G or $S queries
-static OutputStream *query_os = nullptr;
+static OutputStream *query_os{nullptr};
+// for $I or $S queries
+struct query_t
+{
+    OutputStream *query_os;
+    char *query_line;
+};
+xSemaphoreHandle queries_mutex;
+static std::vector<struct query_t> queries;
 
 // set to true when M28 is in effect
 static bool uploading = false;
@@ -330,11 +338,11 @@ void process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line,
         } else if(line[cnt] == '\n') {
             line[cnt] = '\0'; // remove the \n and nul terminate
             if(line[0] == '$' && (line[1] == 'I' || line[1] == 'S')) {
-                // Handle $I and $S as queries if we do not have one outstanding
-                if(query_line == nullptr) {
-                    query_os = os;
-                    query_line= strdup(line);
-                } // else ignore it
+                // Handle $I and $S as queries
+                // TODO maybe limit the number of outstanding ones
+                xSemaphoreTake(queries_mutex, portMAX_DELAY);
+                queries.push_back({os, strdup(line)});
+                xSemaphoreGive(queries_mutex);
 
             }else{
                 send_message_queue(line, os);
@@ -499,13 +507,15 @@ void handle_query()
         Robot::getInstance()->get_query_string(r);
         query_os->puts(r.c_str());
         do_query= false;
-
     }
-    if(query_line != nullptr) {
-        Dispatcher::getInstance()->dispatch(query_line, *query_os);
-        free(query_line);
-        query_line= nullptr;
+    // dispatch any instant queries we have recieved
+    xSemaphoreTake(queries_mutex, portMAX_DELAY);
+    for(auto& q : queries) {
+        Dispatcher::getInstance()->dispatch(q.query_line, *q.query_os);
+        free(q.query_line);
     }
+    queries.clear();
+    xSemaphoreGive(queries_mutex);
 }
 
 #include "Conveyor.h"
@@ -856,6 +866,8 @@ static void smoothie_startup(void *)
         // Failed to create the queue.
         printf("Error: failed to create comms i/o queue\n");
     }
+
+    queries_mutex= xSemaphoreCreateMutex();
 
     // Start comms threads Higher priority than the command thread
     // fixed stack size of 4k Bytes each
