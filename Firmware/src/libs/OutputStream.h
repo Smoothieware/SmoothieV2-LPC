@@ -42,9 +42,10 @@ private:
 	class FdBuf : public std::stringbuf
 	{
 	public:
-		FdBuf(wrfnc f) : fnc(f) {};
+		FdBuf(OutputStream *p, wrfnc f) : parent(p), fnc(f) {};
 		virtual int sync();
 	private:
+		OutputStream *parent;
 		wrfnc fnc;
 	};
 

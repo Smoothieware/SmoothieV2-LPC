@@ -62,6 +62,7 @@ int _kill(int pid, int sig)
 void _exit (int status)
 {
 	_kill(status, -1);
+    __asm("bkpt #0");
 	while (1) {}		/* Make sure we hang here */
 }
 

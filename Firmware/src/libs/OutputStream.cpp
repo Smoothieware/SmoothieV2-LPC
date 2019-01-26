@@ -8,7 +8,7 @@
 OutputStream::OutputStream(wrfnc f) : append_nl(false), prepend_ok(false), deleteos(true), no_response(false)
 {
 	// create an output stream using the given write fnc
-	fdbuf = new FdBuf(f);
+	fdbuf = new FdBuf(this, f);
 	os = new std::ostream(fdbuf);
 	*os << std::unitbuf; // auto flush on every write
 }
@@ -82,6 +82,7 @@ int OutputStream::FdBuf::sync()
 		int n = fnc(this->str().c_str(), len);
 		if(n < 0) {
 			::printf("OutputStream error: write fnc failed\n");
+			parent->set_closed();
 		}
 		this->str("");
 	}

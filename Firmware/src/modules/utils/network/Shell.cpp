@@ -36,17 +36,17 @@ static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
 {
     if(p_shell->magic != MAGIC) {
         // we probably went away
-        return len;
+        printf("shell: write_back: ERROR magic was bad\n");
+        return -1;
     }
-    size_t n;
+    int n;
     if ( (n = lwip_write(p_shell->socket, rbuf, len)) < 0) {
         //close_chargen(p_shell);
         printf("shell: write_back: error writing\n");
+        p_shell->magic= 1;
+        return -1;
     }
-    if(n != len) {
-        printf("shell: write_back: not all data written: %d - %d\n", n, len);
-    }
-    return n;
+    return len;
 }
 
 /**************************************************************
@@ -56,8 +56,11 @@ static void close_shell(shell_t *p_shell)
 {
     shell_t *p_search_shell;
     p_shell->magic= 0; // safety
+    // FIXME if we delete this now and command thread is still outputing stuff we will crash
+    //   it needs to stick around until the command has completed
     delete p_shell->os;
 
+    printf("shell: closing shell connection: %d\n", p_shell->socket);
     lwip_close(p_shell->socket);
 
     // Free shell
@@ -83,6 +86,8 @@ static void shell_thread(void *arg)
     fd_set writeset;
     int i, maxfdp1;
     shell_t *p_shell;
+
+    lwip_socket_thread_init();
 
     memset(&shell_saddr, 0, sizeof (shell_saddr));
 
@@ -128,18 +133,19 @@ static void shell_thread(void *arg)
 
         /* At least one descriptor is ready */
         if (FD_ISSET(listenfd, &readset)) {
-            /* We have a new connection request!!! */
-            /* Lets create a new control block */
+            /* We have a new connection request */
+            /* create a new control block */
             p_shell = (shell_t *) mem_malloc(sizeof(shell_t));
             if(p_shell != nullptr) {
                 p_shell->socket = lwip_accept(listenfd, (struct sockaddr *) &p_shell->cliaddr, &p_shell->clilen);
                 if (p_shell->socket < 0) {
                     mem_free(p_shell);
-                    printf("shell: accept socket error\n");
+                    printf("shell: accept socket error: %d\n", errno);
                 } else {
-                    /* Keep this tecb in our list */
+                    /* Keep this shell state in our list */
                     p_shell->next = shell_list;
                     shell_list = p_shell;
+                    printf("shell: accepted shell connection: %d\n", p_shell->socket);
                 }
                 // initialise command buffer state
                 p_shell->cnt = 0;
@@ -147,6 +153,7 @@ static void shell_thread(void *arg)
                 p_shell->os = new OutputStream([p_shell](const char *ibuf, size_t ilen) { return write_back(p_shell, ibuf, ilen); });
                 //output_streams.push_back(p_shell->os);
                 p_shell->magic= MAGIC;
+                lwip_write(p_shell->socket, "Welcome to the Smoothie Shell\n", 30);
 
             } else {
                 /* No memory to accept connection. Just accept and then close */
@@ -182,9 +189,10 @@ static void shell_thread(void *arg)
             }
         }
     }
+    lwip_socket_thread_cleanup();
 }
 
 void shell_init(void)
 {
-    sys_thread_new("shell_thread", shell_thread, NULL, 500, DEFAULT_THREAD_PRIO);
+    sys_thread_new("shell_thread", shell_thread, NULL, 450, DEFAULT_THREAD_PRIO);
 }
