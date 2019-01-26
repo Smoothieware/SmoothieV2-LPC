@@ -1,4 +1,4 @@
-    #include "lwip/opt.h"
+#include "lwip/opt.h"
 #include "lwip/sys.h"
 #include "lwip/api.h"
 
@@ -9,9 +9,9 @@
 static struct netconn *newconn= NULL;
 static int write_back(const char *rbuf, size_t len)
 {
-    // FIXME netconn calls are not thread safe so must be called in the app thread
-    // however OutputStream is called from the command thread
-    // A quick workaround is to store in a string, then use select and write when string is not empty
+#ifndef LWIP_NETCONN_FULLDUPLEX
+    #error LWIP_NETCONN_FULLDUPLEX is required for this to work
+#endif
     if(newconn != NULL) {
         netconn_write(newconn, rbuf, len, NETCONN_COPY);
     }

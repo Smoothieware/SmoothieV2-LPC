@@ -57,8 +57,6 @@
 #endif
 #endif
 
-#define ip_2_ip4(ipaddr) (ipaddr)
-
 #define EINVAL 1
 #define ENOMEM 2
 #define ENODEV 3
@@ -151,7 +149,6 @@
 #define msg502 "502 Command not implemented."
 #define msg503 "503 Bad sequence of commands."
 #define msg504 "504 Command not implemented for that parameter."
-
 #define msg530 "530 Not logged in."
 #define msg532 "532 Need account for storing files."
 #define msg550 "550 Requested action not taken."
@@ -315,7 +312,7 @@ static int sfifo_write(sfifo_t *f, const void *_buf, int len)
 
 	/* total = len = min(space, len) */
 	total = sfifo_space(f);
-	DBG(dbg_printf("sfifo_space() = %d\n", total));
+	DBG(dbg_printf("sfifo_space() = %d\n",total));
 	if(len > total)
 		len = total;
 	else
@@ -466,7 +463,7 @@ static void send_file(struct ftpd_datastate *fsd, struct tcp_pcb *pcb)
 			}
 			len= j;
 		} else {
-			len = vfs_read(buffer, 1, len, fsd->vfs_file);
+		len = vfs_read(buffer, 1, len, fsd->vfs_file);
 		}
 
 		if (len == 0) {
@@ -514,67 +511,67 @@ static void send_next_directory(struct ftpd_datastate *fsd, struct tcp_pcb *pcb,
 	}
 
 	while (1) {
-		if (fsd->vfs_dirent == NULL)
-			fsd->vfs_dirent = vfs_readdir(fsd->vfs_dir);
+	if (fsd->vfs_dirent == NULL)
+		fsd->vfs_dirent = vfs_readdir(fsd->vfs_dir);
 
-		if (fsd->vfs_dirent) {
-			if (shortlist) {
-				len = sprintf(buffer, "%s\r\n", fsd->vfs_dirent->name);
-				if (sfifo_space(&fsd->fifo) < len) {
-					send_data(pcb, fsd);
-					free(buffer);
-					return;
-				}
-				sfifo_write(&fsd->fifo, buffer, len);
-				fsd->vfs_dirent = NULL;
-			} else {
-				vfs_stat_t st;
-				time_t current_time;
-				int current_year;
-				struct tm *s_time;
-
-				time(&current_time);
-				s_time = gmtime(&current_time);
-				current_year = s_time->tm_year;
-
-				vfs_stat(fsd->msgfs->vfs, fsd->vfs_dirent->name, &st);
-				s_time = gmtime(&st.st_mtime);
-				if (s_time->tm_year == current_year)
-					len = sprintf(buffer, "-rw-rw-rw-   1 user     ftp  %11ld %s %02i %02i:%02i %s\r\n", st.st_size, month_table[s_time->tm_mon], s_time->tm_mday, s_time->tm_hour, s_time->tm_min, fsd->vfs_dirent->name);
-				else
-					len = sprintf(buffer, "-rw-rw-rw-   1 user     ftp  %11ld %s %02i %5i %s\r\n", st.st_size, month_table[s_time->tm_mon], s_time->tm_mday, s_time->tm_year + 1900, fsd->vfs_dirent->name);
-				if (VFS_ISDIR(st.st_mode))
-					buffer[0] = 'd';
-				if (sfifo_space(&fsd->fifo) < len) {
-					send_data(pcb, fsd);
-					free(buffer);
-					return;
-				}
-				sfifo_write(&fsd->fifo, buffer, len);
-				fsd->vfs_dirent = NULL;
-			}
-		} else {
-			struct ftpd_msgstate *fsm;
-			struct tcp_pcb *msgpcb;
-
-			if (sfifo_used(&fsd->fifo) > 0) {
+	if (fsd->vfs_dirent) {
+		if (shortlist) {
+			len = sprintf(buffer, "%s\r\n", fsd->vfs_dirent->name);
+			if (sfifo_space(&fsd->fifo) < len) {
 				send_data(pcb, fsd);
-				free(buffer);
+					free(buffer);
 				return;
 			}
-			fsm = fsd->msgfs;
-			msgpcb = fsd->msgpcb;
+			sfifo_write(&fsd->fifo, buffer, len);
+			fsd->vfs_dirent = NULL;
+		} else {
+			vfs_stat_t st;
+			time_t current_time;
+			int current_year;
+			struct tm *s_time;
 
-			vfs_closedir(fsd->vfs_dir);
-			fsd->vfs_dir = NULL;
-			ftpd_dataclose(pcb, fsd);
-			fsm->datapcb = NULL;
-			fsm->datafs = NULL;
-			fsm->state = FTPD_IDLE;
-			send_msg(msgpcb, fsm, msg226);
-			free(buffer);
+			time(&current_time);
+			s_time = gmtime(&current_time);
+			current_year = s_time->tm_year;
+
+			vfs_stat(fsd->msgfs->vfs, fsd->vfs_dirent->name, &st);
+			s_time = gmtime(&st.st_mtime);
+			if (s_time->tm_year == current_year)
+				len = sprintf(buffer, "-rw-rw-rw-   1 user     ftp  %11ld %s %02i %02i:%02i %s\r\n", st.st_size, month_table[s_time->tm_mon], s_time->tm_mday, s_time->tm_hour, s_time->tm_min, fsd->vfs_dirent->name);
+			else
+				len = sprintf(buffer, "-rw-rw-rw-   1 user     ftp  %11ld %s %02i %5i %s\r\n", st.st_size, month_table[s_time->tm_mon], s_time->tm_mday, s_time->tm_year + 1900, fsd->vfs_dirent->name);
+			if (VFS_ISDIR(st.st_mode))
+				buffer[0] = 'd';
+			if (sfifo_space(&fsd->fifo) < len) {
+				send_data(pcb, fsd);
+					free(buffer);
+				return;
+			}
+			sfifo_write(&fsd->fifo, buffer, len);
+			fsd->vfs_dirent = NULL;
+		}
+	} else {
+		struct ftpd_msgstate *fsm;
+		struct tcp_pcb *msgpcb;
+
+		if (sfifo_used(&fsd->fifo) > 0) {
+			send_data(pcb, fsd);
+				free(buffer);
 			return;
 		}
+		fsm = fsd->msgfs;
+		msgpcb = fsd->msgpcb;
+
+		vfs_closedir(fsd->vfs_dir);
+		fsd->vfs_dir = NULL;
+		ftpd_dataclose(pcb, fsd);
+		fsm->datapcb = NULL;
+		fsm->datafs = NULL;
+		fsm->state = FTPD_IDLE;
+		send_msg(msgpcb, fsm, msg226);
+			free(buffer);
+		return;
+	}
 	}
 }
 
@@ -583,17 +580,17 @@ static err_t ftpd_datasent(void *arg, struct tcp_pcb *pcb, u16_t len)
 	struct ftpd_datastate *fsd = arg;
 
 	switch (fsd->msgfs->state) {
-		case FTPD_LIST:
-			send_next_directory(fsd, pcb, 0);
-			break;
-		case FTPD_NLST:
-			send_next_directory(fsd, pcb, 1);
-			break;
-		case FTPD_RETR:
-			send_file(fsd, pcb);
-			break;
-		default:
-			break;
+	case FTPD_LIST:
+		send_next_directory(fsd, pcb, 0);
+		break;
+	case FTPD_NLST:
+		send_next_directory(fsd, pcb, 1);
+		break;
+	case FTPD_RETR:
+		send_file(fsd, pcb);
+		break;
+	default:
+		break;
 	}
 
 	return ERR_OK;
@@ -614,7 +611,6 @@ static u16_t convert_from_ascii(void *buf, u16_t len)
 static err_t ftpd_datarecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
 {
 	struct ftpd_datastate *fsd = arg;
-
 
 	if (err == ERR_OK && p != NULL) {
 		// struct ftpd_msgstate *fsm= fsd->msgfs;
@@ -640,8 +636,6 @@ static err_t ftpd_datarecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t
 				break;
 		}
 
-		/* Inform TCP that we have taken the data. */
-		tcp_recved(pcb, tot_len);
 
 		pbuf_free(p);
 	}
@@ -682,17 +676,17 @@ static err_t ftpd_dataconnected(void *arg, struct tcp_pcb *pcb, err_t err)
 	tcp_err(pcb, ftpd_dataerr);
 
 	switch (fsd->msgfs->state) {
-		case FTPD_LIST:
-			send_next_directory(fsd, pcb, 0);
-			break;
-		case FTPD_NLST:
-			send_next_directory(fsd, pcb, 1);
-			break;
-		case FTPD_RETR:
-			send_file(fsd, pcb);
-			break;
-		default:
-			break;
+	case FTPD_LIST:
+		send_next_directory(fsd, pcb, 0);
+		break;
+	case FTPD_NLST:
+		send_next_directory(fsd, pcb, 1);
+		break;
+	case FTPD_RETR:
+		send_file(fsd, pcb);
+		break;
+	default:
+		break;
 	}
 
 	return ERR_OK;
@@ -716,17 +710,17 @@ static err_t ftpd_dataaccept(void *arg, struct tcp_pcb *pcb, err_t err)
 	tcp_err(pcb, ftpd_dataerr);
 
 	switch (fsd->msgfs->state) {
-		case FTPD_LIST:
-			send_next_directory(fsd, pcb, 0);
-			break;
-		case FTPD_NLST:
-			send_next_directory(fsd, pcb, 1);
-			break;
-		case FTPD_RETR:
-			send_file(fsd, pcb);
-			break;
-		default:
-			break;
+	case FTPD_LIST:
+		send_next_directory(fsd, pcb, 0);
+		break;
+	case FTPD_NLST:
+		send_next_directory(fsd, pcb, 1);
+		break;
+	case FTPD_RETR:
+		send_file(fsd, pcb);
+		break;
+	default:
+		break;
 	}
 
 	return ERR_OK;
@@ -769,8 +763,8 @@ static int open_dataconnection(struct tcp_pcb *pcb, struct ftpd_msgstate *fsm)
 	   callbacks. */
 	tcp_arg(fsm->datapcb, fsm->datafs);
 	ip_addr_t dataip;
-	//IP_SET_TYPE_VAL(dataip, IPADDR_TYPE_V4);
-	ip_addr_copy(*ip_2_ip4(&dataip), fsm->dataip);
+	IP_SET_TYPE_VAL(dataip, IPADDR_TYPE_V4);
+	ip4_addr_copy(*ip_2_ip4(&dataip), fsm->dataip);
 	tcp_connect(fsm->datapcb, &dataip, fsm->dataport, ftpd_dataconnected);
 
 	return 0;
@@ -1384,7 +1378,7 @@ static err_t ftpd_msgrecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t 
 		}
 		pbuf_free(p);
 	} else if (err == ERR_OK && p == NULL) {
-		ftpd_msgclose(pcb, fsm);
+	    ftpd_msgclose(pcb, fsm);
 	}
 
 	return ERR_OK;
@@ -1400,17 +1394,17 @@ static err_t ftpd_msgpoll(void *arg, struct tcp_pcb *pcb)
 	if (fsm->datafs) {
 		if (fsm->datafs->connected) {
 			switch (fsm->state) {
-				case FTPD_LIST:
-					send_next_directory(fsm->datafs, fsm->datapcb, 0);
-					break;
-				case FTPD_NLST:
-					send_next_directory(fsm->datafs, fsm->datapcb, 1);
-					break;
-				case FTPD_RETR:
-					send_file(fsm->datafs, fsm->datapcb);
-					break;
-				default:
-					break;
+			case FTPD_LIST:
+				send_next_directory(fsm->datafs, fsm->datapcb, 0);
+				break;
+			case FTPD_NLST:
+				send_next_directory(fsm->datafs, fsm->datapcb, 1);
+				break;
+			case FTPD_RETR:
+				send_file(fsm->datafs, fsm->datapcb);
+				break;
+			default:
+				break;
 			}
 		}
 	}

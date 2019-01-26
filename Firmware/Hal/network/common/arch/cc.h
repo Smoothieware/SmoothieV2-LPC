@@ -95,6 +95,7 @@ typedef uintptr_t          mem_ptr_t;
 /* Used with IP headers only */
 #define LWIP_CHKSUM_ALGORITHM 1
 
+#if 0
 #ifdef LWIP_DEBUG
 /**
  * @brief	Displays an error message on assertion
@@ -119,6 +120,7 @@ void assert_printf(char *msg, int line, char *file);
 void assert_loop(void);
 #define LWIP_PLATFORM_DIAG(msg) { ; }
 #define LWIP_PLATFORM_ASSERT(flag) { assert_loop(); }
+#endif
 #endif
 
 /**
