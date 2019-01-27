@@ -25,12 +25,12 @@
 #include "Module.h"
 #include "OutputStream.h"
 #include "MessageQueue.h"
-
 #include "GCode.h"
 #include "GCodeProcessor.h"
 #include "Dispatcher.h"
 #include "Robot.h"
 #include "RingBuffer.h"
+#include "Conveyor.h"
 
 static bool system_running= false;
 static bool rpi_port_enabled= false;
@@ -289,7 +289,6 @@ bool dispatch_line(OutputStream& os, const char *cl)
         --ngcodes;
     }
 
-
     return true;
 }
 
@@ -495,7 +494,7 @@ void print_to_all_consoles(const char *str)
     }
 }
 
-void handle_query()
+static void handle_query(bool need_done)
 {
     // set in comms thread, and executed in the command thread to avoid thread clashes.
     // the trouble with this is that ? does not reply if a long command is blocking call to dispatch_line
@@ -514,11 +513,9 @@ void handle_query()
             free(q.query_line);
         }
         // on last one (Does presume they are the same os though)
-        if(queries.empty()) q.query_os->set_done();
+        if(need_done && queries.empty()) q.query_os->set_done();
     }
 }
-
-#include "Conveyor.h"
 
 /*
  * All commands must be executed in the context of this thread. It is equivalent to the main_loop in v1.
@@ -538,7 +535,7 @@ static void command_handler()
         if(receive_message_queue(&line, &os)) {
             //printf("DEBUG: got line: %s\n", line);
             dispatch_line(*os, line);
-            handle_query();
+            handle_query(false);
             os->set_done(); // set after all possible output
 
         } else {
@@ -548,7 +545,7 @@ static void command_handler()
                 // toggle led to show we are alive, but idle
                 Board_LED_Toggle(0);
             }
-            handle_query();
+            handle_query(true);
         }
 
         // call in_command_ctx for all modules that want it
@@ -572,7 +569,9 @@ void safe_sleep(uint32_t ms)
     TickType_t delayms = pdMS_TO_TICKS(10); // 10 ms sleep
     while(ms > 0) {
         vTaskDelay(delayms);
-        handle_query();
+        // presumably there is a long running command that
+        // may need Outputstream which will set done flag when it is done
+        handle_query(false);
 
         if(ms > 10) {
             ms -= 10;
