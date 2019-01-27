@@ -5,6 +5,10 @@
 
 #include "main.h"
 #include "OutputStream.h"
+#include "RingBuffer.h"
+
+#include "FreeRTOS.h"
+#include "timers.h"
 
 #if !(LWIP_SOCKET && LWIP_SOCKET_SELECT)
 #error LWIP_SOCKET_SELECT and  LWIP_SOCKET needed
@@ -31,6 +35,9 @@ using shell_t = struct shell_state_t;
 
 static shell_t *shell_list = nullptr;
 
+// Stores OutputStreams that need to be deleted when done
+static RingBuffer<OutputStream*, MAX_SERV*2> gc;
+
 // callback from command thread to write data to the socket
 static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
 {
@@ -56,16 +63,16 @@ static void close_shell(shell_t *p_shell)
 {
     shell_t *p_search_shell;
     p_shell->magic= 0; // safety
-    // FIXME if we delete this now and command thread is still outputting stuff we will crash
-    //   it needs to stick around until the command has completed
-    //if(p_shell->os->is_done()) {
-        printf("shell: releasing output stream\n");
+    // if we delete the OutputStream now and command thread is still outputting stuff we will crash
+    // it needs to stick around until the command has completed
+    if(p_shell->os->is_done()) {
+        printf("shell: releasing output stream: %p\n", p_shell->os);
         delete p_shell->os;
-    // }else{
-    //     printf("shell: delaying releasing output stream: %p\n", p_shell->os);
-    //     p_shell->os->set_closed();
-        // TODO put it on a garbage collector? to delete it when it is done
-    // }
+    }else{
+        printf("shell: delaying releasing output stream: %p\n", p_shell->os);
+        p_shell->os->set_closed();
+        gc.push_back(p_shell->os);
+    }
 
     printf("shell: closing shell connection: %d\n", p_shell->socket);
     lwip_close(p_shell->socket);
@@ -84,6 +91,24 @@ static void close_shell(shell_t *p_shell)
     mem_free(p_shell);
 }
 
+// This will delete any OutputStreams that are done
+// we need to do this so that we don't crash when an OutputStream is deleted before it is done
+static void os_garbage_collector( TimerHandle_t xTimer )
+{
+    while(!gc.empty()) {
+        // we only check the oldest, presuming it will be done before newer ones
+        OutputStream *os= gc.peek_front();
+        if(os->is_done()) {
+            printf("shell: releasing output stream: %p\n", os);
+            os= gc.pop_front();
+            delete os;
+        } else {
+            // if this is not done then we presume the newer ones aren't either
+            break;
+        }
+    }
+}
+
 static void shell_thread(void *arg)
 {
     LWIP_UNUSED_ARG(arg);
@@ -95,6 +120,12 @@ static void shell_thread(void *arg)
     shell_t *p_shell;
 
     printf("Shell thread started\n");
+
+    // OutputStream garbage collector timer
+    TimerHandle_t timer_handle= xTimerCreate("osgarbage", pdMS_TO_TICKS(1000), pdTRUE, nullptr, os_garbage_collector);
+    if( xTimerStart( timer_handle, 1000 ) != pdPASS ) {
+        printf("shell_thread: ERROR: Failed to start the timer\n");
+    }
 
     lwip_socket_thread_init();
 
@@ -203,5 +234,5 @@ static void shell_thread(void *arg)
 
 void shell_init(void)
 {
-    sys_thread_new("shell_thread", shell_thread, NULL, 450, DEFAULT_THREAD_PRIO);
+    sys_thread_new("shell_thread", shell_thread, NULL, 350, DEFAULT_THREAD_PRIO);
 }

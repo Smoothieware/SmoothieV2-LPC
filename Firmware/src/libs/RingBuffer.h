@@ -98,9 +98,19 @@ class RingBuffer
          */
         kind pop_front()
         {
-            float object = buffer[tail];
+            kind object = buffer[tail];
             tail = next(tail);
             return object;
+        }
+
+        /**
+         * @brief   Get object from the tail position don't remove it
+         * @param   Nothing
+         * @return  Object obtained from the tail position
+         */
+        kind peek_front()
+        {
+            return buffer[tail];
         }
 
     private:

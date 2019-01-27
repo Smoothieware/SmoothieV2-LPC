@@ -119,7 +119,7 @@
 #define TCP_MSL 100 // added
 
 #define DEFAULT_THREAD_PRIO             (tskIDLE_PRIORITY + 3)
-#define DEFAULT_THREAD_STACKSIZE        (200)
+#define DEFAULT_THREAD_STACKSIZE        (100)
 #define DEFAULT_ACCEPTMBOX_SIZE         6
 #define DEFAULT_ACCEPTMBOX_SIZE         6
 #define DEFAULT_TCP_RECVMBOX_SIZE       6
