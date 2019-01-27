@@ -49,7 +49,6 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 		if(gc.has_m() && gc.get_code() == 999) {
 			Module::broadcast_halt(false);
 			os.printf("WARNING: After HALT you should HOME as position is currently unknown\nok\n");
-			os.set_done();
 			return true;
 		}
 
@@ -60,7 +59,6 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 			} else {
 				os.printf("!!\n");
 			}
-			os.set_done();
 			return true;
 		}
 	}
@@ -99,7 +97,6 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 			// we cannot continue safely after an error so we enter HALT state
 			os.printf("Entering Alarm/Halt state\n");
 			Module::broadcast_halt(true);
-			os.set_done();
 			return true;
 		}
 
@@ -121,8 +118,6 @@ bool Dispatcher::dispatch(GCode& gc, OutputStream& os, bool need_ok) const
 		if(send_ok && need_ok) {
 			os.printf("ok\n");
 		}
-
-		os.set_done();
 		return true;
 	}
 
@@ -173,7 +168,6 @@ bool Dispatcher::dispatch(const char *line, OutputStream& os) const
 			DEBUG_WARNING("command handler did not handle %s\n", line);
 		}
 	}
-	os.set_done();
 	return ret;
 }
 

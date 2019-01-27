@@ -36,10 +36,8 @@ static bool system_running= false;
 static bool rpi_port_enabled= false;
 static uint32_t rpi_baudrate= 115200;
 
-// set in comms threads to signal command_thread to print a query response
-static volatile bool do_query = false; // for ? query
-static OutputStream *query_os{nullptr};
-// for $I or $S queries
+// for ?, $I or $S queries
+// for ? then query_line will be nullptr
 struct query_t
 {
     OutputStream *query_os;
@@ -322,8 +320,9 @@ void process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
             cnt = 0;
 
         } else if(line[cnt] == '?') {
-            query_os = os; // we need to let it know where to send response back to TODO maybe a race condition if both USB and uart send ?
-            do_query = true;
+            if(!queries.full()) {
+                queries.push_back({os, nullptr});
+            }
 
         } else if(discard) {
             // we discard long lines until we get the newline
@@ -336,15 +335,15 @@ void process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
             os->puts("error:Discarding long line\n");
 
         } else if(line[cnt] == '\n') {
+            os->clear_flags(); // clear the done flag here to avoid race conditions
             line[cnt] = '\0'; // remove the \n and nul terminate
-            if(line[0] == '$' && (line[1] == 'I' || line[1] == 'S')) {
-                // Handle $I and $S as queries
+            if(cnt == 2 && line[0] == '$' && (line[1] == 'I' || line[1] == 'S')) {
+                // Handle $I and $S as instant queries
                 if(!queries.full()) {
                     queries.push_back({os, strdup(line)});
                 }
 
             }else{
-                os->clear_flags(); // clear the done flag here to avoid race conditions
                 send_message_queue(line, os);
             }
             cnt = 0;
@@ -502,17 +501,20 @@ void handle_query()
     // the trouble with this is that ? does not reply if a long command is blocking call to dispatch_line
     // test commands for instance or a long line when the queue is full or G4 etc
     // so long as safe_sleep() is called then this will still be processed
-    if(do_query) {
-        std::string r;
-        Robot::getInstance()->get_query_string(r);
-        query_os->puts(r.c_str());
-        do_query= false;
-    }
-    // dispatch any instant queries we have recieved
+    // also dispatch any instant queries we have recieved
     while(!queries.empty()) {
         struct query_t q= queries.pop_front();
-        Dispatcher::getInstance()->dispatch(q.query_line, *q.query_os);
-        free(q.query_line);
+        if(q.query_line == nullptr) { // it is a ? query
+            std::string r;
+            Robot::getInstance()->get_query_string(r);
+            q.query_os->puts(r.c_str());
+
+        } else {
+            Dispatcher::getInstance()->dispatch(q.query_line, *q.query_os);
+            free(q.query_line);
+        }
+        // on last one (Does presume they are the same os though)
+        if(queries.empty()) q.query_os->set_done();
     }
 }
 
@@ -526,23 +528,18 @@ void handle_query()
 static void command_handler()
 {
     printf("DEBUG: Command thread running\n");
-    // {
-    //     // Manual unlocking is done before notifying, to avoid waking up
-    //     // the waiting thread only to block again (see notify_one for details)
-    //     std::unique_lock<std::mutex> lk(m);
-    //     lk.unlock();
-    //     cv.notify_one();
-    // }
 
     for(;;) {
         char *line;
-        OutputStream *os;
+        OutputStream *os= nullptr;
         bool idle = false;
 
         // This will timeout after 100 ms
         if(receive_message_queue(&line, &os)) {
             //printf("DEBUG: got line: %s\n", line);
             dispatch_line(*os, line);
+            handle_query();
+            os->set_done(); // set after all possible output
 
         } else {
             // timed out or other error
@@ -551,9 +548,8 @@ static void command_handler()
                 // toggle led to show we are alive, but idle
                 Board_LED_Toggle(0);
             }
+            handle_query();
         }
-
-        handle_query();
 
         // call in_command_ctx for all modules that want it
         // dispatch_line can be called from that
