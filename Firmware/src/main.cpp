@@ -513,6 +513,7 @@ static void handle_query(bool need_done)
             free(q.query_line);
         }
         // on last one (Does presume they are the same os though)
+        // FIXME may not work as expected when there are multiple I/O channels and output streams
         if(need_done && queries.empty()) q.query_os->set_done();
     }
 }
@@ -554,7 +555,6 @@ static void command_handler()
 
         // we check the queue to see if it is ready to run
         // we specifically deal with this in append_block, but need to check for other places
-        // This used to be done in on_idle which never blocked
         if(Conveyor::getInstance() != nullptr) {
             Conveyor::getInstance()->check_queue();
         }
@@ -562,7 +562,7 @@ static void command_handler()
 }
 
 // called only in command thread context, it will sleep (and yield) thread but will also
-// process things like query
+// process things like instant query
 void safe_sleep(uint32_t ms)
 {
     // here we need to sleep (and yield) for 10ms then check if we need to handle the query command
