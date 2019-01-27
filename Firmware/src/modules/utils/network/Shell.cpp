@@ -99,9 +99,9 @@ static void os_garbage_collector( TimerHandle_t xTimer )
         // we only check the oldest, presuming it will be done before newer ones
         OutputStream *os= gc.peek_front();
         if(os->is_done()) {
-            printf("shell: releasing output stream: %p\n", os);
             os= gc.pop_front();
             delete os;
+            printf("shell: releasing output stream: %p\n", os);
         } else {
             // if this is not done then we presume the newer ones aren't either
             break;
@@ -119,7 +119,7 @@ static void shell_thread(void *arg)
     int i, maxfdp1;
     shell_t *p_shell;
 
-    printf("Shell thread started\n");
+    printf("Network: Shell thread started\n");
 
     // OutputStream garbage collector timer
     TimerHandle_t timer_handle= xTimerCreate("osgarbage", pdMS_TO_TICKS(1000), pdTRUE, nullptr, os_garbage_collector);

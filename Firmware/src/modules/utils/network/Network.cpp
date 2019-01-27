@@ -304,7 +304,7 @@ void Network::network_thread()
     }
 
     /* Add netif interface for lpc17xx_8x */
-    if (!netifapi_netif_add(lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init, tcpip_input)) {
+    if (netifapi_netif_add(lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init, tcpip_input) != ERR_OK) {
         printf("Network: Net interface failed to initialize\n");
     }
 
@@ -406,7 +406,7 @@ void Network::vSetupIFTask(void *arg)
 
 bool Network::start()
 {
-    printf("Network: running start\n");
+    printf("Network: starting\n");
     xTaskCreate(vSetupIFTask, "SetupIFx", 256, this, (tskIDLE_PRIORITY + 1UL), (xTaskHandle *) NULL);
     return true;
 }
