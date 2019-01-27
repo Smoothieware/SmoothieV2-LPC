@@ -30,6 +30,7 @@
 #include "GCodeProcessor.h"
 #include "Dispatcher.h"
 #include "Robot.h"
+#include "RingBuffer.h"
 
 static bool system_running= false;
 static bool rpi_port_enabled= false;
@@ -44,8 +45,7 @@ struct query_t
     OutputStream *query_os;
     char *query_line;
 };
-xSemaphoreHandle queries_mutex;
-static std::vector<struct query_t> queries;
+static RingBuffer<struct query_t, 8> queries; // thread safe FIFO
 
 // set to true when M28 is in effect
 static bool uploading = false;
@@ -339,10 +339,9 @@ void process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
             line[cnt] = '\0'; // remove the \n and nul terminate
             if(line[0] == '$' && (line[1] == 'I' || line[1] == 'S')) {
                 // Handle $I and $S as queries
-                // TODO maybe limit the number of outstanding ones
-                xSemaphoreTake(queries_mutex, portMAX_DELAY);
-                queries.push_back({os, strdup(line)});
-                xSemaphoreGive(queries_mutex);
+                if(!queries.full()) {
+                    queries.push_back({os, strdup(line)});
+                }
 
             }else{
                 os->clear_flags(); // clear the done flag here to avoid race conditions
@@ -510,13 +509,11 @@ void handle_query()
         do_query= false;
     }
     // dispatch any instant queries we have recieved
-    xSemaphoreTake(queries_mutex, portMAX_DELAY);
-    for(auto& q : queries) {
+    while(!queries.empty()) {
+        struct query_t q= queries.pop_front();
         Dispatcher::getInstance()->dispatch(q.query_line, *q.query_os);
         free(q.query_line);
     }
-    queries.clear();
-    xSemaphoreGive(queries_mutex);
 }
 
 #include "Conveyor.h"
@@ -867,8 +864,6 @@ static void smoothie_startup(void *)
         // Failed to create the queue.
         printf("Error: failed to create comms i/o queue\n");
     }
-
-    queries_mutex= xSemaphoreCreateMutex();
 
     // Start comms threads Higher priority than the command thread
     // fixed stack size of 4k Bytes each
