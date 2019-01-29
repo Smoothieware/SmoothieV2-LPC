@@ -11,9 +11,10 @@
         margin: 5px;
         padding: 5px;
         position: relative;
-        width: 200px;
+        width: 500px;
         height: 100px;
         overflow: auto;
+        font-family: "Courier New", Courier, monospace;
       }
   </style>
 </head>
@@ -363,7 +364,9 @@ mm/min
 <button id="sendCommand" onclick="runCommand(document.getElementById('commandText').value)">Send</button><br>
 
 <!-- the result of the command will be rendered inside this div -->
+<pre>
 <div class="scrollBox" id="result"></div>
+</pre>
 <br>
 <button id="clear" onclick="$('.scrollBox').empty();">Clear</button><br>
 

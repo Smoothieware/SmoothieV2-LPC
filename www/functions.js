@@ -59,7 +59,7 @@ function onClose(evt)
 
 function onMessage(evt)
 {
-	console.log("<" + evt.data + ">");
+	//console.log("<" + evt.data + ">");
 	if(evt.data.startsWith('<')) {
 		parseQuery(evt.data);
 		return;
@@ -67,10 +67,11 @@ function onMessage(evt)
 
 	if(silent) return;
 	if(capture_cb == null) {
-		str= $.trim(evt.data);
-		$.each(str.split('\n'), function(index) {
-			$( "#result" ).append( this + '<br/>' );
-		});
+		str= evt.data;
+		// str= str.replace(/ /g, '&nbsp;');
+		// str= str.replace(/[\n]/g, '<br/>');
+
+		$("#result").append(str);
 		var div = $("#result");
     	div.scrollTop(div.prop('scrollHeight'));
 	}else{

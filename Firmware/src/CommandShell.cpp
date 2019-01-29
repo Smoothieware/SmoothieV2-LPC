@@ -336,7 +336,7 @@ static void printTaskList(OutputStream& os)
     TaskStatus_t *pxTaskStatusArray;
     char cStatus;
 
-    vTaskSuspendAll();
+    //vTaskSuspendAll();
     UBaseType_t uxArraySize = uxTaskGetNumberOfTasks();
 
     /* Allocate an array index for each task. */
@@ -361,7 +361,7 @@ static void printTaskList(OutputStream& os)
             }
 
             /* Write the task name */
-            os.printf("%10s ", pxTaskStatusArray[x].pcTaskName);
+            os.printf("%12s ", pxTaskStatusArray[x].pcTaskName);
 
             /* Write the rest of the string. */
             os.printf(" %c %2u %6u %2u\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber );
@@ -369,7 +369,7 @@ static void printTaskList(OutputStream& os)
 
         free( pxTaskStatusArray );
     }
-    xTaskResumeAll();
+    //xTaskResumeAll();
 }
 
 bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
