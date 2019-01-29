@@ -173,9 +173,9 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
 
     DWORD p1, s1, s2;
     p1 = s1 = s2 = 0;
-    bool simple= false;
+    bool simple = false;
     if(opts.find("-1", 0, 2) != std::string::npos) {
-        simple= true;
+        simple = true;
     }
 
     for(;;) {
@@ -183,26 +183,26 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
         res = f_readdir(&dir, &finfo);
         if ((res != FR_OK) || !finfo.fname[0]) break;
         if(simple) {
-           if(finfo.fattrib & AM_DIR) {
+            if(finfo.fattrib & AM_DIR) {
                 os.printf("%s/\n", finfo.fname);
-            }else{
+            } else {
                 os.printf("%s\n", finfo.fname);
             }
-        }else{
+        } else {
             if (finfo.fattrib & AM_DIR) {
                 s2++;
             } else {
                 s1++; p1 += finfo.fsize;
             }
             os.printf("%c%c%c%c%c %u/%02u/%02u %02u:%02u %9lu  %s\n",
-                (finfo.fattrib & AM_DIR) ? 'D' : '-',
-                (finfo.fattrib & AM_RDO) ? 'R' : '-',
-                (finfo.fattrib & AM_HID) ? 'H' : '-',
-                (finfo.fattrib & AM_SYS) ? 'S' : '-',
-                (finfo.fattrib & AM_ARC) ? 'A' : '-',
-                (finfo.fdate >> 9) + 1980, (finfo.fdate >> 5) & 15, finfo.fdate & 31,
-                (finfo.ftime >> 11), (finfo.ftime >> 5) & 63,
-                (DWORD)finfo.fsize, finfo.fname);
+                      (finfo.fattrib & AM_DIR) ? 'D' : '-',
+                      (finfo.fattrib & AM_RDO) ? 'R' : '-',
+                      (finfo.fattrib & AM_HID) ? 'H' : '-',
+                      (finfo.fattrib & AM_SYS) ? 'S' : '-',
+                      (finfo.fattrib & AM_ARC) ? 'A' : '-',
+                      (finfo.fdate >> 9) + 1980, (finfo.fdate >> 5) & 15, finfo.fdate & 31,
+                      (finfo.ftime >> 11), (finfo.ftime >> 5) & 63,
+                      (DWORD)finfo.fsize, finfo.fname);
         }
     }
     if(!simple) {
@@ -210,7 +210,7 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
         res = f_getfree("/sd", (DWORD*)&p1, &fs);
         if(FR_OK == res) {
             os.printf(", %10lu bytes free\n", p1 * fs->csize * 512);
-        }else{
+        } else {
             os.printf("\n");
         }
         os.set_no_response();
@@ -241,7 +241,7 @@ bool CommandShell::cd_cmd(std::string& params, OutputStream& os)
         os.puts("directory name required\n");
         return true;
     }
-    if(FR_OK != f_chdir(fn.c_str())){
+    if(FR_OK != f_chdir(fn.c_str())) {
         os.puts("failed to change to directory\n");
     }
     return true;
@@ -289,27 +289,27 @@ bool CommandShell::cp_cmd(std::string& params, OutputStream& os)
     std::fstream fsin;
     std::fstream fsout;
 
-    fsin.rdbuf()->pubsetbuf(0,0); // set unbuffered
-    fsout.rdbuf()->pubsetbuf(0,0); // set unbuffered
-    fsin.open(fn1, std::fstream::in|std::fstream::binary);
+    fsin.rdbuf()->pubsetbuf(0, 0); // set unbuffered
+    fsout.rdbuf()->pubsetbuf(0, 0); // set unbuffered
+    fsin.open(fn1, std::fstream::in | std::fstream::binary);
     if(!fsin.is_open()) {
         os.printf("File %s does not exist\n", fn1.c_str());
         return true;
     }
 
-    fsout.open(fn2, std::fstream::out|std::fstream::binary|std::fstream::trunc);
+    fsout.open(fn2, std::fstream::out | std::fstream::binary | std::fstream::trunc);
     if(!fsout.is_open()) {
         os.printf("Could not open File %s for write\n", fn2.c_str());
         return true;
     }
 
     // allocate from heap rather than the limited stack
-    char *buffer= (char *)malloc(4096);
+    char *buffer = (char *)malloc(4096);
     if(buffer != nullptr) {
         /* Copy source to destination */
         while (!fsin.eof()) {
             fsin.read(buffer, sizeof(buffer));
-            int br= fsin.gcount();
+            int br = fsin.gcount();
             if(br > 0) {
                 fsout.write(buffer, br);
                 if(!fsout.good()) {
@@ -320,7 +320,7 @@ bool CommandShell::cp_cmd(std::string& params, OutputStream& os)
         }
         free(buffer);
 
-    }else{
+    } else {
         os.printf("Not enough memory for operation\n");
     }
 
@@ -331,12 +331,52 @@ bool CommandShell::cp_cmd(std::string& params, OutputStream& os)
     return true;
 }
 
+static void printTaskList(OutputStream& os)
+{
+    TaskStatus_t *pxTaskStatusArray;
+    char cStatus;
+
+    vTaskSuspendAll();
+    UBaseType_t uxArraySize = uxTaskGetNumberOfTasks();
+
+    /* Allocate an array index for each task. */
+    pxTaskStatusArray = (TaskStatus_t *)malloc( uxArraySize * sizeof( TaskStatus_t ) );
+
+    if( pxTaskStatusArray != NULL ) {
+        /* Generate the (binary) data. */
+        uxArraySize = uxTaskGetSystemState( pxTaskStatusArray, uxArraySize, NULL );
+
+        /* Create a human readable table from the binary data. */
+        for(UBaseType_t x = 0; x < uxArraySize; x++ ) {
+            switch( pxTaskStatusArray[ x ].eCurrentState ) {
+                case eRunning:      cStatus = 'X'; break;
+                case eReady:        cStatus = 'R'; break;
+                case eBlocked:      cStatus = 'B'; break;
+                case eSuspended:    cStatus = 'S'; break;
+                case eDeleted:      cStatus = 'D'; break;
+                default:            /* Should not get here, but it is included
+                                        to prevent static checking errors. */
+                    cStatus = 0x00;
+                    break;
+            }
+
+            /* Write the task name */
+            os.printf("%10s ", pxTaskStatusArray[x].pcTaskName);
+
+            /* Write the rest of the string. */
+            os.printf(" %c %2u %6u %2u\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber );
+        }
+
+        free( pxTaskStatusArray );
+    }
+    xTaskResumeAll();
+}
+
 bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
 {
     HELP("show memory allocation and tasks");
-    char pcWriteBuffer[500];
-    vTaskList( pcWriteBuffer );
-    os.puts(pcWriteBuffer);
+
+    printTaskList(os);
     // os->puts("\n\n");
     // vTaskGetRunTimeStats(pcWriteBuffer);
     // os->puts(pcWriteBuffer);
@@ -351,7 +391,7 @@ bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
     os.printf("RAM4: %lu used, %lu bytes free\n", _RAM4->get_size() - _RAM4->available(), _RAM4->available());
     os.printf("RAM5: %lu used, %lu bytes free\n", _RAM5->get_size() - _RAM5->available(), _RAM5->available());
     os.printf("Total available RAM: %lu\n", xPortGetFreeHeapSize() +
-        _RAM2->available() + _RAM3->available() + _RAM4->available() + _RAM5->available());
+              _RAM2->available() + _RAM3->available() + _RAM4->available() + _RAM5->available());
 
     if(!params.empty()) {
         os.printf("-- RAM2 --\n"); _RAM2->debug(os);
@@ -369,7 +409,7 @@ bool CommandShell::mount_cmd(std::string& params, OutputStream& os)
 {
     HELP("mount sdcard on /sd (or unmount if already mounted)");
 
-    const char g_target[]= "sd";
+    const char g_target[] = "sd";
     if(mounted) {
         os.printf("Already mounted, unmounting\n");
         int ret = f_unmount("g_target");
@@ -381,10 +421,10 @@ bool CommandShell::mount_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
-    int ret= f_mount(f_mount(&fatfs, g_target, 1);
+    int ret = f_mount(f_mount(&fatfs, g_target, 1);
     if(FR_OK == ret) {
-        mounted = true;
-        os.printf("Mounted /%s\n", g_target);
+    mounted = true;
+    os.printf("Mounted /%s\n", g_target);
 
     } else {
         os.printf("Failed to mount sdcard: %d\n", ret);
@@ -406,12 +446,12 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
-    bool delay= false;
+    bool delay = false;
     int limit = -1;
 
     if(!limit_parameter.empty() && limit_parameter.substr(0, 2) == "-d") {
-        delay= true;
-        limit_parameter= stringutils::shift_parameter( params );
+        delay = true;
+        limit_parameter = stringutils::shift_parameter( params );
     }
 
     if (!limit_parameter.empty()) {
@@ -424,7 +464,7 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
     // Open file
     FILE *lp = fopen(filename.c_str(), "r");
     if (lp != NULL) {
-        if(delay){
+        if(delay) {
             os.puts("you have 5 seconds to initiate the upload command on the host...\n");
             vTaskDelay(pdMS_TO_TICKS(5000));
         }
@@ -439,7 +479,7 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
         };
         fclose(lp);
         if(delay) {
-            char c= 26;
+            char c = 26;
             os.write(&c, 1);
         }
 
@@ -644,7 +684,7 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
                 TemperatureControl::pad_temperature_t temp;
                 if(m->request("get_current_temperature", &temp)) {
                     os.printf("%s: %s (%d) temp: %f/%f @%d\n", m->get_instance_name(), temp.designator.c_str(), temp.tool_id, temp.current_temperature, temp.target_temperature, temp.pwm);
-                }else{
+                } else {
                     os.printf("temo request failed\n");
                 }
             }
@@ -747,18 +787,18 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
     } else if (what == "volts") {
         std::string type = stringutils::shift_parameter( params );
         if(type.empty()) {
-            int n= get_voltage_monitor_names(nullptr);
+            int n = get_voltage_monitor_names(nullptr);
             if(n > 0) {
                 const char *names[n];
                 get_voltage_monitor_names(names);
                 for (int i = 0; i < n; ++i) {
-                    os.printf("%s: %f v\n", names[i], get_voltage_monitor(names[i])*11);
+                    os.printf("%s: %f v\n", names[i], get_voltage_monitor(names[i]) * 11);
                 }
-            }else{
+            } else {
                 os.printf("No voltage monitors configured\n");
             }
-        }else{
-            os.printf("%s: %f v\n", type.c_str(), get_voltage_monitor(type.c_str())*11);
+        } else {
+            os.printf("%s: %f v\n", type.c_str(), get_voltage_monitor(type.c_str()) * 11);
         }
 
     } else {
@@ -1006,7 +1046,7 @@ bool CommandShell::m115_cmd(GCode& gcode, OutputStream& os)
 {
     Version vers;
 
-    os.printf("FIRMWARE_NAME:Smoothieware2, FIRMWARE_URL:http%%3A//smoothieware.org, X-SOURCE_CODE_URL:https://github.com/Smoothieware/SmoothieV2, FIRMWARE_VERSION:%s, X-FIRMWARE_BUILD_DATE:%s, X-SYSTEM_CLOCK:%ldMHz, X-AXES:%d, X-GRBL_MODE:%d\n", vers.get_build(), vers.get_build_date(), SystemCoreClock / 1000000, MAX_ROBOT_ACTUATORS, Dispatcher::getInstance()->is_grbl_mode()?1:0);
+    os.printf("FIRMWARE_NAME:Smoothieware2, FIRMWARE_URL:http%%3A//smoothieware.org, X-SOURCE_CODE_URL:https://github.com/Smoothieware/SmoothieV2, FIRMWARE_VERSION:%s, X-FIRMWARE_BUILD_DATE:%s, X-SYSTEM_CLOCK:%ldMHz, X-AXES:%d, X-GRBL_MODE:%d\n", vers.get_build(), vers.get_build_date(), SystemCoreClock / 1000000, MAX_ROBOT_ACTUATORS, Dispatcher::getInstance()->is_grbl_mode() ? 1 : 0);
 
     return true;
 }
@@ -1029,14 +1069,14 @@ bool CommandShell::config_get_cmd(std::string& params, OutputStream& os)
 
     ConfigReader cr(fsin);
     ConfigReader::section_map_t m;
-    bool b= cr.get_section(sectionstr.c_str(), m);
+    bool b = cr.get_section(sectionstr.c_str(), m);
     if(b) {
         for(auto& s : m) {
             std::string k = s.first;
             std::string v = s.second;
             os.printf("%s = %s\n", k.c_str(), v.c_str());
         }
-    }else{
+    } else {
         os.printf("No section named %s\n", sectionstr.c_str());
     }
 
@@ -1137,7 +1177,7 @@ bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
             return true;
         }
 
-    }else{
+    } else {
         os.printf("Usage: rx filename\n");
         return true;
     }
@@ -1145,20 +1185,20 @@ bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
     os.printf("xmodem to file: %s - start xmodem transfer\n", download_filename.c_str());
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    prxos= &os;
+    prxos = &os;
     if(!init_xmodem(rxsend)) {
         os.printf("error: out of memory\n");
         deinit_xmodem();
         return true;
     }
 
-    set_capture([](char c){ add_to_xmodem_inbuff(c); });
-    int ret= xmodemReceive(fd);
+    set_capture([](char c) { add_to_xmodem_inbuff(c); });
+    int ret = xmodemReceive(fd);
     set_capture(nullptr);
     deinit_xmodem();
     if(ret > 0) {
         os.printf("downloaded file: %s, size: %d bytes ok\n", download_filename.c_str(), ret);
-    }else{
+    } else {
         os.printf("download failed with error %d\n", ret);
     }
 
@@ -1180,21 +1220,21 @@ bool CommandShell::ry_cmd(std::string& params, OutputStream& os)
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 
-    prxos= &os;
+    prxos = &os;
     if(!init_xmodem(rxsend)) {
         os.printf("error: out of memory\n");
         deinit_xmodem();
         return true;
     }
 
-    set_capture([](char c){ add_to_xmodem_inbuff(c); });
-    int ret= ymodemReceive();
+    set_capture([](char c) { add_to_xmodem_inbuff(c); });
+    int ret = ymodemReceive();
     set_capture(nullptr);
     deinit_xmodem();
     if(params.empty()) {
         if(ret > 0) {
             os.printf("downloaded %d file(s) ok\n", ret);
-        }else{
+        } else {
             os.printf("download failed with error %d\n", ret);
         }
     } else {
@@ -1214,14 +1254,14 @@ bool CommandShell::truncate_file(const char *fn, int size, OutputStream& os)
         return false;
     }
 
-    ret= f_lseek(&fp, size);
+    ret = f_lseek(&fp, size);
     if(FR_OK != ret) {
         f_close(&fp);
         os.printf("error %d seeking to %d bytes\n", ret, size);
         return false;
     }
 
-    ret= f_truncate(&fp);
+    ret = f_truncate(&fp);
     f_close(&fp);
     if(FR_OK != ret) {
         os.printf("error %d truncating file\n", ret);
@@ -1279,14 +1319,14 @@ extern "C" void shutdown_cdc();
 bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 {
     HELP("flash image - flash flashme.bin");
-    uint32_t magic= *(uint32_t*)0x14700000;
+    uint32_t magic = *(uint32_t*)0x14700000;
     if(magic != 0x5555AAAAUL) {
         os.printf("No magic flashloader: %08X\n", magic);
         return true;
     }
 
     // check the flashme.bin is on the disk first
-    FILE *fp= fopen("/sd/flashme.bin", "r");
+    FILE *fp = fopen("/sd/flashme.bin", "r");
     if(fp == NULL) {
         os.printf("No flashme.bin file found\n");
         return true;
@@ -1306,8 +1346,8 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
     //NVIC_DisableIRQ(SysTick_IRQn);
 
     // get start address of the flash loader
-    uint32_t p= *(uint32_t*)0x14700004;
-    void (*runat)(void)= *(void (*)())p;
+    uint32_t p = *(uint32_t*)0x14700004;
+    void (*runat)(void) = *(void (*)())p;
     os.printf("Executing at %p\n", runat);
     stop_uart();
 
@@ -1322,11 +1362,11 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 {
     HELP("instant jog: $J X0.01 [F0.5] - axis can be one of XYZABC, optional speed is scale of max_rate");
     // $J X0.1 F0.5
-    int n_motors= Robot::getInstance()->get_number_registered_motors();
+    int n_motors = Robot::getInstance()->get_number_registered_motors();
 
     // get axis to move and amount (X0.1)
     // for now always 1 axis
-    size_t npos= params.find_first_of("XYZABC");
+    size_t npos = params.find_first_of("XYZABC");
     if(npos == std::string::npos) {
         os.printf("usage: $J X0.01 [F0.5]\n");
         return true;
@@ -1337,30 +1377,30 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
         os.printf("usage: $J X0.01 [F0.5]\n");
         return true;
     }
-    char ax= toupper(s[0]);
-    uint8_t a= ax >= 'X' ? ax - 'X' : ax - 'A' + 3;
+    char ax = toupper(s[0]);
+    uint8_t a = ax >= 'X' ? ax - 'X' : ax - 'A' + 3;
     if(a >= n_motors) {
         os.printf("error:bad axis\n");
         return true;
     }
 
-    float d= strtof(s.substr(1).c_str(), NULL);
+    float d = strtof(s.substr(1).c_str(), NULL);
 
     float delta[n_motors];
     for (int i = 0; i < n_motors; ++i) {
-        delta[i]= 0;
+        delta[i] = 0;
     }
-    delta[a]= d;
+    delta[a] = d;
 
     // get speed scale
-    float scale= 1.0F;
-    npos= params.find_first_of("F");
-    if(npos != std::string::npos && npos+1 < params.size()) {
-        scale= strtof(params.substr(npos+1).c_str(), NULL);
+    float scale = 1.0F;
+    npos = params.find_first_of("F");
+    if(npos != std::string::npos && npos + 1 < params.size()) {
+        scale = strtof(params.substr(npos + 1).c_str(), NULL);
     }
 
     Robot::getInstance()->push_state();
-    float rate_mm_s= Robot::getInstance()->actuators[a]->get_max_rate() * scale;
+    float rate_mm_s = Robot::getInstance()->actuators[a]->get_max_rate() * scale;
     Robot::getInstance()->delta_move(delta, rate_mm_s, n_motors);
 
     // turn off queue delay and run it now
