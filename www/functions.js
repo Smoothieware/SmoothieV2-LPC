@@ -59,7 +59,7 @@ function onClose(evt)
 
 function onMessage(evt)
 {
-	console.log(evt.data)
+	console.log("<" + evt.data + ">");
 	if(evt.data.startsWith('<')) {
 		parseQuery(evt.data);
 		return;
@@ -67,9 +67,12 @@ function onMessage(evt)
 
 	if(silent) return;
 	if(capture_cb == null) {
-		$.each(evt.data.split('\n'), function(index) {
+		str= $.trim(evt.data);
+		$.each(str.split('\n'), function(index) {
 			$( "#result" ).append( this + '<br/>' );
 		});
+		var div = $("#result");
+    	div.scrollTop(div.prop('scrollHeight'));
 	}else{
 		capture_cb(evt.data);
 	}
@@ -249,7 +252,6 @@ function refreshFiles() {
 		  cell = row.insertCell(1);
 		  cell.innerHTML = "[<a href='javascript:void(0);' onclick='playFile(\""+item+"\");'>Play</a>]";
 		}
-		//$( "#result" ).append( this + '<br/>' );
 	  });
   };
   runCommand("M20", false);

@@ -4,6 +4,18 @@
 	<title>Smoothie2 Web</title>
 	<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js"></script>
   <script type="text/javascript" src="functions.js"></script>
+  <style>
+      div.scrollBox {
+        background: #ccc none repeat scroll 0 0;
+        border: 3px solid #666;
+        margin: 5px;
+        padding: 5px;
+        position: relative;
+        width: 200px;
+        height: 100px;
+        overflow: auto;
+      }
+  </style>
 </head>
 
 <body>
@@ -351,7 +363,9 @@ mm/min
 <button id="sendCommand" onclick="runCommand(document.getElementById('commandText').value)">Send</button><br>
 
 <!-- the result of the command will be rendered inside this div -->
-<div id="result"></div>
+<div class="scrollBox" id="result"></div>
+<br>
+<button id="clear" onclick="$('.scrollBox').empty();">Clear</button><br>
 
 <h2> Upload File </h2>
 <input type="file" id="files" name="files[]" onchange="upload();">
