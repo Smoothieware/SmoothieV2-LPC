@@ -32,7 +32,7 @@
 #define ip_address_key  "ip_address"
 #define ip_mask_key "ip_mask"
 #define ip_gateway_key "ip_gateway"
-#define hostname_key "hostname_key"
+#define hostname_key "hostname"
 
 REGISTER_MODULE(Network, Network::create)
 
