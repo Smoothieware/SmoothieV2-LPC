@@ -126,7 +126,7 @@ bool MorganSCARASolution::set_optional(const arm_options_t& options)
 
     arm_options_t::const_iterator i;
 
-    i = options.find('T');         // Theta arm1 length
+    i = options.find('L');         // Theta arm1 length
     if(i != options.end()) {
         arm1_length = i->second;
 
@@ -170,7 +170,7 @@ bool MorganSCARASolution::set_optional(const arm_options_t& options)
 
 bool MorganSCARASolution::get_optional(arm_options_t& options, bool force_all) const
 {
-    options['T'] = this->arm1_length;
+    options['L'] = this->arm1_length;
     options['P'] = this->arm2_length;
     options['X'] = this->morgan_offset_x;
     options['Y'] = this->morgan_offset_y;

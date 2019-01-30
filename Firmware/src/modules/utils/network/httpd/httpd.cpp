@@ -283,7 +283,7 @@ static err_t websocket_read(WebsocketState& state, uint8_t *buf, uint16_t buflen
                 readlen = plen;
                 break;
             case 0x08: // close
-                return ERR_CLSD;
+                return -20;
                 break;
             default:
                 printf("websocket_read: unhandled opcode %d\n", opcode);
@@ -391,8 +391,10 @@ static err_t handle_command(struct netconn *conn)
     // make sure command thread does not try to write to the soon to be closed (and deleted) conn
     os->set_closed();
 
-    // send exit string
-    netconn_write(conn, endbuf, sizeof(endbuf), NETCONN_NOCOPY);
+    if(err == -20) {
+        // send exit string if we got one
+        netconn_write(conn, endbuf, sizeof(endbuf), NETCONN_NOCOPY);
+    }
 
     printf("handle_command: websocket closing\n");
     return ERR_OK;

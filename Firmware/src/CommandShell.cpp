@@ -354,10 +354,7 @@ static void printTaskList(OutputStream& os)
                 case eBlocked:      cStatus = 'B'; break;
                 case eSuspended:    cStatus = 'S'; break;
                 case eDeleted:      cStatus = 'D'; break;
-                default:            /* Should not get here, but it is included
-                                        to prevent static checking errors. */
-                    cStatus = 0x00;
-                    break;
+                default:            cStatus = '?'; break;
             }
 
             /* Write the task name */
