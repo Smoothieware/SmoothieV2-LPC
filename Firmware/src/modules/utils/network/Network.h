@@ -2,6 +2,8 @@
 
 #include "Module.h"
 
+#include <string>
+
 class OutputStream;
 class Ftpd;
 
@@ -20,7 +22,7 @@ class Network : public Module {
 
         bool handle_net_cmd( std::string& params, OutputStream& os );
         struct netif *lpc_netif;
-
+        std::string hostname;
         char *ip_address{nullptr};
         char *ip_mask{nullptr};
         char *ip_gateway{nullptr};

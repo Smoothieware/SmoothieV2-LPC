@@ -32,6 +32,7 @@
 #define ip_address_key  "ip_address"
 #define ip_mask_key "ip_mask"
 #define ip_gateway_key "ip_gateway"
+#define hostname_key "hostname_key"
 
 REGISTER_MODULE(Network, Network::create)
 
@@ -70,6 +71,8 @@ bool Network::configure(ConfigReader& cr)
     if(!enable) {
         return false;
     }
+
+    hostname = cr.get_string(m, hostname_key, "smoothiev2");
 
     std::string ip_address_str = cr.get_string(m, ip_address_key, "auto");
     if(!ip_address_str.empty() && ip_address_str != "auto") {
@@ -212,6 +215,7 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
     HELP("net - show network status, -n also shows netstat");
 
     if(lpc_netif->flags & NETIF_FLAG_LINK_UP) {
+        os.printf("hostname: %s\n", netif_get_hostname(lpc_netif));
         os.printf("Link UP\n");
         if (lpc_netif->ip_addr.addr) {
             static char tmp_buff[16];
@@ -307,7 +311,7 @@ void Network::network_thread()
     if (netifapi_netif_add(lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init, tcpip_input) != ERR_OK) {
         printf("Network: Net interface failed to initialize\n");
     }
-
+    netif_set_hostname(lpc_netif, hostname.c_str());
     netifapi_netif_set_default(lpc_netif);
     netifapi_netif_set_up(lpc_netif);
 
