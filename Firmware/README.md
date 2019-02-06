@@ -40,3 +40,21 @@ on the Prime Alpha there are 4 leds..
 1. led3 - smoothie led, flashes slowly when idle, does not flash when busy
 2. led4 - smoothie led, on when executing moves, flashes when in HALT
 
+The debug UART port is on PF.10 (TX) and PF.11 (RX) on the PrimeAlpha
+The debug UART port is on P6.4 (TX) and P6.5 (RX) on the Bambino Socket 2 pin 4,5
+
+Debugging and Flashing
+----------------------
+You will need a JLink to flash and debug, plug it into the jtag port.
+Run the jlink gdb server:
+```/opt/jlink/JLinkGDBServer -device LPC4330_M4 -speed auto -rtos GDBServer/RTOSPlugin_FreeRTOS.so -timeout 10000```
+
+Then run gdb:
+```arm-none-eabi-gdb-64bit -ex "target remote localhost:2331" smoothiev2_Primealpha/smoothiev2.elf```
+
+The ```arm-none-eabi-gdb-64bit``` binary is in the tools directory, it is a fixed version that handles Hard Faults correctly.
+
+To flash use the load command in gdb, it is recommended you do a ```mon reset``` before and after the load.
+
+Once flashed you use the c command to run.
+
