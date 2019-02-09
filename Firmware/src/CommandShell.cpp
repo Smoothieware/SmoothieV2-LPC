@@ -238,8 +238,7 @@ bool CommandShell::cd_cmd(std::string& params, OutputStream& os)
     HELP("change directory");
     std::string fn = stringutils::shift_parameter( params );
     if(fn.empty()) {
-        os.puts("directory name required\n");
-        return true;
+        fn= "/";
     }
     if(FR_OK != f_chdir(fn.c_str())) {
         os.puts("failed to change to directory\n");
@@ -371,7 +370,7 @@ static void printTaskList(OutputStream& os)
 
 bool CommandShell::mem_cmd(std::string& params, OutputStream& os)
 {
-    HELP("show memory allocation and tasks");
+    HELP("show memory allocation and threads");
 
     printTaskList(os);
     // os->puts("\n\n");
