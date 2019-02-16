@@ -681,7 +681,7 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
                 if(m->request("get_current_temperature", &temp)) {
                     os.printf("%s: %s (%d) temp: %f/%f @%d\n", m->get_instance_name(), temp.designator.c_str(), temp.tool_id, temp.current_temperature, temp.target_temperature, temp.pwm);
                 } else {
-                    os.printf("temo request failed\n");
+                    os.printf("temp request failed\n");
                 }
             }
 

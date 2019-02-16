@@ -93,7 +93,6 @@ end
 # Install the handler
 Rake.application.add_loader('d', DfileLoader.new)
 
-#TOOLSDIR = '/home/morris/work/reprap/Smoothie/gcc-arm-none-eabi/bin'
 TOOLSDIR = ENV['ARMTOOLS'].nil? ? '/usr/bin' :  ENV['ARMTOOLS']
 TOOLSBIN = "#{TOOLSDIR}/arm-none-eabi-"
 LIBSDIR = "#{TOOLSDIR}/../lib"
@@ -109,7 +108,7 @@ ARFLAGS = 'ur'
 
 current_version= `#{CC} -dumpversion`.chomp
 puts "Current GCC version is #{current_version}"
-ARMVERSION = ENV['ARMVERSION'].nil? ? current_version :  ENV['ARMVERSION']
+#ARMVERSION = ENV['ARMVERSION'].nil? ? current_version :  ENV['ARMVERSION']
 
 # Set build type
 #BUILDTYPE= ENV['BUILDTYPE'] || 'Checked' unless defined? BUILDTYPE
@@ -254,7 +253,7 @@ task :help do
   puts " debug=1 - turns on debug compilation"
   puts " debuglib=1 - turns on debugging only for the hal libs"
   puts " ARMTOOLS=path - overides where the ARM tool chain is loaded from. default is #{TOOLSDIR}"
-  puts " ARMVERSION=version - overides the version of ARM tools to use. default is #{ARMVERSION}"
+  #puts " ARMVERSION=version - overides the version of ARM tools to use. default is #{ARMVERSION}"
   puts " axis=nnn - overrides the number of axis compiled in. default is 4"
   puts " paxis=nnn - overrides the number of primary axis. default is 3"
 end
@@ -265,15 +264,15 @@ end
 #   sh "./flashit #{OBJDIR}/#{PROG}.bin"
 # end
 
-desc "Upload via openocd"
-task :upload do
-  sh "./flashit.openocd #{OBJDIR}/#{PROG}.elf"
-end
+# desc "Upload via openocd"
+# task :upload do
+#   sh "./flashit.openocd #{OBJDIR}/#{PROG}.elf"
+# end
 
-desc "Upload via dfu"
-task :dfu do
-  sh "/usr/bin/dfu-util -v -R -d 0483:df11 -a 0 --dfuse-address 0x08000000 -D #{OBJDIR}/#{PROG}.bin"
-end
+# desc "Upload via dfu"
+# task :dfu do
+#   sh "/usr/bin/dfu-util -v -R -d 0483:df11 -a 0 --dfuse-address 0x08000000 -D #{OBJDIR}/#{PROG}.bin"
+# end
 
 # generate the header dependencies if they exist
 import(*DEPFILES)

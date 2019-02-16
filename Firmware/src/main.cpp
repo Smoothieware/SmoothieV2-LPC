@@ -742,7 +742,7 @@ static void smoothie_startup(void *)
             uint32_t freq = 10000; // default is 10KHz
             ConfigReader::section_map_t m;
             if(cr.get_section("pwm", m)) {
-                freq = cr.get_int(m, "frequency", 10000);
+                freq = cr.get_int(m, "frequency", freq);
             }
             Pwm::setup(freq);
             printf("INFO: PWM frequency set to %lu Hz\n", freq);
