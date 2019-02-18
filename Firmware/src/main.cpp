@@ -962,7 +962,7 @@ extern "C" void vApplicationIdleHook( void )
             Board_LED_Toggle(0);
             Board_LED_Toggle(1);
         } else {
-            // handle play led
+            // handle play led 1
             if(system_running) {
                 if(Module::is_halted()) {
                     Board_LED_Toggle(1);
