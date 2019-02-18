@@ -2,6 +2,7 @@
 
 #include "ConfigReader.h"
 #include "SlowTicker.h"
+#include "main.h"
 
 #define kill_button_enable_key "enable"
 #define kill_button_pin_key "pin"
@@ -97,13 +98,13 @@ void KillButton::button_tick()
     if(state == KILL_BUTTON_DOWN) {
         if(!killed) {
             Module::broadcast_halt(true);
-            //printf("ALARM: Kill button pressed - reset or M999 to continue\r\n");
+            print_to_all_consoles("ALARM: Kill button pressed - reset or M999 to continue\n");
         }
 
     } else if(state == UNKILL_FIRE) {
         if(killed) {
             Module::broadcast_halt(false); // clears on_halt
-            //printf("UnKill button pressed Halt cleared\r\n");
+            print_to_all_consoles("UnKill button pressed Halt cleared\n");
         }
     }
 }

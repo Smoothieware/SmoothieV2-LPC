@@ -723,6 +723,8 @@ static void smoothie_startup(void *)
                 if(!aux_play_led->connected()) {
                     delete aux_play_led;
                     aux_play_led = nullptr;
+                }else{
+                    printf("INFO: auxilliary play led set to %s\n", aux_play_led->to_string().c_str());
                 }
             }
         }
