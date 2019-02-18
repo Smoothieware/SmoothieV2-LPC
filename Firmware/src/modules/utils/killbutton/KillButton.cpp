@@ -52,7 +52,7 @@ bool KillButton::configure(ConfigReader& cr)
 }
 
 // Check the state of the button and act accordingly using the following FSM
-// Note this is ISR so don't do anything nasty in here
+// Note this is the system timer so don't do anything slow in here
 // If in toggle mode (locking estop) then button down will kill, and button up will unkill if unkill is enabled
 // otherwise it will look for a 2 second press on the kill button to unkill if unkill is set
 void KillButton::button_tick()

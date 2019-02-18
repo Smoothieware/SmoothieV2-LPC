@@ -31,10 +31,12 @@
 #include "Robot.h"
 #include "RingBuffer.h"
 #include "Conveyor.h"
+#include "Pin.h"
 
 static bool system_running= false;
 static bool rpi_port_enabled= false;
 static uint32_t rpi_baudrate= 115200;
+static Pin *aux_play_led = nullptr;
 
 // for ?, $I or $S queries
 // for ? then query_line will be nullptr
@@ -716,6 +718,12 @@ static void smoothie_startup(void *)
                 rpi_port_enabled= cr.get_bool(m, "rpi_port_enable", false);
                 rpi_baudrate= cr.get_int(m, "rpi_baudrate", 115200);
                 printf("INFO: rpi port is %senabled, at baudrate: %lu\n", rpi_port_enabled ? "" : "not ", rpi_baudrate);
+                std::string p = cr.get_string(m, "aux_play_led", "nc");
+                aux_play_led = new Pin(p.c_str(), Pin::AS_OUTPUT);
+                if(!aux_play_led->connected()) {
+                    delete aux_play_led;
+                    aux_play_led = nullptr;
+                }
             }
         }
 
@@ -962,12 +970,18 @@ extern "C" void vApplicationIdleHook( void )
             Board_LED_Toggle(0);
             Board_LED_Toggle(1);
         } else {
-            // handle play led 1
+            // handle play led 1 and aux play led
             if(system_running) {
                 if(Module::is_halted()) {
                     Board_LED_Toggle(1);
+                    if(aux_play_led != nullptr) {
+                        aux_play_led->set(!aux_play_led->get());
+                    }
                 }else{
                     Board_LED_Set(1, !Conveyor::getInstance()->is_idle());
+                    if(aux_play_led != nullptr) {
+                        aux_play_led->set(!Conveyor::getInstance()->is_idle());
+                    }
                 }
             }
         }
