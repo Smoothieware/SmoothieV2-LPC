@@ -1,7 +1,7 @@
 /*
 FUNCTION
 	<<strcasecmp>>---case-insensitive character string compare
-	
+
 INDEX
 	strcasecmp
 
@@ -13,7 +13,7 @@ DESCRIPTION
 	<<strcasecmp>> compares the string at <[a]> to
 	the string at <[b]> in a case-insensitive manner.
 
-RETURNS 
+RETURNS
 
 	If <<*<[a]>>> sorts lexicographically after <<*<[b]>>> (after
 	both are converted to lowercase), <<strcasecmp>> returns a

@@ -221,14 +221,18 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::rm_cmd(std::string& params, OutputStream& os)
 {
-    HELP("delete: file or directory");
+    HELP("delete: file(s) or directory. quote names with spaces");
     std::string fn = stringutils::shift_parameter( params );
-    if(fn.empty()) {
-        os.puts("name required\n");
-        return true;
+    while(!fn.empty()) {
+        int s = remove(fn.c_str());
+        if (s != 0){
+            os.printf("Could not delete %s\n", fn.c_str());
+        } else {
+            os.printf("deleted %s\n", fn.c_str());
+        }
+        fn = stringutils::shift_parameter( params );
     }
-    int s = remove(fn.c_str());
-    if (s != 0) os.printf("Could not delete %s\n", fn.c_str());
+
     return true;
 }
 

@@ -23,7 +23,7 @@ class RingBuffer
             size = length;
             tail = 0;
             head = 0;
-            buffer = (kind*) malloc(sizeof(int) * size);
+            buffer = (kind*) malloc(sizeof(kind) * size);
         }
 
         /**
