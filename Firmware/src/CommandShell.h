@@ -42,7 +42,6 @@ private:
     bool version_cmd(std::string& params, OutputStream& os);
     bool m20_cmd(GCode& gcode, OutputStream& os);
     bool m115_cmd(GCode& gcode, OutputStream& os);
-    bool rx_cmd(std::string& params, OutputStream& os);
     bool ry_cmd(std::string& params, OutputStream& os);
     bool truncate_cmd(std::string& params, OutputStream& os);
     bool break_cmd(std::string& params, OutputStream& os);

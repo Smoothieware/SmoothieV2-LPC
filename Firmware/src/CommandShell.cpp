@@ -11,7 +11,7 @@
 #include "ConfigWriter.h"
 #include "Conveyor.h"
 #include "version.h"
-#include "xmodem.h"
+#include "ymodem.h"
 #include "Adc.h"
 #include "FastTicker.h"
 #include "StepTicker.h"
@@ -59,7 +59,6 @@ bool CommandShell::initialize()
 
     THEDISPATCHER->add_handler( "config-set", std::bind( &CommandShell::config_set_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "config-get", std::bind( &CommandShell::config_get_cmd, this, _1, _2) );
-    THEDISPATCHER->add_handler( "rx", std::bind( &CommandShell::rx_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "ry", std::bind( &CommandShell::ry_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "truncate", std::bind( &CommandShell::truncate_cmd, this, _1, _2) );
 
@@ -1147,61 +1146,6 @@ bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
     return true;
 }
 
-// HACK to add xmodem download to smoothie for binary files
-static OutputStream *prxos;
-static void rxsend(char c)
-{
-    prxos->write(&c, 1);
-}
-
-bool CommandShell::rx_cmd(std::string& params, OutputStream& os)
-{
-    HELP("xmodem recieve: rx filename");
-
-    if(!Conveyor::getInstance()->is_idle()) {
-        os.printf("rx not allowed while printing or busy\n");
-        return true;
-    }
-
-    // open file to download to
-    FILE *fd;
-    std::string download_filename = params;
-    if(!download_filename.empty()) {
-        fd = fopen(download_filename.c_str(), "w");
-        if(fd == NULL) {
-            os.printf("failed to open file: %s.\r\n", download_filename.c_str());
-            return true;
-        }
-
-    } else {
-        os.printf("Usage: rx filename\n");
-        return true;
-    }
-
-    os.printf("xmodem to file: %s - start xmodem transfer\n", download_filename.c_str());
-    vTaskDelay(pdMS_TO_TICKS(2000));
-
-    prxos = &os;
-    if(!init_xmodem(rxsend)) {
-        os.printf("error: out of memory\n");
-        deinit_xmodem();
-        return true;
-    }
-
-    set_capture([](char c) { add_to_xmodem_inbuff(c); });
-    int ret = xmodemReceive(fd);
-    set_capture(nullptr);
-    deinit_xmodem();
-    if(ret > 0) {
-        os.printf("downloaded file: %s, size: %d bytes ok\n", download_filename.c_str(), ret);
-    } else {
-        os.printf("download failed with error %d\n", ret);
-    }
-
-    fclose(fd);
-    return true;
-}
-
 bool CommandShell::ry_cmd(std::string& params, OutputStream& os)
 {
     HELP("ymodem recieve");
@@ -1216,17 +1160,18 @@ bool CommandShell::ry_cmd(std::string& params, OutputStream& os)
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 
-    prxos = &os;
-    if(!init_xmodem(rxsend)) {
-        os.printf("error: out of memory\n");
-        deinit_xmodem();
+
+    YModem ymodem([&os](char c){os.write(&c, 1);});
+    // check we did not run out of memory
+    if(!ymodem.is_ok()) {
+        os.printf("error: not enough memory\n");
         return true;
     }
 
-    set_capture([](char c) { add_to_xmodem_inbuff(c); });
-    int ret = ymodemReceive();
+    set_capture([&ymodem](char c) { ymodem.add(c); });
+    int ret = ymodem.receive();
     set_capture(nullptr);
-    deinit_xmodem();
+
     if(params.empty()) {
         if(ret > 0) {
             os.printf("downloaded %d file(s) ok\n", ret);

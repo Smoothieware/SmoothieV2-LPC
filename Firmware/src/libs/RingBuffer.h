@@ -34,8 +34,10 @@ class RingBuffer
          */
         ~RingBuffer()
         {
-            delete [] buffer;
+            free(buffer);
         }
+
+        bool is_ok() const { return buffer != nullptr; }
 
         /**
          * @brief   Get next index of the reference index
