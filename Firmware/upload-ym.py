@@ -6,6 +6,7 @@ import signal
 import traceback
 import os
 import argparse
+import serial
 
 def signal_term_handler(signal, frame):
    global intrflg
@@ -42,21 +43,31 @@ if args.verbose:
 else:
     varg= '-q'
 
+ok= False
+
 try:
     p = subprocess.Popen(['sx', '--ymodem', varg, file_path], bufsize=0, stdin=fin, stdout=fout, stderr=sys.stderr)
     result, err = p.communicate()
     if p.returncode != 0:
         print("Failed")
-
+        ok= False
     else:
         print("uploaded ok")
-        if args.flash:
-            fout.write(b'rm flashme.bin\n')
-            fout.write(b'mv smoothiev2.bin flashme.bin\n')
-            print("now do flash")
-            
+        ok= True
+
 except:
     print('Exception: {}'.format(traceback.format_exc()))
 
 fin.close()
 fout.close()
+
+if ok and args.flash:
+    # we use serial here
+    s = serial.Serial(dev, 115200)
+    s.flushInput()  # Flush startup text in serial input
+
+    s.write(b'rm flashme.bin\n')
+    s.write(b'mv smoothiev2.bin flashme.bin\n')
+    s.flushInput()
+    s.close()
+    print("now do flash")

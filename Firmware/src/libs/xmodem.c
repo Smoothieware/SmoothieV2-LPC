@@ -33,10 +33,10 @@ static volatile int inptr= 0;
 static volatile int outptr= 0;
 void add_to_xmodem_inbuff(char c)
 {
-	taskENTER_CRITICAL();
+	vTaskSuspendAll();
 	inbuff[inptr++]= c;
 	inptr = inptr & 2047;
-	taskEXIT_CRITICAL();
+	xTaskResumeAll();
 	while(inptr == outptr) {
 		vTaskDelay(pdMS_TO_TICKS(10));
 	}
@@ -68,10 +68,10 @@ static int _inbyte(int msec)
 		if (msec-- <= 0)
 			return -1;
 	}
-	taskENTER_CRITICAL();
+	vTaskSuspendAll();
 	int c= inbuff[outptr++];
 	outptr = outptr & 2047;
-	taskEXIT_CRITICAL();
+	xTaskResumeAll();
 	return c;
 }
 
