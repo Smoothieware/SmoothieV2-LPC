@@ -12,7 +12,7 @@ public:
 	virtual ~YModem();
 	void add(char c);
 	int receive();
-	bool is_ok() const { return inbuf.is_ok(); }
+	bool is_ok() const { return(inbuf.is_ok() && xbuff != nullptr); }
 
 private:
 	int _inbyte(int msec);
@@ -23,7 +23,7 @@ private:
 
 	txfunc_t txfnc;
 	RingBuffer<char, 2048> inbuf;
-	unsigned char xbuff[1030]; /* 1024 for YModem 1k + 3 head chars + 2 crc + nul */
+	unsigned char *xbuff;
 };
 
 

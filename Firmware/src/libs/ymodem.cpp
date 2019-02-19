@@ -28,10 +28,14 @@
 #include "task.h"
 
 YModem::YModem(txfunc_t txfunc) : txfnc(txfunc)
-{}
+{
+	xbuff= (unsigned char*) malloc(1030); /* 1024 for YModem 1k + 3 head chars + 2 crc + nul */
+}
 
 YModem::~YModem()
-{}
+{
+	free(xbuff);
+}
 
 void YModem::add(char c)
 {
