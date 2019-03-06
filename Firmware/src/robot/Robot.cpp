@@ -737,6 +737,12 @@ bool Robot::handle_G92(GCode& gcode, OutputStream& os)
         if(gcode.has_arg('Z')) z = gcode.get_arg('Z');
         g92_offset = wcs_t(x, y, z);
 
+    } else if(gcode.get_subcode() == 4) {
+        // do a manual homing based on given coordinates, no endstops required (Old G92 functionality)
+        if(gcode.has_arg('X')){ Robot::getInstance()->reset_axis_position(gcode.get_arg('X'), X_AXIS); }
+        if(gcode.has_arg('Y')){ Robot::getInstance()->reset_axis_position(gcode.get_arg('Y'), Y_AXIS); }
+        if(gcode.has_arg('Z')){ Robot::getInstance()->reset_axis_position(gcode.get_arg('Z'), Z_AXIS); }
+
     } else {
         // standard setting of the g92 offsets, making current WCS position whatever the coordinate arguments are
         float x, y, z;
