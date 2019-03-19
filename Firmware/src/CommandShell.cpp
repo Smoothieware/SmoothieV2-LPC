@@ -611,6 +611,20 @@ bool CommandShell::switch_poll_cmd(std::string& params, OutputStream& os)
     return true;
 }
 
+static bool get_spindle_state()
+{
+    // get spindle switch state
+    Module *m = Module::lookup("switch", "spindle");
+    if(m != nullptr) {
+        // get switch state
+        bool state;
+        if(m->request("state", &state)) {
+            return state;
+        }
+    }
+    return false;
+}
+
 // set or get gpio
 bool CommandShell::gpio_cmd(std::string& params, OutputStream& os)
 {
@@ -763,9 +777,9 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
         grblDP_cmd(cmd, os);
 
     } else if (what == "state") {
-        // also $G
+        // also $G and $I
         // [G0 G54 G17 G21 G90 G94 M0 M5 M9 T0 F0.]
-        os.printf("[G%d %s G%d G%d G%d G94 M0 M5 M9 T%d F%1.4f S%1.4f]\n",
+        os.printf("[G%d %s G%d G%d G%d G94 M0 M%c M9 T%d F%1.4f S%1.4f]\n",
                   1, // Dispatcher.getInstance()->get_modal_command(),
                   stringutils::wcs2gcode(Robot::getInstance()->get_current_wcs()).c_str(),
                   Robot::getInstance()->plane_axis_0 == X_AXIS && Robot::getInstance()->plane_axis_1 == Y_AXIS && Robot::getInstance()->plane_axis_2 == Z_AXIS ? 17 :
@@ -773,6 +787,7 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
                   Robot::getInstance()->plane_axis_0 == Y_AXIS && Robot::getInstance()->plane_axis_1 == Z_AXIS && Robot::getInstance()->plane_axis_2 == X_AXIS ? 19 : 17,
                   Robot::getInstance()->inch_mode ? 20 : 21,
                   Robot::getInstance()->absolute_mode ? 90 : 91,
+                  get_spindle_state()?'3':'5',
                   0, //get_active_tool(),
                   Robot::getInstance()->from_millimeters(Robot::getInstance()->get_feed_rate()),
                   Robot::getInstance()->get_s_value());

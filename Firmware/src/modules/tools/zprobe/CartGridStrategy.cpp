@@ -55,7 +55,7 @@
     -----
     G29 test probes a rectangle which defaults to the width and height, can be overidden with Xnnn and Ynnn
 
-    G31 probes the grid and turns the compensation on, this will remain in effect until reset or M561/M370
+    G32 probes the grid and turns the compensation on, this will remain in effect until reset or M561/M370
         optional parameters {{Xn}} {{Yn}} sets the size for this rectangular probe, which gets saved with M375
 
     M370 clears the grid and turns off compensation
@@ -195,7 +195,7 @@ void CartGridStrategy::save_grid(OutputStream& os)
         return;
     }
 
-    if(isnan(grid[0])) {
+    if(grid[0] < -1E5F) {
         os.printf("error:No grid to save\n");
         return;
     }
