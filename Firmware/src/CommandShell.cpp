@@ -788,7 +788,7 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
                   Robot::getInstance()->inch_mode ? 20 : 21,
                   Robot::getInstance()->absolute_mode ? 90 : 91,
                   get_spindle_state()?'3':'5',
-                  0, //get_active_tool(),
+                  0, // TODO get_active_tool(),
                   Robot::getInstance()->from_millimeters(Robot::getInstance()->get_feed_rate()),
                   Robot::getInstance()->get_s_value());
 

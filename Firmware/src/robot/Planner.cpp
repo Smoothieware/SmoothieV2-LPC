@@ -80,9 +80,10 @@ bool Planner::append_block(ActuatorCoordinates& actuator_pos, uint8_t n_motors, 
     }
 
     // sometimes even though there is a detectable movement it turns out there are no steps to be had from such a small move
+    // However we return true as we need to accumulate the move
     if(!has_steps) {
         block->clear();
-        return false;
+        return true;
     }
 
     // info needed by laser
