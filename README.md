@@ -3,6 +3,8 @@ Smoothie V2 using LPCopen and FreeRTOS.
 
 Currently runs on Bambino boards and V2 Prime Alpha proto boards.
 
+It is currently being used to control a Delta 3D printer, and has been used to control a CNC laser.
+
 Firmware/... is for Smoothie firmware code and Test Units
 
 Currently uses the following toolchain..
