@@ -77,8 +77,8 @@
 #define LAN8_SPEED10H       (1 << 0)	/*!< 10BT half duplex */
 
 /* KSZ8021RNL PHY ID 1/2 register definitions */
-#define LAN8_PHYID1_OUI     0x0007		/*!< Expected PHY ID1 */
-#define LAN8_PHYID2_OUI     0xC0F0		/*!< Expected PHY ID2, except last 4 bits */
+#define LAN8_PHYID1_OUI     0x0022		/*!< Expected PHY ID1 */
+#define LAN8_PHYID2_OUI     0x1560		/*!< Expected PHY ID2, except last 4 bits */
 
 /* DP83848 PHY update flags */
 static uint32_t physts, olddphysts;
@@ -216,6 +216,14 @@ uint32_t lpc_phy_init(bool rmii, p_msDelay_func_t pDelayMsFunc)
 	if (i == 0) {
 		return ERROR;
 	}
+
+#if 0
+	// Read chip ID
+	uint16_t id1, id2;
+	lpc_mii_read(LAN8_PHYID1_REG, &id1);
+	lpc_mii_read(LAN8_PHYID2_REG, &id2);
+	printf("PHY ID: %04X, %04X\n", id1, id2);
+#endif
 
 	/* Setup link */
 	lpc_mii_write(LAN8_BCR_REG, LAN8_AUTONEG);
