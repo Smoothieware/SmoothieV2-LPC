@@ -1,5 +1,5 @@
 /*
- * @brief KSZ8021RNL / KSZ8031RNL simple PHY driver
+ * @brief KSZ8081 simple PHY driver
  *
  * @note
  * Copyright(C) NXP Semiconductors, 2012
@@ -32,21 +32,21 @@
 #include "chip.h"
 #include "lpc_phy.h"
 
-/** @defgroup KSZ8031RNL_PHY BOARD: PHY status and control driver for the KSZ8021RNL / KSZ8031RNL
+/** @defgroup KSZ8081_PHY BOARD: PHY status and control driver for the KSZ8081
  * @ingroup BOARD_PHY
  * Various functions for controlling and monitoring the status of the
- * KSZ8021RNL / KSZ8031RNL PHY.
+ * KSZ8081 PHY.
  * @{
  */
 
-/* KSZ8021RNL PHY register offsets */
+/* KSZ8081 PHY register offsets */
 #define LAN8_BCR_REG        0x0	/*!< Basic Control Register */
 #define LAN8_BSR_REG        0x1	/*!< Basic Status Reg */
 #define LAN8_PHYID1_REG     0x2	/*!< PHY ID 1 Reg  */
 #define LAN8_PHYID2_REG     0x3	/*!< PHY ID 2 Reg */
 #define LAN8_PHYSPLCTL_REG  0x1E/*!< PHY special control/status Reg */
 
-/* KSZ8021RNL BCR register definitions */
+/* KSZ8081 BCR register definitions */
 #define LAN8_RESET          (1 << 15)	/*!< 1= S/W Reset */
 #define LAN8_LOOPBACK       (1 << 14)	/*!< 1=loopback Enabled */
 #define LAN8_SPEED_SELECT   (1 << 13)	/*!< 1=Select 100MBps */
@@ -56,7 +56,7 @@
 #define LAN8_RESTART_AUTONEG (1 << 9)	/*!< 1=Restart auto-negoatiation */
 #define LAN8_DUPLEX_MODE    (1 << 8)	/*!< 1=Full duplex mode */
 
-/* KSZ8021RNL BSR register definitions */
+/* KSZ8081 BSR register definitions */
 #define LAN8_100BASE_T4     (1 << 15)	/*!< T4 mode */
 #define LAN8_100BASE_TX_FD  (1 << 14)	/*!< 100MBps full duplex */
 #define LAN8_100BASE_TX_HD  (1 << 13)	/*!< 100MBps half duplex */
@@ -69,18 +69,18 @@
 #define LAN8_JABBER_DETECT  (1 << 1)	/*!< Jabber detect */
 #define LAN8_EXTEND_CAPAB   (1 << 0)	/*!< Supports extended capabilities */
 
-/* KSZ8021RNL PHYSPLCTL status definitions */
+/* KSZ8081 PHYSPLCTL status definitions */
 #define LAN8_SPEEDMASK      (7 << 0)	/*!< Speed and duplex mask */
 #define LAN8_SPEED100F      (6 << 0)	/*!< 100BT full duplex */
 #define LAN8_SPEED10F       (5 << 0)	/*!< 10BT full duplex */
 #define LAN8_SPEED100H      (2 << 0)	/*!< 100BT half duplex */
 #define LAN8_SPEED10H       (1 << 0)	/*!< 10BT half duplex */
 
-/* KSZ8021RNL PHY ID 1/2 register definitions */
+/* KSZ8081 PHY ID 1/2 register definitions */
 #define LAN8_PHYID1_OUI     0x0022		/*!< Expected PHY ID1 */
 #define LAN8_PHYID2_OUI     0x1560		/*!< Expected PHY ID2, except last 4 bits */
 
-/* DP83848 PHY update flags */
+/* KSZ8081 PHY update flags */
 static uint32_t physts, olddphysts;
 
 /* PHY update counter for state machine */
@@ -182,7 +182,7 @@ static void smsc_update_phy_sts(uint16_t linksts, uint16_t sdsts)
 	}
 }
 
-/* Initialize the KSZ8021RNL / KSZ8031RNL PHY */
+/* Initialize the KSZ8081 PHY */
 uint32_t lpc_phy_init(bool rmii, p_msDelay_func_t pDelayMsFunc)
 {
 	uint16_t tmp;

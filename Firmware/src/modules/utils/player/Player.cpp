@@ -312,7 +312,7 @@ bool Player::play_command( std::string& params, OutputStream& os )
     // start play thread
     play_thread_exited = false;
 
-    BaseType_t status = xTaskCreate(play_thread, "PlayThread", 4000/4, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
+    BaseType_t status = xTaskCreate(play_thread, "PlayThread", 4000/4, NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
     if (status != pdPASS) {
         printf("Player: xTaskCreate failed, status=%ld\n", status);
     }
