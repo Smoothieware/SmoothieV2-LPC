@@ -58,7 +58,6 @@ Player::Player() : Module("player")
     abort_thread = false;
     abort_flg= false;
     play_thread_exited = false;
-    play_thread_p = nullptr;
     instance = this;
 }
 
@@ -371,7 +370,7 @@ bool Player::abort_command( std::string& params, OutputStream& os )
 {
     HELP("abort playing file");
 
-    if((!playing_file && current_file_handler == nullptr) || play_thread_p == nullptr) {
+    if(!playing_file && current_file_handler == nullptr) {
         os.printf("Not currently playing\n");
         return true;
     }
@@ -430,7 +429,6 @@ void Player::in_command_ctx(bool idle)
     // clean up the play thread once it has finished normally
     if(play_thread_exited) {
         play_thread_exited = false;
-        play_thread_p= nullptr;
     }
 }
 

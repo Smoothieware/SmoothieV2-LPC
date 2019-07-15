@@ -42,7 +42,6 @@ class Player : public Module {
         std::string on_boot_gcode;
         OutputStream *current_os;
         OutputStream *reply_os;
-        void *play_thread_p;
 
         FILE* current_file_handler;
         long file_size;
