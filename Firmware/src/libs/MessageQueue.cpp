@@ -23,6 +23,11 @@ QueueHandle_t get_message_queue()
 	return queue_handle;
 }
 
+int get_message_queue_space()
+{
+    return uxQueueSpacesAvailable(queue_handle);
+}
+
 // can be called by several threads to submit messages to the dispatcher
 // the line is copied into the message so can be on the stack
 // This call will block until there is room in the queue

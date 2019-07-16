@@ -46,7 +46,7 @@ class Player : public Module {
         FILE* current_file_handler;
         long file_size;
         unsigned long played_cnt;
-        unsigned long elapsed_secs;
+        unsigned long start_ticks;
         float saved_position[3]; // only saves XYZ
         std::map<Module*, float> saved_temperatures;
 

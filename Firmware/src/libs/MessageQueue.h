@@ -10,7 +10,7 @@ using comms_msg_t = struct {char pline[MAX_LINE_LENGTH]; OutputStream *pos; };
 extern "C" {
 bool send_message_queue(char *pline, OutputStream *pos);
 bool receive_message_queue(char **ppline, OutputStream **ppos);
-
+int get_message_queue_space();
 #else
 
 struct dispatch_message_t {

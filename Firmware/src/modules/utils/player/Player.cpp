@@ -50,7 +50,7 @@ Player::Player() : Module("player")
     this->playing_file = false;
     this->current_file_handler = nullptr;
     this->booted = false;
-    this->elapsed_secs = 0;
+    this->start_ticks = 0;
     this->reply_os = nullptr;
     this->current_os = nullptr;
     this->suspended = false;
@@ -107,12 +107,6 @@ bool Player::configure(ConfigReader& cr)
 
     return true;
 }
-
-// TODO implement
-// void Player::on_second_tick(void *)
-// {
-//     if(this->playing_file) this->elapsed_secs++;
-// }
 
 // extract any options found on line, terminates args at the space before the first option (-v)
 // eg this is a file.gcode -v
@@ -306,12 +300,11 @@ bool Player::play_command( std::string& params, OutputStream& os )
     }
 
     this->played_cnt = 0;
-    this->elapsed_secs = 0;
 
     // start play thread
     play_thread_exited = false;
 
-    BaseType_t status = xTaskCreate(play_thread, "PlayThread", 4000/4, NULL, (tskIDLE_PRIORITY + 2UL), (TaskHandle_t *) NULL);
+    BaseType_t status = xTaskCreate(play_thread, "PlayThread", 4000/4, NULL, (tskIDLE_PRIORITY + 1UL), (TaskHandle_t *) NULL);
     if (status != pdPASS) {
         printf("Player: xTaskCreate failed, status=%ld\n", status);
     }
@@ -341,8 +334,9 @@ bool Player::progress_command( std::string& params, OutputStream& os )
 
     if(file_size > 0) {
         unsigned long est = 0;
-        if(this->elapsed_secs > 10) {
-            unsigned long bytespersec = played_cnt / this->elapsed_secs;
+        unsigned long elapsed_secs = ((xTaskGetTickCount() - start_ticks) * 1000 / configTICK_RATE_HZ) / 1000;
+        if(elapsed_secs > 10) {
+            unsigned long bytespersec = played_cnt / elapsed_secs;
             if(bytespersec > 0)
                 est = (file_size - played_cnt) / bytespersec;
         }
@@ -350,7 +344,7 @@ bool Player::progress_command( std::string& params, OutputStream& os )
         float pcnt = ((float)file_size - (file_size - played_cnt)) * 100.0F / file_size;
         // If -b or -B is passed, report in the format used by Marlin and the others.
         if (!sdprinting) {
-            os.printf("file: %s, %5.1f %% complete, elapsed time: %02lu:%02lu:%02lu", this->filename.c_str(), roundf(pcnt), this->elapsed_secs / 3600, (this->elapsed_secs % 3600) / 60, this->elapsed_secs % 60);
+            os.printf("file: %s, %5.1f %% complete, elapsed time: %02lu:%02lu:%02lu", this->filename.c_str(), roundf(pcnt), elapsed_secs / 3600, (elapsed_secs % 3600) / 60, elapsed_secs % 60);
             if(est > 0) {
                 os.printf(", est time: %02lu:%02lu:%02lu",  est / 3600, (est % 3600) / 60, est % 60);
             }
@@ -436,6 +430,7 @@ void Player::player_thread()
 {
     printf("DEBUG: Player thread starting\n");
 
+    start_ticks = xTaskGetTickCount();
     char buf[130]; // lines upto 128 characters are allowed, anything longer is discarded
     bool discard = false;
     uint32_t linecnt= 0;
@@ -467,7 +462,10 @@ void Player::player_thread()
 
             buf[len - 1] = '\0'; // remove the \n and nul terminate
 
-            // we do not want to fill the message queue and block so don't let planner stall on a full queue
+            // we do not want to fill the message queue, so leave some space in it
+            //while(get_message_queue_space() < 2) vTaskDelay(pdMS_TO_TICKS(1));
+
+            // don't fill block queue so don't let planner stall on a full queue
             Conveyor::getInstance()->wait_for_room();
 
             send_message_queue(buf, &nullos);
