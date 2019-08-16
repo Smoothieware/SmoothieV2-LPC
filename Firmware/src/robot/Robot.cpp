@@ -2070,7 +2070,7 @@ void Robot::get_query_string(std::string& str) const
         // deal with the ABC axis (E will be A)
         for (int i = A_AXIS; i < get_number_registered_motors(); ++i) {
             // current actuator position
-            n = snprintf(buf, sizeof(buf), ",%1.4f", from_millimeters(actuators[i]->get_current_position()));
+            n = snprintf(buf, sizeof(buf), ",%1.4f", actuators[i]->get_current_position());
             str.append(buf, n);
         }
 #endif
@@ -2115,7 +2115,7 @@ void Robot::get_query_string(std::string& str) const
         // deal with the ABC axis (E will be A)
         for (int i = A_AXIS; i < get_number_registered_motors(); ++i) {
             // current actuator position
-            n = snprintf(buf, sizeof(buf), ",%1.4f", from_millimeters(actuators[i]->get_current_position()));
+            n = snprintf(buf, sizeof(buf), ",%1.4f", actuators[i]->get_current_position());
             str.append(buf, n);
         }
 #endif
