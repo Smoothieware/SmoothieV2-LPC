@@ -207,7 +207,7 @@ bool Player::handle_gcode(GCode& gcode, OutputStream& os)
             break;
 
             case 600: { // suspend print, Not entirely Marlin compliant, M600.1 will leave the heaters on
-                std::string cmd((gcode.get_subcode() == 1) ? "h" : "");
+                std::string cmd((gcode.get_subcode() == 1) ? "l" : "");
                 this->suspend_command(cmd, os);
             }
             break;
