@@ -561,7 +561,7 @@ bool Player::suspend_command(std::string& params, OutputStream& os )
     os.printf("Suspending print, waiting for queue to empty...\n");
 
     // override the leave_heaters_on setting
-    this->override_leave_heaters_on = (params == "l");
+    this->override_leave_heaters_on = (params == "l" || params == "h");
 
     suspended = true;
     if( this->playing_file ) {
