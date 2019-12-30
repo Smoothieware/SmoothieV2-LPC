@@ -58,3 +58,13 @@ To flash use the load command in gdb, it is recommended you do a ```mon reset```
 
 Once flashed you use the c command to run.
 
+Flashing V2 Smoothie using J-Link (Windows)
+===========================================
+
+Install and launch Jflash Lite
+Set to LPC4330_M4, JTAG 4000khz
+Select V2 smoothie bin file
+Set Address to 0x14000000
+Click Program Device
+Install SD with config.ini into V2 board
+Plug into USB and boot.  Verify serial connection

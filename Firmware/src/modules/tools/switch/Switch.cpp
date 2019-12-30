@@ -206,6 +206,11 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
     if(input_pin.connected()) {
         // set to initial state
         this->input_pin_state = this->input_pin.get();
+        if(this->input_pin_behavior == momentary_behavior) {
+            // initialize switch state to same as current pin level
+            this->switch_state = this->input_pin_state = this->input_pin.get();
+        }
+
         // input pin polling
         // TODO we should only have one of these in Switch and call each switch instance
         SlowTicker::getInstance()->attach(100, std::bind(&Switch::pinpoll_tick, this));
@@ -468,7 +473,7 @@ void Switch::handle_switch_changed()
 // Check the state of the button and act accordingly
 // This is an ISR
 // we need to protect switch_state from concurrent access so it is an atomic_bool
-// this just sets the state and lets handle_switch_changed() changethe actual pins
+// this just sets the state and lets handle_switch_changed() change the actual pins
 // TODO however if there is no output_on_command and output_off_command set it could set the pins here instead
 // FIXME there is a race condition where if the button is pressed and released faster than the command loop runs then it will not see the button as active
 void Switch::pinpoll_tick()
