@@ -208,7 +208,7 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
         this->input_pin_state = this->input_pin.get();
         if(this->input_pin_behavior == momentary_behavior) {
             // initialize switch state to same as current pin level
-            this->switch_state = this->input_pin_state = this->input_pin.get();
+            this->switch_state = this->input_pin_state;
         }
 
         // input pin polling
