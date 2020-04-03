@@ -340,6 +340,7 @@ bool CartGridStrategy::probe_grid(int n, int m, float _x_start, float _y_start, 
     float x_step = _x_size / n;
     float y_step = _y_size / m;
     for (int c = 0; c < m; ++c) {
+        std::string scanline;
         float y = _y_start + y_step * c;
         for (int r = 0; r < n; ++r) {
             float x = _x_start + x_step * r;
@@ -347,9 +348,11 @@ bool CartGridStrategy::probe_grid(int n, int m, float _x_start, float _y_start, 
             float mm;
             if(!zprobe->doProbeAt(mm, x, y)) return false;
             z = zprobe->getProbeHeight() - mm;
-            os.printf("%1.4f ", z);
+            char buf[16];
+            size_t n= snprintf(buf, sizeof(buf), "%1.4f ", z);
+            scanline.append(buf, n);
         }
-        os.printf("\n");
+        os.printf("%s\n", scanline.c_str());
     }
     return true;
 }
