@@ -349,8 +349,8 @@ bool CartGridStrategy::probe_grid(int n, int m, float _x_start, float _y_start, 
             if(!zprobe->doProbeAt(mm, x, y)) return false;
             z = zprobe->getProbeHeight() - mm;
             char buf[16];
-            size_t n= snprintf(buf, sizeof(buf), "%1.4f ", z);
-            scanline.append(buf, n);
+            size_t s= snprintf(buf, sizeof(buf), "%1.4f ", z);
+            scanline.append(buf, s);
         }
         os.printf("%s\n", scanline.c_str());
     }
