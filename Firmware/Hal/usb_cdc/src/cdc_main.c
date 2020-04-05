@@ -130,9 +130,20 @@ USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass
 }
 
 // called externally to read/write to the USB CDC channel
+// Expects entire buffer to be written
 size_t write_cdc(const char *buf, size_t len)
 {
-	return vcom_write((uint8_t *)buf, len);
+	size_t sent= 0;
+	while(sent < len) {
+		uint32_t n = vcom_write((uint8_t *)buf+sent, len-sent);
+		sent += n;
+		if(sent < len) {
+			// yield some time
+			taskYIELD();
+		}
+	}
+
+	return len;
 }
 
 size_t read_cdc(char *buf, size_t len)
