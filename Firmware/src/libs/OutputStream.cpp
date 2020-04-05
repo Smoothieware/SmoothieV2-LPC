@@ -39,7 +39,7 @@ int OutputStream::write(const char *buffer, size_t size)
 	if(prepend_ok) {
 		prepending.append(buffer, size);
 	} else {
-		// this is expected to always write everything out unless
+		// this is expected to always write everything out
 		os->write((const char*)buffer, size);
 	}
 	return size;

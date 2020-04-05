@@ -138,6 +138,8 @@ size_t write_cdc(const char *buf, size_t len)
 		uint32_t n = vcom_write((uint8_t *)buf+sent, len-sent);
 		sent += n;
 		if(sent < len) {
+			if(!vcom_connected())
+				return -1;
 			// yield some time
 			taskYIELD();
 		}

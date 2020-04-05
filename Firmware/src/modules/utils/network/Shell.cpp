@@ -46,7 +46,7 @@ static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
         printf("shell: write_back: ERROR magic was bad\n");
         return -1;
     }
-    // FIXME must write entire buffer
+    // NOTE must write entire buffer
     size_t sent= 0;
     while(sent < len) {
         int n;
@@ -57,8 +57,11 @@ static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
             return -1;
         }
         sent += n;
-        // TODO my need to yield here if not all sent
-
+        // need to yield here if not all sent
+        if(sent < len) {
+            // yield some time
+            taskYIELD();
+        }
     }
     return len;
 }
