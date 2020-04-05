@@ -385,6 +385,8 @@ bool Robot::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 21, std::bind(&Robot::handle_gcodes, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 28, std::bind(&Robot::handle_gcodes, this, _1, _2));
 
+    THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 43, std::bind(&Robot::handle_gcodes, this, _1, _2));
+    THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 49, std::bind(&Robot::handle_gcodes, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 53, std::bind(&Robot::handle_gcodes, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 54, std::bind(&Robot::handle_gcodes, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 55, std::bind(&Robot::handle_gcodes, this, _1, _2));
@@ -872,6 +874,24 @@ bool Robot::handle_gcodes(GCode& gcode, OutputStream& os)
 
                 default: handled = false;
             }
+            break;
+
+        case 43:
+            if(gcode.get_subcode() == 1) {
+                float x, y, z;
+                std::tie(x, y, z) = tool_offset;
+                if(gcode.has_arg('X')) x += to_millimeters(gcode.get_arg('X'));
+                if(gcode.has_arg('Y')) y += to_millimeters(gcode.get_arg('Y'));
+                if(gcode.has_arg('Z')) z += to_millimeters(gcode.get_arg('Z'));
+                tool_offset = wcs_t(x, y, z);
+
+            } else{
+                handled = false;
+            }
+            break;
+
+        case 49:
+            tool_offset = wcs_t(0, 0, 0);
             break;
 
         case 53: // G53 not fully supported. G53 G1 X1 Y1 is ok, but G53 X1 Y1 is not supported
