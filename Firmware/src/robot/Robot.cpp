@@ -876,19 +876,26 @@ bool Robot::handle_gcodes(GCode& gcode, OutputStream& os)
             }
             break;
 
-        case 43:
-            if(gcode.get_subcode() == 1) {
-                float x, y, z;
-                std::tie(x, y, z) = tool_offset;
-                if(gcode.has_arg('X')) x += to_millimeters(gcode.get_arg('X'));
-                if(gcode.has_arg('Y')) y += to_millimeters(gcode.get_arg('Y'));
-                if(gcode.has_arg('Z')) z += to_millimeters(gcode.get_arg('Z'));
-                tool_offset = wcs_t(x, y, z);
+            case 43:
+                if(gcode.get_subcode() == 1 || gcode.get_subcode() == 2) {
+                    float deltas[3]= {0, 0, 0};
+                    if(gcode.has_arg('X')) deltas[X_AXIS]= to_millimeters(gcode.get_arg('X'));
+                    if(gcode.has_arg('Y')) deltas[Y_AXIS]= to_millimeters(gcode.get_arg('Y'));
+                    if(gcode.has_arg('Z')) deltas[Z_AXIS]= to_millimeters(gcode.get_arg('Z'));
 
-            } else{
-                handled = false;
-            }
-            break;
+                    float x, y, z;
+                    std::tie(x, y, z) = tool_offset;
+                    if(deltas[X_AXIS] != 0) x += deltas[X_AXIS];
+                    if(deltas[Y_AXIS] != 0) y += deltas[Y_AXIS];
+                    if(deltas[Z_AXIS] != 0) z += deltas[Z_AXIS];
+                    tool_offset = wcs_t(x, y, z);
+
+                    if(gcode.get_subcode() == 2) {
+                        // we also move
+                        delta_move(deltas, this->seek_rate / seconds_per_minute, 3);
+                    }
+                }
+                break;
 
         case 49:
             tool_offset = wcs_t(0, 0, 0);
