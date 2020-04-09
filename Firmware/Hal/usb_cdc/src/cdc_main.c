@@ -157,6 +157,12 @@ size_t read_cdc(char *buf, size_t len)
 __attribute__ ((section (".bss.$RAM3"))) static char usb_cdc_buffer[USB_STACK_MEM_SIZE];
 int setup_cdc(xTaskHandle h)
 {
+	// check memory is on 4KB aligned memory
+	if((uint32_t) &usb_cdc_buffer & 0x0FFF) {
+		printf("FATAL: CDC Buffer is not aligned to 4K\n");
+		return 0;
+	}
+
 	USBD_API_INIT_PARAM_T usb_param;
 	USB_CORE_DESCS_T desc;
 	ErrorCode_t ret = LPC_OK;

@@ -778,8 +778,8 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
 
     } else if (what == "state") {
         // also $G and $I
-        // [G0 G54 G17 G21 G90 G94 M0 M5 M9 T0 F0.]
-        os.printf("[G%d %s G%d G%d G%d G94 M0 M%c M9 T%d F%1.4f S%1.4f]\n",
+        // [GC:G0 G54 G17 G21 G90 G94 M0 M5 M9 T0 F0.]
+        os.printf("[GC:G%d %s G%d G%d G%d G94 M0 M%c M9 T%d F%1.4f S%1.4f]\n",
                   1, // Dispatcher.getInstance()->get_modal_command(),
                   stringutils::wcs2gcode(Robot::getInstance()->get_current_wcs()).c_str(),
                   Robot::getInstance()->plane_axis_0 == X_AXIS && Robot::getInstance()->plane_axis_1 == Y_AXIS && Robot::getInstance()->plane_axis_2 == Z_AXIS ? 17 :
@@ -892,7 +892,7 @@ bool CommandShell::grblDP_cmd(std::string& params, OutputStream& os)
                   Robot::getInstance()->from_millimeters(std::get<1>(v[n + 2])),
                   Robot::getInstance()->from_millimeters(std::get<2>(v[n + 2])));
     } else {
-        os.printf("[TL0:%1.4f]\n", Robot::getInstance()->from_millimeters(std::get<2>(v[n + 2])));
+        os.printf("[TLO:%1.4f]\n", Robot::getInstance()->from_millimeters(std::get<2>(v[n + 2])));
     }
 
     // this is the last probe position, updated when a probe completes, also stores the number of steps moved after a homing cycle
