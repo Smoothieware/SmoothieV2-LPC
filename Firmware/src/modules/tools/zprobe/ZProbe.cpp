@@ -63,7 +63,7 @@ bool ZProbe::configure(ConfigReader& cr)
 {
     ConfigReader::section_map_t m;
     if(!cr.get_section("zprobe", m)) {
-        printf("configure-zprobe: no zprobe section found\n");
+        printf("config-zprobe: no zprobe section found\n");
         return false;
     }
 
@@ -76,6 +76,9 @@ bool ZProbe::configure(ConfigReader& cr)
     if(!this->pin.connected()) {
         printf("ERROR: config-zprobe: no pin defined\n");
         return false;
+
+    }else{
+        printf("config-zprobe: Probe pin: %s\n", this->pin.to_string().c_str());
     }
 
     this->debounce_ms = cr.get_float(m, debounce_ms_key, 0);
@@ -388,7 +391,7 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
     switch (gcode.get_code()) {
         case 119:
             c = this->pin.get();
-            os.printf(" Probe: %d", c);
+            os.printf(" Probe(%s): %d", this->pin.to_string().c_str(), c);
             os.set_append_nl(true);
             break;
 
