@@ -25,5 +25,6 @@ private:
 
     float probe_radius;
     float initial_height;
+    float tolerance;
 };
 

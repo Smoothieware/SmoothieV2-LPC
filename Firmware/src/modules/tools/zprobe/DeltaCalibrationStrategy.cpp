@@ -17,6 +17,7 @@
 
 #define radius_key "radius"
 #define initial_height_key "initial_height"
+#define tolerance_key "tolerance"
 
 bool DeltaCalibrationStrategy::configure(ConfigReader& cr)
 {
@@ -32,6 +33,10 @@ bool DeltaCalibrationStrategy::configure(ConfigReader& cr)
     // the initial height above the bed we stop the initial move down after home to find the bed
     // this should be a height that is enough that the probe will not hit the bed
     this->initial_height = cr.get_float(m, initial_height_key, 20);
+
+    // the error we allow for probe (target to resolve to)
+    this->tolerance = cr.get_float(m, tolerance_key, 0.03F);
+
     return true;
 }
 
@@ -166,7 +171,7 @@ bool DeltaCalibrationStrategy::findBed(float& ht)
 
 bool DeltaCalibrationStrategy::calibrate_delta_endstops(GCode& gcode, OutputStream& os)
 {
-    float target = 0.03F;
+    float target = this->tolerance;
     if(gcode.has_arg('I')) target = gcode.get_arg('I'); // override default target
     if(gcode.has_arg('J')) this->probe_radius = gcode.get_arg('J'); // override default probe radius
 
@@ -290,7 +295,7 @@ bool DeltaCalibrationStrategy::calibrate_delta_endstops(GCode& gcode, OutputStre
 
 bool DeltaCalibrationStrategy::calibrate_delta_radius(GCode& gcode, OutputStream& os)
 {
-    float target = 0.03F;
+    float target = this->tolerance;
     if(gcode.has_arg('I')) target = gcode.get_arg('I'); // override default target
     if(gcode.has_arg('J')) this->probe_radius = gcode.get_arg('J'); // override default probe radius
 
