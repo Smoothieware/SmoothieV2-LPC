@@ -205,7 +205,7 @@ bool ConfigReader::get_bool(const section_map_t& m, const char *key, bool def)
 {
     auto s = m.find(key);
     if(s != m.end()) {
-        return s->second == "true";
+        return s->second == "true" || s->second == "t" || s->second == "1";
     }
 
     return def;
