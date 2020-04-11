@@ -42,31 +42,31 @@ std::vector<std::string> stringutils::split(const char *str, char sep)
 // if a quoted parameter extract it as one parameter including spaces but excluding quotes
 std::string stringutils::shift_parameter( std::string &parameters )
 {
-    size_t beginning = parameters.find_first_of(" ");
-    if( beginning == std::string::npos ) {
-        std::string temp = parameters;
-        parameters = "";
-        return temp;
-    }
+    std::string ret;
+    size_t pos = parameters.find_first_of(" \"");
+    if(pos == std::string::npos) {
+        ret= parameters;
+        parameters= "";
 
-    std::string temp = parameters.substr( 0, beginning );
-    if(temp[0] == '\"') {
+    } else if(parameters[pos] == '\"') {
         // if it is quoted then return up to the closing quote
-        size_t o= parameters.find_first_of("\"", beginning);
+        size_t o= parameters.find_first_of("\"", pos+1);
         if( o != std::string::npos ) {
-            temp= temp.substr(1); // remove leading "
-            temp.append(parameters.substr(beginning, o-beginning)); // add rest of string until the last "
+            ret= parameters.substr(pos+1, o-1); // remove leading and trailing "
+
             size_t n= parameters.find_first_of(" ", o);
             if(n != std::string::npos) {
-                beginning= n;
+                parameters= parameters.substr(n+1, parameters.size());
             }else{
-                beginning= o;
+                parameters= parameters.substr(o+1, parameters.size());
             }
         }
 
+    } else {
+        ret = parameters.substr( 0, pos );
+        parameters = parameters.substr(pos+1, parameters.size());
     }
-    parameters = parameters.substr(beginning + 1, parameters.size());
-    return temp;
+    return ret;
 }
 
 
