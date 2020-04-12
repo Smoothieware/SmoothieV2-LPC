@@ -15,11 +15,11 @@ public:
 
 	bool parse(const char *line, GCodes_t& gcodes);
 	int get_line_number() const { return line_no; }
-	int get_group1_modal_code() const { return group1.get_code(); }
+	static int get_group1_modal_code() { return group1.get_code(); }
     static std::tuple<uint16_t, uint16_t, float> parse_code(const char *&p);
 
 private:
 	// modal settings
-	GCode group1;
+	static GCode group1;
 	int line_no;
 };

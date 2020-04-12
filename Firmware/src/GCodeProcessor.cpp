@@ -29,6 +29,8 @@ std::tuple<uint16_t, uint16_t, float> GCodeProcessor::parse_code(const char *&p)
     }
     return std::make_tuple(a, b, f);
 }
+//static
+GCode GCodeProcessor::group1;
 
 GCodeProcessor::GCodeProcessor()
 {

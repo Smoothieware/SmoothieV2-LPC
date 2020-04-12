@@ -16,6 +16,7 @@
 #include "FastTicker.h"
 #include "StepTicker.h"
 #include "Adc.h"
+#include "GCodeProcessor.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -628,12 +629,15 @@ static bool get_spindle_state()
 // set or get gpio
 bool CommandShell::gpio_cmd(std::string& params, OutputStream& os)
 {
-    HELP("set and get gpio pins: use GPIO5[14] | gpio5_14 | P4_10 | p4.10 out/in [on/off]");
+    HELP("set and get gpio pins: use GPIO5[14] | gpio5_14 | gpio5.14 | P4_10 | p4.10 out/in [on/off]");
 
     std::string gpio = stringutils::shift_parameter( params );
     std::string dir = stringutils::shift_parameter( params );
 
-    if(gpio.empty()) return false;
+    if(gpio.empty()) {
+        os.printf("incorrect usage\n");
+        return true;
+    }
 
     if(dir.empty() || dir == "in") {
         // read pin
@@ -649,7 +653,10 @@ bool CommandShell::gpio_cmd(std::string& params, OutputStream& os)
 
     if(dir == "out") {
         std::string v = stringutils::shift_parameter( params );
-        if(v.empty()) return false;
+        if(v.empty()) {
+            os.printf("on|off required\n");
+            return true;
+        }
         Pin pin(gpio.c_str(), Pin::AS_OUTPUT);
         if(!pin.connected()) {
             os.printf("Not a valid GPIO\n");
@@ -661,7 +668,8 @@ bool CommandShell::gpio_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
-    return false;
+    os.printf("incorrect usage\n");
+    return true;
 }
 
 bool CommandShell::modules_cmd(std::string& params, OutputStream& os)
@@ -780,7 +788,7 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
         // also $G and $I
         // [GC:G0 G54 G17 G21 G90 G94 M0 M5 M9 T0 F0.]
         os.printf("[GC:G%d %s G%d G%d G%d G94 M0 M%c M9 T%d F%1.4f S%1.4f]\n",
-                  1, // Dispatcher.getInstance()->get_modal_command(),
+                  GCodeProcessor::get_group1_modal_code(),
                   stringutils::wcs2gcode(Robot::getInstance()->get_current_wcs()).c_str(),
                   Robot::getInstance()->plane_axis_0 == X_AXIS && Robot::getInstance()->plane_axis_1 == Y_AXIS && Robot::getInstance()->plane_axis_2 == Z_AXIS ? 17 :
                   Robot::getInstance()->plane_axis_0 == X_AXIS && Robot::getInstance()->plane_axis_1 == Z_AXIS && Robot::getInstance()->plane_axis_2 == Y_AXIS ? 18 :
