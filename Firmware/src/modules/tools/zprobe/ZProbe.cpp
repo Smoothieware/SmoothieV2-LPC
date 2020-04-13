@@ -152,6 +152,7 @@ bool ZProbe::configure(ConfigReader& cr)
     THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 32, std::bind(&ZProbe::handle_gcode, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::GCODE_HANDLER, 38, std::bind(&ZProbe::handle_gcode, this, _1, _2));
 
+    THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 48, std::bind(&ZProbe::handle_mcode, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 119, std::bind(&ZProbe::handle_mcode, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 670, std::bind(&ZProbe::handle_mcode, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 500, std::bind(&ZProbe::handle_mcode, this, _1, _2));
@@ -222,7 +223,7 @@ bool ZProbe::run_probe(float& mm, float feedrate, float max_dist, bool reverse)
 
     // now see how far we moved, get delta in z we moved
     // NOTE this works for deltas as well as all three actuators move the same amount in Z
-    mm = z_start_pos - Robot::getInstance()->actuators[2]->get_current_position();
+    mm = z_start_pos - Robot::getInstance()->actuators[Z_AXIS]->get_current_position();
 
     // set the last probe position to the actuator units moved during this home
     Robot::getInstance()->set_last_probe_position(std::make_tuple(0, 0, mm, probe_detected ? 1 : 0));
@@ -389,6 +390,30 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
     // M code processing here
     int c;
     switch (gcode.get_code()) {
+        case 48: { // Measure Z-Probe repeatability Pnnn is number of iterations, 10 is the default
+            int n = gcode.has_arg('P') ? gcode.get_arg('P') : 10;
+            float maxz = -1e6F, minz = 1e6F;
+            float rate = gcode.has_arg('F') ? gcode.get_arg('F') / 60 : this->slow_feedrate;
+            for (int i = 0; i < n; ++i) {
+                float mm;
+                bool probe_result = run_probe_return(mm, rate, 20); // NOTE hard coded max distance 20mm
+
+                if(Module::is_halted()) break;
+
+                if(probe_result) {
+                    // the result is in actuator coordinates moved
+                    os.printf("Z:%1.4f\n", mm);
+                    if(mm < minz) minz= mm;
+                    if(mm > maxz) maxz= mm;
+
+                } else {
+                    os.printf("ZProbe not triggered, place probe less than 20mm from bed\n");
+                    break;
+                }
+            }
+            os.printf("Delta: %1.4f\n", fabs(maxz-minz));
+        } break;
+
         case 119:
             c = this->pin.get();
             os.printf(" Probe(%s): %d", this->pin.to_string().c_str(), c);
