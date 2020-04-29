@@ -231,7 +231,7 @@ DEPFLAGS = '-MMD '
 CSTD = '-std=c99'
 FFLAGS = ' -fmessage-length=0 -fno-builtin-printf -fno-builtin-isnan -ffast-math -ffunction-sections -fdata-sections '
 CFLAGS = FFLAGS + DEPFLAGS + " -Wall -Wshadow -Wundef  -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16  " + (DEBUG ? "-O0 -g3 " : "-O2 -g")
-CPPFLAGS = CFLAGS + ' -Wno-psabi -fno-exceptions -fno-rtti -fno-common -std=gnu++11'
+CPPFLAGS = CFLAGS + ' -Wno-psabi -fno-exceptions -fno-rtti -fno-common -std=gnu++14'
 
 # Linker script to be used.
 LSCRIPT = TARGET == 'LPC4337' ? "./v2pro4337.ld"  : SPIFI ? "./spifi.ld" : "./pflash.ld"

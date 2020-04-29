@@ -1355,7 +1355,7 @@ static err_t ftpd_msgrecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t 
 			dbg_printf("query: %s\n", text);
 
 			strncpy(cmd, text, 4);
-			for (pt = cmd; isalpha(*pt) && pt < &cmd[4]; pt++)
+			for (pt = cmd; isalpha((unsigned char)*pt) && pt < &cmd[4]; pt++)
 				*pt = toupper(*pt);
 			*pt = '\0';
 
