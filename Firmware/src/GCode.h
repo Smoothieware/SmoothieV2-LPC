@@ -37,8 +37,8 @@ public:
 	GCode& set_command(char c, uint16_t cd, uint16_t scode=0) { is_g= c=='G'; is_m= c=='M'; this->code= cd; this->subcode= scode; return *this; }
 	GCode& add_arg(char c, float f) { args[c]= f; set_arg(c); return *this; }
 
-	void dump(OutputStream&) const;
-	void dump(FILE*) const;
+	bool dump(OutputStream&) const;
+	bool dump(FILE*) const;
 	//friend std::ostream& operator<<(std::ostream& o, const GCode& f) { f.dump(); return o; }
 
 private:

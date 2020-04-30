@@ -219,7 +219,12 @@ bool dispatch_line(OutputStream& os, const char *cl)
                 // just save the gcodes to the file
                 if(upload_fp != nullptr) {
                     // write out gcode
-                    i.dump(upload_fp);
+                    if(!i.dump(upload_fp)) {
+                        // we got an error
+                        fclose(upload_fp);
+                        upload_fp= nullptr;
+                        os.printf("Error:error writing to file.\n");
+                    }
                 }
 
                 os.printf("ok\n");

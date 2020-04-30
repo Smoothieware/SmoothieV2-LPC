@@ -21,7 +21,7 @@ void GCode::clear()
 	code= subcode= 0;
 }
 
-void GCode::dump(OutputStream &o) const
+bool GCode::dump(OutputStream &o) const
 {
 	o.printf("%s%u", is_g?"G":is_m?"M":"", code);
 	if(subcode != 0) {
@@ -32,18 +32,21 @@ void GCode::dump(OutputStream &o) const
 		o.printf("%c:%1.5f ", i.first, i.second);
 	}
 	o.printf("\n");
+	return true;
 }
 
-void GCode::dump(FILE *fp) const
+bool GCode::dump(FILE *fp) const
 {
-	fprintf(fp, "%s%u", is_g?"G":is_m?"M":"", code);
+	if(fprintf(fp, "%s%u", is_g?"G":is_m?"M":"", code) < 0) return false;
 	if(subcode != 0) {
-		fprintf(fp, ".%u",  subcode);
+		if(fprintf(fp, ".%u",  subcode) < 0) return false;
 	}
-	fprintf(fp, " ");
+	if(fprintf(fp, " ") < 0) return false;
 	for(auto& i : args) {
-		fprintf(fp, "%c%1.5f ", i.first, i.second);
+		if(fprintf(fp, "%c%1.5f ", i.first, i.second) < 0) return false;
 	}
-	fprintf(fp, "\n");
+	if(fprintf(fp, "\n") < 0) return false;
+
+	return true;
 }
 
