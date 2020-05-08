@@ -73,7 +73,7 @@ bool Module::add(const char* group, const char* instance)
     return true;
 }
 
-// this may be called in an ISR context so all on_halts must be ISR safe
+// this may be called in a Timer context so all on_halts must be Timer task safe
 void Module::broadcast_halt(bool flg)
 {
     halted= flg;

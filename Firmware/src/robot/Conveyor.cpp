@@ -55,7 +55,7 @@ void Conveyor::start()
     running = true;
 }
 
-// this maybe called in ISR context so we cannot wait for queue to flush
+// this maybe called in Timer context so we cannot wait for queue to flush
 void Conveyor::on_halt(bool flg)
 {
     halted= flg;

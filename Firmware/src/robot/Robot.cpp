@@ -480,6 +480,7 @@ void Robot::periodic_checks()
 }
 #endif
 
+// This may be called in an Timer context, but we can send SPI
 void Robot::on_halt(bool flg)
 {
     halted = flg;

@@ -97,6 +97,8 @@ The slowticker is limited to 100Hz, there is a fastticker for events faster than
     SlowTicker::getInstance()->attach(100, std::bind(&Laser::set_proportional_power, this));
 ```
 
+NOTE that it is safe to do prints and SPI calls (and blocking routines that do not block for long) etc from a SlowTicker as it is an RTOS Timer, however FastTicker callbacks are ISRs and may not do prints or any slow or blocking calls.
+
 Note all callbacks are of type std::function
 
 As the CPU has a FPU never use doubles always use floats.
