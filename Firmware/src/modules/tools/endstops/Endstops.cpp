@@ -368,7 +368,8 @@ void Endstops::read_endstops()
 void Endstops::check_limits()
 {
     if(this->status == LIMIT_TRIGGERED) {
-        // if we were in limit triggered see if it has been cleared
+        // if we were in limit triggered see if all have been cleared
+        bool all_clear= true;
         for(auto& i : endstops) {
             if(i->limit_enable) {
                 if(i->pin.get()) {
@@ -379,12 +380,17 @@ void Endstops::check_limits()
 
                 if(i->debounce < debounce_ms) {
                     i->debounce += 10;
-                }else{
-                    // clear the state
-                    this->status = NOT_HOMING;
+                    all_clear= false;
                 }
             }
         }
+
+        if(all_clear) {
+            // clear the state
+            this->status = NOT_HOMING;
+            print_to_all_consoles("// NOTICE hard limits are now enabled\n");
+        }
+
         return;
 
     } else if(this->status != NOT_HOMING) {
@@ -411,6 +417,7 @@ void Endstops::check_limits()
                         snprintf(report_string, sizeof(report_string), "ALARM: Hard limit %c%c was hit - $X needed\n", STEPPER[i->axis_index]->which_direction() ? '-' : '+', i->axis);
                     }
                     print_to_all_consoles(report_string);
+                    print_to_all_consoles("// NOTICE hard limits are disabled until all have been cleared\n");
 
                     this->status = LIMIT_TRIGGERED;
                     i->debounce= 0;
