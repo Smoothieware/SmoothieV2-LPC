@@ -29,5 +29,6 @@ class KillButton : public Module {
             volatile STATE state:4;
             bool unkill_enable:1;
             bool toggle_enable:1;
+            bool estop_still_pressed:1;
         };
 };

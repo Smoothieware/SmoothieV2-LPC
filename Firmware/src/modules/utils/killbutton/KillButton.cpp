@@ -26,6 +26,7 @@ bool KillButton::create(ConfigReader& cr)
 KillButton::KillButton() : Module("killbutton")
 {
     this->state = IDLE;
+    this->estop_still_pressed= false;
 }
 
 bool KillButton::configure(ConfigReader& cr)
@@ -69,7 +70,14 @@ void KillButton::button_tick()
             if(killed) state = KILLED_BUTTON_DOWN;
             break;
         case KILLED_BUTTON_DOWN:
-            if(this->kill_button.get()) state = KILLED_BUTTON_UP;
+            if (this->kill_button.get()) {
+                state= KILLED_BUTTON_UP;
+            } else if ((toggle_enable) && (!killed)) {
+                // button is still pressed but the halted state was left
+                // re-trigger the halted state
+                state= KILL_BUTTON_DOWN;
+                estop_still_pressed= true;
+            }
             break;
         case KILLED_BUTTON_UP:
             if(!killed) state = IDLE;
@@ -99,6 +107,12 @@ void KillButton::button_tick()
         if(!killed) {
             Module::broadcast_halt(true);
             print_to_all_consoles("ALARM: Kill button pressed - reset or M999 to continue\n");
+            if(estop_still_pressed) {
+                print_to_all_consoles("WARNING: ESTOP is still latched, unlatch ESTOP to clear HALT\n");
+                estop_still_pressed= false;
+            }else{
+                print_to_all_consoles("ALARM: Kill button pressed - reset, $X or M999 to clear HALT\n");
+            }
         }
 
     } else if(state == UNKILL_FIRE) {
