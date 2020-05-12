@@ -320,6 +320,10 @@ bool CommandShell::cp_cmd(std::string& params, OutputStream& os)
                     break;
                 }
             }
+            if(Module::is_halted()) {
+                os.printf("copy aborted\n");
+                break;
+            }
         }
         free(buffer);
 
@@ -476,6 +480,7 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
             if ( limit > 0 && ++newlines >= limit ) {
                 break;
             }
+            if(Module::is_halted()) break;
         };
         fclose(lp);
         if(delay) {

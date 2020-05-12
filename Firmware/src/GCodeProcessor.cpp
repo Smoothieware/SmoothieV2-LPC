@@ -119,9 +119,9 @@ bool GCodeProcessor::parse(const char *line, GCodes_t& gcodes)
             start = true;
         }
 
-        // extract gcode word G01{.123}
-        std::tuple<uint16_t, uint16_t, float> code = parse_code(p);
         if(start) {
+            // extract gcode command word G01{.123}
+            std::tuple<uint16_t, uint16_t, float> code = parse_code(p);
             if(c == 'G' || c == 'M') {
                 gc.set_command(c, std::get<0>(code), std::get<1>(code));
                 if(c == 'G' && std::get<0>(code) <= 3) {
@@ -145,7 +145,11 @@ bool GCodeProcessor::parse(const char *line, GCodes_t& gcodes)
             start = false;
 
         } else {
-            gc.add_arg(c, std::get<2>(code));
+            // parse argument word (X-1.23)
+            char *np;
+            float f = strtof(p, &np);
+            gc.add_arg(c, f);
+            p= np;
         }
     }
     gcodes.push_back(gc);

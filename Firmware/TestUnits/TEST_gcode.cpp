@@ -9,7 +9,7 @@ REGISTER_TEST(GCodeTest,basic)
     GCodeProcessor gp;
     GCodeProcessor::GCodes_t gca;
 
-    const char *g1("G32 X1.2 Y2.3");
+    const char *g1("G32 X1.2 Y-2.3");
     bool ok= gp.parse(g1, gca);
     TEST_ASSERT_TRUE(ok);
     TEST_ASSERT_EQUAL_INT(1, gca.size());
@@ -23,7 +23,7 @@ REGISTER_TEST(GCodeTest,basic)
     TEST_ASSERT_TRUE(gc1.has_arg('Y'));
     TEST_ASSERT_TRUE(!gc1.has_arg('Z'));
     TEST_ASSERT_EQUAL_FLOAT(1.2, gc1.get_arg('X'));
-    TEST_ASSERT_EQUAL_FLOAT(2.3, gc1.get_arg('Y'));
+    TEST_ASSERT_EQUAL_FLOAT(-2.3, gc1.get_arg('Y'));
 }
 
 GCode gc2;
