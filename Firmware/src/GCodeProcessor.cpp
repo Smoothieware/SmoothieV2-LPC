@@ -12,10 +12,10 @@
 #include <cstring>
 
 
-std::tuple<uint16_t, uint16_t, float> GCodeProcessor::parse_code(const char *&p)
+std::tuple<uint16_t, uint16_t> GCodeProcessor::parse_code(const char *&p)
 {
     int a = 0, b = 0;
-    float f = strtof(p, nullptr);
+
     while(*p && isdigit(*p)) {
         a = (a * 10) + (*p - '0');
         ++p;
@@ -27,7 +27,7 @@ std::tuple<uint16_t, uint16_t, float> GCodeProcessor::parse_code(const char *&p)
             ++p;
         }
     }
-    return std::make_tuple(a, b, f);
+    return std::make_tuple(a, b);
 }
 //static
 GCode GCodeProcessor::group1;
@@ -95,6 +95,7 @@ bool GCodeProcessor::parse(const char *line, GCodes_t& gcodes)
 
     } else {
         // checksum failed
+        gcodes.clear();
         return false;
     }
 
@@ -111,8 +112,17 @@ bool GCodeProcessor::parse(const char *line, GCodes_t& gcodes)
             continue;
         }
 
-        // see if we have another G or M code on the same line
+        // Words as per NIST are always an upper case letter followed by a signed or unsigned floating point number
+        // [A-Z][-+]*[/d.]+
         char c = toupper(*p++);
+        if(c < 'A' || c > 'Z') {
+            // This is an error
+            gc.set_error("Illegal word");
+            gcodes.push_back(gc);
+            return false;
+        }
+
+        // see if we have another G or M code on the same line
         if((c == 'G' || c == 'M') && !start) {
             gcodes.push_back(gc);
             gc.clear();
@@ -120,38 +130,58 @@ bool GCodeProcessor::parse(const char *line, GCodes_t& gcodes)
         }
 
         if(start) {
-            // extract gcode command word G01{.123}
-            std::tuple<uint16_t, uint16_t, float> code = parse_code(p);
-            if(c == 'G' || c == 'M') {
-                gc.set_command(c, std::get<0>(code), std::get<1>(code));
-                if(c == 'G' && std::get<0>(code) <= 3) {
-                    group1.clear();
-                    group1.set_command(c, std::get<0>(code), std::get<1>(code));
+            start = false;
+            if(c == 'G' || c == 'M' || c == 'T'){
+                // it is a command word
+                if(!isdigit(*p)) {
+                    // this is an error
+                    gc.set_error("Illegal command word");
+                    gcodes.push_back(gc);
+                    return false;
+                }
+                // extract gcode command word G01{.123}
+                std::tuple<uint16_t, uint16_t> code = parse_code(p);
+
+                if(c == 'G' || c == 'M') {
+                    gc.set_command(c, std::get<0>(code), std::get<1>(code));
+                    if(c == 'G' && std::get<0>(code) <= 3) {
+                        group1.clear();
+                        group1.set_command(c, std::get<0>(code), std::get<1>(code));
+                    }
+
+                } else if(c == 'T') {
+                    // tool change but for 3dprinters this is really just select an extruder/heater to use
+                    // but we force mcode to be M6 which is change tool and set the T parameter
+                    // TODO tool change will break when/if real tool change is added and will need to be re thought
+                    gc.set_t();
+                    gc.set_command('M', 6, 0);
+                    gc.add_arg('T', std::get<0>(code));
                 }
 
-            } else if(c == 'T') {
-                // tool change but for 3dprinters this is really just select an extruder/heater to use
-                // but we force mcode to be M6 which is change tool and set the T parameter
-                // TODO tool change will break when/if real tool change is added and will need to be re thought
-                gc.set_t();
-                gc.set_command('M', 6, 0);
-                gc.add_arg('T', std::get<0>(code));
+                continue;
 
             } else {
-                gc.set_command('G', group1.get_code(), group1.get_subcode()); // modal group1, copies G code and subcode for this line
-                gc.add_arg(c, std::get<2>(code));
+                // parameter word with no command word so use modal command word
+                // group1, copies G code and subcode for this line
+                gc.set_command('G', group1.get_code(), group1.get_subcode());
+                // fall through to process parameter word
             }
-
-            start = false;
-
-        } else {
-            // parse argument word (X-1.23)
-            char *np;
-            float f = strtof(p, &np);
-            gc.add_arg(c, f);
-            p= np;
         }
+
+        // process the parameter word
+        if(!isdigit(*p) && *p != '-' && *p != '.') {
+            // this is an error
+            gc.set_error("Illegal parameter word");
+            gcodes.push_back(gc);
+            return false;
+        }
+        // parse argument word (X-1.23)
+        char *np;
+        float f = strtof(p, &np);
+        gc.add_arg(c, f);
+        p= np;
     }
+
     gcodes.push_back(gc);
     return true;
 }

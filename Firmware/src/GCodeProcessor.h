@@ -16,7 +16,7 @@ public:
 	bool parse(const char *line, GCodes_t& gcodes);
 	int get_line_number() const { return line_no; }
 	static int get_group1_modal_code() { return group1.get_code(); }
-    static std::tuple<uint16_t, uint16_t, float> parse_code(const char *&p);
+    static std::tuple<uint16_t, uint16_t> parse_code(const char *&p);
 
 private:
 	// modal settings

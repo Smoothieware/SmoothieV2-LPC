@@ -94,7 +94,7 @@ REGISTER_TESTF(Dispatcher, one_off_dispatch)
 
     TEST_ASSERT_FALSE(cb1);
     TEST_ASSERT_TRUE(args.empty());
-    THEDISPATCHER->dispatch(os, 'G', 1, 'X', 456.0, 'Y', 789.0, 'Z', 123.0, 0);
+    THEDISPATCHER->dispatch(os, 'G', 1, 'X', 456.0, 'Y', -789.0, 'Z', 123.0, 0);
     TEST_ASSERT_STRING_S(oss.str().c_str(), "ok\n");
 
     TEST_ASSERT_TRUE ( cb1 );
@@ -102,6 +102,6 @@ REGISTER_TESTF(Dispatcher, one_off_dispatch)
 
     TEST_ASSERT_EQUAL_INT(3, args.size());
     TEST_ASSERT_EQUAL_INT(456, args['X']);
-    TEST_ASSERT_EQUAL_INT(789, args['Y']);
+    TEST_ASSERT_EQUAL_INT(-789, args['Y']);
     TEST_ASSERT_EQUAL_INT(123, args['Z']);
 }

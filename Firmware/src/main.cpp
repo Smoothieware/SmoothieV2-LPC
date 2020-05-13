@@ -187,11 +187,30 @@ bool dispatch_line(OutputStream& os, const char *cl)
 
     // Parse gcode
     if(!gp.parse(line, gcodes)) {
-        // line failed checksum, send resend request
-        os.printf("rs N%d\n", gp.get_line_number() + 1);
-        return true;
+        if(gcodes.empty()) {
+            // line failed checksum, send resend request
+            os.printf("rs N%d\n", gp.get_line_number() + 1);
+            return true;
 
-    } else if(gcodes.empty()) {
+        }else {
+            auto& g= gcodes.back();
+            if(g.has_error()) {
+                // Word parse Error
+                if(THEDISPATCHER->is_grbl_mode()) {
+                    os.printf("error:gcode parse failed %s - %s\n", g.get_error_message(), line);
+                }else{
+                    os.printf("// WARNING gcode parse failed %s - %s\n", g.get_error_message(), line);
+                }
+                // TODO add option to HALT in this case
+            }else{
+                // this shouldn't happen
+                printf("WARNING: parse returned false but no error\n");
+            }
+            gcodes.pop_back();
+        }
+    }
+
+    if(gcodes.empty()) {
         // if gcodes is empty then was a M110, just send ok
         os.puts("ok\n");
         return true;

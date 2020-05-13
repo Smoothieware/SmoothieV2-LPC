@@ -177,7 +177,7 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
         input_on_command_letter = input_on_command.front();
         const char *p = input_on_command.c_str();
         p++;
-        std::tuple<uint16_t, uint16_t, float> c = GCodeProcessor::parse_code(p);
+        std::tuple<uint16_t, uint16_t> c = GCodeProcessor::parse_code(p);
         input_on_command_code = std::get<0>(c);
         if(std::get<1>(c) != 0) {
             this->subcode = std::get<1>(c); // override any subcode setting
@@ -193,7 +193,7 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
         input_off_command_letter = input_off_command.front();
         const char *p = input_off_command.c_str();
         p++;
-        std::tuple<uint16_t, uint16_t, float> c = GCodeProcessor::parse_code(p);
+        std::tuple<uint16_t, uint16_t> c = GCodeProcessor::parse_code(p);
         input_off_command_code = std::get<0>(c);
         if(std::get<1>(c) != 0) {
             this->subcode = std::get<1>(c); // override any subcode setting
