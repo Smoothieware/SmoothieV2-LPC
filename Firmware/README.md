@@ -68,3 +68,12 @@ Set Address to 0x14000000
 Click Program Device
 Install SD with config.ini into V2 board
 Plug into USB and boot.  Verify serial connection
+
+Contributions
+=============
+
+Pull requests to the master branch will not be accepted as this will be the stable, well tested branch.
+Pull requests should be made to the unstable branch, which is a branch off the edge branch.
+Once a PR has been merged into unstable and has been fairly well tested it will be merged to the edge branch.
+Only when edge is considered stable will it be merged into master.
+
