@@ -352,10 +352,12 @@ bool Robot::configure(ConfigReader& cr)
         actuators[i]->change_last_milestone(actuator_pos[i]);
     }
 
+    #if MAX_ROBOT_ACTUATORS > 3
     // initialize any extra axis to machine position
     for (size_t i = A_AXIS; i < n_motors; i++) {
         actuators[i]->change_last_milestone(machine_position[i]);
     }
+    #endif
 
     //this->clearToolOffset();
 #ifdef BOARD_PRIMEALPHA
