@@ -669,7 +669,7 @@ bool CommandShell::gpio_cmd(std::string& params, OutputStream& os)
         }
         bool b = (v == "on");
         pin.set(b);
-        os.printf("%s: was set to %s\n", pin.to_string().c_str(), v);
+        os.printf("%s: was set to %s\n", pin.to_string().c_str(), v.c_str());
         return true;
     }
 
