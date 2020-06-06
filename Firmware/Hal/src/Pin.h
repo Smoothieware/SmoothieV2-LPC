@@ -42,20 +42,11 @@ public:
         if (!this->valid) return;
         uint8_t v= (this->inverting ^ value) ? 1 : 0;
         if(open_drain) {
-            // simulates open drain by setting to input when on and output low when off
-            if(v) {
-                // pin is on so set to open drain
-                LPC_GPIO_PORT->B[this->gpioport][this->gpiopin] = 1;
-                // 0 is input, 1 is output
-                Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, gpioport, gpiopin, 0);
-            }else{
-                // pin is off so set to low output
-                Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, gpioport, gpiopin, 1);
-                LPC_GPIO_PORT->B[this->gpioport][this->gpiopin] = 0;
-            }
-        }else{
-            LPC_GPIO_PORT->B[this->gpioport][this->gpiopin] = v;
+            // simulates open drain by setting to input when on and output when off
+            // 0 is input, 1 is output
+            Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, gpioport, gpiopin, v?0:1);
         }
+        LPC_GPIO_PORT->B[this->gpioport][this->gpiopin] = v;
     }
 
     inline uint16_t get_gpioport() const { return this->gpioport; }

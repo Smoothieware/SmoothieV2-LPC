@@ -974,7 +974,7 @@ bool Endstops::handle_mcode(GCode& gcode, OutputStream& os)
             for(auto& p : endstops) {
                 std::string str(1, p->axis);
                 if(p->limit_enable) str.append("L");
-                os.printf("(%s)%s:%d ", str.c_str(), p->pin.to_string().c_str(), p->pin.get());
+                os.printf("(%s)%s ", str.c_str(), p->pin.to_string().c_str());
             }
         }
         break;

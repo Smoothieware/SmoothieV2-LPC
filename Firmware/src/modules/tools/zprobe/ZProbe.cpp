@@ -388,7 +388,6 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
 bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
 {
     // M code processing here
-    int c;
     switch (gcode.get_code()) {
         case 48: { // Measure Z-Probe repeatability Pnnn is number of iterations, 10 is the default
             int n = gcode.has_arg('P') ? gcode.get_arg('P') : 10;
@@ -415,8 +414,7 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
         } break;
 
         case 119:
-            c = this->pin.get();
-            os.printf(" Probe(%s): %d", this->pin.to_string().c_str(), c);
+            os.printf(" (Probe)%s ", this->pin.to_string().c_str());
             os.set_append_nl(true);
             break;
 
