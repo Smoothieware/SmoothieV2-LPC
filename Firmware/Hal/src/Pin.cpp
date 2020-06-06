@@ -519,6 +519,11 @@ std::string Pin::to_string() const
         s.append(std::to_string(pin)).append(")");
         if(open_drain) s.push_back('o');
         if(inverting) s.push_back('!');
+        if(get()) {
+        	s.append(":1");
+        }else{
+        	s.append(":0");
+        }
         return s;
 
     } else {
