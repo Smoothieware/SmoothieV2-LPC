@@ -756,7 +756,7 @@
 ** 'string.format'.)
 */
 #if LUA_FLOAT_TYPE == LUA_FLOAT_LONGDOUBLE
-#define LUAL_BUFFERSIZE		8192
+#define LUAL_BUFFERSIZE		2048
 #else
 #define LUAL_BUFFERSIZE   ((int)(0x80 * sizeof(void*) * sizeof(lua_Integer)))
 #endif

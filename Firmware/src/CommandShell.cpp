@@ -1404,7 +1404,7 @@ bool CommandShell::lua_cmd(std::string& params, OutputStream& os)
     }
     int ret= luamain(args.size(), argv);
 
-    os.printf("lua script returned: %d", ret);
+    os.printf("lua script returned: %d\n", ret);
 
     return true;
 }
