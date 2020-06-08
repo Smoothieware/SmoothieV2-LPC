@@ -297,6 +297,12 @@ int _execve(char *name, char **argv, char **env)
 	return -1;
 }
 
+#include <sys/time.h>
+int _gettimeofday(struct timeval *tv, struct timezone *tz)
+{
+    return -1;
+}
+
 #if 0
 // now in heap_useNewlib.c
 extern caddr_t _sbrk(int incr);

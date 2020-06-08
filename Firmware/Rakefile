@@ -121,6 +121,9 @@ hal_src = FileList['Hal/**/*.{c,cpp,s}']
 # RTOS
 rtos_src = FileList['RTOS/**/*.{c,cpp,s}']
 
+# lua
+lua_src = FileList['lua/*.c']
+
 if TESTING
   # Unity tests
   src = FileList['Unity/src/*.c', 'src/**/*.{c,cpp,s}']
@@ -159,8 +162,10 @@ if NONETWORK == '1'
   puts "Excluding Network code"
 end
 
+src += lua_src
+
 # All sources
-SRCS = hal_src + rtos_src + src
+SRCS = hal_src + rtos_src + lua_src + src
 
 # Library sources
 HAL_SRCS = hal_src + rtos_src

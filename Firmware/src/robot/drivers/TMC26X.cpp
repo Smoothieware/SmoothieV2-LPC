@@ -193,11 +193,13 @@ TMC26X::TMC26X(char d) : designator(d)
     #else
         //void TMC26X::setSpreadCycleChopper( constant_off_time,  blank_time,  hysteresis_start,  hysteresis_end,  hysteresis_decrement);
 
-        // openbuilds high torque nema23 3amps (2.8)
+        // openbuilds high torque nema23 3amps (2.8) @24v
         //setSpreadCycleChopper(5, 36, 6, 0, 0);
+        // alpha.reg = 00201,981D5,A0000,D0A15,E0020
 
         // for 1.5amp kysan @ 12v
         setSpreadCycleChopper(5, 54, 5, 0, 0);
+        //alpha.reg = 00201,981C0,A0000,D0A15,E0020
 
         // for 4amp Nema24 @ 12v
         //setSpreadCycleChopper(5, 54, 4, 0, 0);
@@ -986,7 +988,7 @@ void TMC26X::dump_status(OutputStream& stream, bool readable)
         stream.printf(" %s.reg = %05lX,%05lX,%05lX,%05lX,%05lX\n", name.c_str(), driver_control_register_value, chopper_config_register_value, cool_step_register_value, stall_guard2_current_register_value, driver_configuration_register_value);
 
     } else {
-        // This is the format the [rocessing app uses for tuning TMX26X chips
+        // This is the format the processing app uses for tuning TMX26X chips
         int n= designator < 'X' ? designator-'A'+3 : designator-'X';
         bool moving = Robot::getInstance()->actuators[n]->is_moving();
         // dump out in the format that the processing script needs

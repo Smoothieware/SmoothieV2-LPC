@@ -79,6 +79,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "break", std::bind( &CommandShell::break_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "reset", std::bind( &CommandShell::reset_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "flash", std::bind( &CommandShell::flash_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "lua", std::bind( &CommandShell::lua_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 20, std::bind(&CommandShell::m20_cmd, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 115, std::bind(&CommandShell::m115_cmd, this, _1, _2));
@@ -1380,6 +1381,30 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
     Conveyor::getInstance()->force_queue();
     Robot::getInstance()->pop_state();
     //os.printf("Jog: %c%f F%f\n", ax, d, scale);
+
+    return true;
+}
+
+extern "C" int luamain(int argc, const char **argv);
+bool CommandShell::lua_cmd(std::string& params, OutputStream& os)
+{
+    HELP("lua: run a lua script from sdcard");
+
+    // convert params into argv
+    std::vector<std::string> args;
+    args.push_back("lua");
+    std::string arg = stringutils::shift_parameter( params );
+    while(!arg.empty()) {
+        args.push_back(arg);
+        arg = stringutils::shift_parameter( params );
+    }
+    const char *argv[args.size()];
+    for (size_t i = 0; i < args.size(); ++i) {
+        argv[i]= args[i].c_str();
+    }
+    int ret= luamain(args.size(), argv);
+
+    os.printf("lua script returned: %d", ret);
 
     return true;
 }
