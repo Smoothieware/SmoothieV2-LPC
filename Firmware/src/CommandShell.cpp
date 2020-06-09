@@ -682,6 +682,8 @@ bool CommandShell::modules_cmd(std::string& params, OutputStream& os)
 {
     HELP("List all registered modules\n");
 
+    os.set_no_response();
+
     std::vector<std::string> l = Module::print_modules();
 
     if(l.empty()) {
@@ -693,7 +695,6 @@ bool CommandShell::modules_cmd(std::string& params, OutputStream& os)
         os.printf("%s\n", i.c_str());
     }
 
-    os.set_no_response();
     return true;
 }
 
@@ -1335,6 +1336,7 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 {
     HELP("instant jog: $J X0.01 [F0.5] - axis can be one of XYZABC, optional speed is scale of max_rate");
+    os.set_no_response(true);
     // $J X0.1 F0.5
     int n_motors = Robot::getInstance()->get_number_registered_motors();
 
@@ -1392,6 +1394,8 @@ namespace ecce {
 bool CommandShell::edit_cmd(std::string& params, OutputStream& os)
 {
     HELP("ed infile outfile - the ecce line editor");
+
+    os.set_no_response(true);
     if(!Conveyor::getInstance()->is_idle()) {
         os.printf("ed not allowed while printing or busy\n");
         return true;
@@ -1400,15 +1404,25 @@ bool CommandShell::edit_cmd(std::string& params, OutputStream& os)
     std::string infile = stringutils::shift_parameter(params);
     std::string outfile = stringutils::shift_parameter(params);
 
-    if(infile.empty() || outfile.empty()) {
-        os.printf("Need input file and output file\n");
+    if(infile.empty() || outfile.empty() || infile == outfile) {
+        os.printf("Need unique input file and output file\n");
+        return true;
+    }
+
+    if(FR_OK == f_stat(outfile.c_str(), NULL)) {
+        os.printf("destination file already exists\n");
         return true;
     }
 
     set_capture([](char c) { ecce::add_input(c); });
     int ret= ecce::main(infile.c_str(), outfile.c_str(), [&os](char c){os.write(&c, 1);});
     set_capture(nullptr);
-    os.printf("ed finished %s\n", ret == 0 ? "good":"bad");
+    if(ret == 0){
+        os.printf("edit was successful\n");
+    }else{
+        remove(outfile.c_str());
+        os.printf("edit failed\n");
+    }
 
     return true;
 }
