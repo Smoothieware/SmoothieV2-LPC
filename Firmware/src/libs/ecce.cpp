@@ -9,7 +9,7 @@
 
 
 /*
-Basic commands
+      Basic commands
       ==============
       m{n}                move to next line                       1
       m-{n}               move to previous line                   2
@@ -103,7 +103,36 @@ typedef char string[132];
 
 namespace ecce {
 const string version = "Ecce editor v3.3";
-
+const char *usage="\
+  Basic commands\n\
+  ==============\n\
+  m{n}                move to next line\n\
+  m-{n}               move to previous line\n\
+  f{m}/..../{n}       find text\n\
+  s/..../             substitute text\n\
+  g{n}                get line\n\
+  k{n}                kill (delete) whole line\n\
+  i/..../{n}          insert text\n\
+  b                   break line (insert newline)\n\
+  d{m}/..../{n}       delete text\n\
+  j                   join (delete next newline)\n\
+  p{n}                print line\n\
+  r{n}                move right\n\
+  l{n}                move left\n\
+  e{n}                erase right\n\
+  e-{n}               erase left\n\
+  t{m}/..../{n}       traverse text\n\
+  u{m}/..../{n}       uncover (delete until) text\n\
+  v/..../             verify (test for) text\n\
+\n\
+  Special commands\n\
+  ================\n\
+  %h                  help\n\
+  %c                  close ( finish editing)\n\
+  %m                  normal monitoring (default)\n\
+  %f                  full monitoring\n\
+  %q                  quiet (no monitoring)\n\
+";
 std::function<void(char)> _outc;
 
 std::jmp_buf jump_buffer;
@@ -128,7 +157,7 @@ const char tab  = char(9);		// Ascii tab
 int top, pe, pp, fp, bottom, pp1, ms, ml, lim, p, ci, ti, txt, clim;
 int num, codelim, matchlim, arg, mon, itype, chain;
 char code, last, term, ch, sym, quote;
-boolean printed, okok, done, failed, detab, again, errorFlag;
+bool printed, okok, done, failed, detab, again, errorFlag;
 
 char *a= NULL;
 int  *c= NULL;
@@ -209,6 +238,7 @@ void putOutFile(char c)					// puts one char on output file
 void closeFiles()						// closes output file
 {
 	outFile.close();
+	inFile.close();
 }
 
 
@@ -223,7 +253,7 @@ void halt (const string s)
 	writestring(s);
 	writeln();
 	closeFiles();
-	std::longjmp(jump_buffer, 0);
+	std::longjmp(jump_buffer, 1);
 }
 
 
@@ -668,6 +698,11 @@ void readcommand()
 			else if ( code == 'c' )
 			{
 				push();
+			}
+			else if(code == 'h')
+			{
+				writestring(usage);
+				writeln();
 			}
 			else if ( (code == 'q') || (code == 'm') || (code == 'f') )
 			{
@@ -1190,11 +1225,11 @@ int main(const char *infile, const char *outfile, std::function<void(char)> outf
 
 	_outc= outfnc;
 
-	if (setjmp(jump_buffer) == 0) {
+	if (setjmp(jump_buffer) == 1) {
 		doexit= true;
 		if(a != NULL) free(a);
 		if(c != NULL) free(c);
-        return 0;
+        return 1;
     }
 
 	a= (char *)malloc(amax+1);
@@ -1343,7 +1378,7 @@ int main(const char *infile, const char *outfile, std::function<void(char)> outf
 						break;
 
 					case 'h':
-						break;		// dummy
+						break;
 
 					case 'i':
 						insert();
@@ -1610,7 +1645,7 @@ int main(const char *infile, const char *outfile, std::function<void(char)> outf
 #include "RingBuffer.h"
 #include "FreeRTOS.h"
 #include "task.h"
-// FIXME move to RAM2 or malloc it
+// FIXME move to RAM2 or malloc it so it can be freed
 RingBuffer<char, 2048> inbuf;
 
 void add_input(char c)

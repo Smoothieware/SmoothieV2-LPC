@@ -1406,8 +1406,9 @@ bool CommandShell::edit_cmd(std::string& params, OutputStream& os)
     }
 
     set_capture([](char c) { ecce::add_input(c); });
-    ecce::main(infile.c_str(), outfile.c_str(), [&os](char c){os.write(&c, 1);});
+    int ret= ecce::main(infile.c_str(), outfile.c_str(), [&os](char c){os.write(&c, 1);});
     set_capture(nullptr);
+    os.printf("ed finished %s\n", ret == 0 ? "good":"bad");
 
     return true;
 }
