@@ -92,6 +92,9 @@
 #include <functional>
 #include <cstring>
 #include <csetjmp>
+
+#include "RingBuffer.h"
+
 #pragma GCC diagnostic ignored "-Wshadow"
 
 typedef char * PtrChar;
@@ -136,6 +139,7 @@ const char *usage="\
 std::function<void(char)> _outc;
 
 std::jmp_buf jump_buffer;
+RingBuffer<char> inbuf;
 
 const int amax = 4096;  		//  size of internal text buffer
 const int argmax = 64;
@@ -1225,24 +1229,36 @@ int main(const char *infile, const char *outfile, std::function<void(char)> outf
 
 	_outc= outfnc;
 
-	if (setjmp(jump_buffer) == 1) {
-		doexit= true;
-		if(a != NULL) free(a);
-		if(c != NULL) free(c);
-        return 1;
-    }
-
 	a= (char *)malloc(amax+1);
 	if(a == NULL) {
-		writestring("error: out of memory\n");
+		writestring("error: a out of memory\n");
 		return 1;
 	}
 	c= (int *)malloc((cmax+1) * sizeof(int));
 	if(c == NULL) {
 		free(a);
-		writestring("error: out of memory\n");
+		writestring("error: c out of memory\n");
 		return 1;
 	}
+
+	const size_t bufsz= 132;
+	char *buffer= (char *)malloc(bufsz);
+	inbuf.allocate(buffer, bufsz);
+	if(!inbuf.is_ok()) {
+		writestring("error: inbuf out of memory\n");
+		free(a);
+		free(c);
+		return 1;
+	}
+
+	if (setjmp(jump_buffer) == 1) {
+		doexit= true;
+		if(a != NULL) free(a);
+		if(c != NULL) free(c);
+		inbuf.deallocate();
+		free(buffer);
+        return 1;
+    }
 
     openFiles(infile, outfile);
 
@@ -1312,8 +1328,11 @@ int main(const char *infile, const char *outfile, std::function<void(char)> outf
 							top = top + 1;
 						};
 						closeFiles();
+						// deallocate memory
 						free(a);
 						free(c);
+						inbuf.deallocate();
+						free(buffer);
 						return 0;
 
 					case 'd':
@@ -1639,14 +1658,13 @@ int main(const char *infile, const char *outfile, std::function<void(char)> outf
 
 	free(a);
 	free(c);
+	inbuf.deallocate();
+	free(buffer);
 	return 1;
 }
 
-#include "RingBuffer.h"
 #include "FreeRTOS.h"
 #include "task.h"
-// FIXME move to RAM2 or malloc it so it can be freed
-RingBuffer<char, 2048> inbuf;
 
 void add_input(char c)
 {

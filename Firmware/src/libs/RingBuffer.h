@@ -7,7 +7,7 @@
 
 #pragma once
 
-template <class kind, size_t length>
+template <class kind, size_t length=0>
 class RingBuffer
 {
     public:
@@ -23,7 +23,11 @@ class RingBuffer
             size = length;
             tail = 0;
             head = 0;
-            buffer = (kind*) malloc(sizeof(kind) * size);
+            if(length != 0) {
+                buffer = (kind*) malloc(sizeof(kind) * size);
+            }else{
+                buffer= nullptr;
+            }
         }
 
         /**
@@ -34,10 +38,34 @@ class RingBuffer
          */
         ~RingBuffer()
         {
-            free(buffer);
+            if(length != 0 && buffer != nullptr) {
+                free(buffer);
+            }
         }
 
-        bool is_ok() const { return buffer != nullptr; }
+        /**
+         * manual allocation of buffer by client, who is also responsible for deallocation
+         */
+        bool allocate(void *buf, size_t n)
+        {
+            if(length == 0) {
+                size= n;
+                buffer= (char *)buf;
+                return true;
+            }
+
+            return false;
+        }
+
+        void deallocate()
+        {
+            if(length == 0) {
+                size= 0;
+                buffer= nullptr;
+            }
+        }
+
+        bool is_ok() const { return buffer != nullptr && size > 0; }
 
         /**
          * @brief   Get next index of the reference index
