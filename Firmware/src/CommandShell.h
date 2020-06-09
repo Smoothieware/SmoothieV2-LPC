@@ -48,6 +48,7 @@ private:
     bool reset_cmd(std::string& params, OutputStream& os);
     bool flash_cmd(std::string& params, OutputStream& os);
     bool jog_cmd(std::string& params, OutputStream& os);
+    bool edit_cmd(std::string& params, OutputStream& os);
 
     bool mounted;
 };

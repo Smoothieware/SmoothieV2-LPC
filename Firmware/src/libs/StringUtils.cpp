@@ -4,8 +4,9 @@
 #include <algorithm>
 #include <cstring>
 
+namespace stringutils {
 // split string into array on separator
-std::vector<std::string> stringutils::split(const char *str, const char *sep)
+std::vector<std::string> split(const char *str, const char *sep)
 {
     const char *p= str;
     const char *fp;
@@ -32,15 +33,15 @@ std::vector<std::string> stringutils::split(const char *str, const char *sep)
 }
 
 // ditto but takes character for sep
-std::vector<std::string> stringutils::split(const char *str, char sep)
+std::vector<std::string> split(const char *str, char sep)
 {
     const char s[2]{sep, '\0'};
-    return stringutils::split(str, s);
+    return split(str, s);
 }
 
 // Get the first parameter, and remove it from the original string
 // if a quoted parameter extract it as one parameter including spaces but excluding quotes
-std::string stringutils::shift_parameter( std::string &parameters )
+std::string shift_parameter( std::string &parameters )
 {
     std::string ret;
     size_t pos = parameters.find_first_of(" \"");
@@ -71,9 +72,9 @@ std::string stringutils::shift_parameter( std::string &parameters )
 
 
 // parse a number list "1.1,2.2,3.3" and return the numbers in a std::vector of floats
-std::vector<float> stringutils::parse_number_list(const char *str)
+std::vector<float> parse_number_list(const char *str)
 {
-    std::vector<std::string> l= stringutils::split(str, ',');
+    std::vector<std::string> l= split(str, ',');
     std::vector<float> r;
     for(auto& s : l){
         float x = strtof(s.c_str(), nullptr);
@@ -82,9 +83,9 @@ std::vector<float> stringutils::parse_number_list(const char *str)
     return r;
 }
 
-std::vector<uint32_t> stringutils::parse_number_list(const char *str, int radix)
+std::vector<uint32_t> parse_number_list(const char *str, int radix)
 {
-    std::vector<std::string> l= stringutils::split(str, ',');
+    std::vector<std::string> l= split(str, ',');
     std::vector<uint32_t> r;
     for(auto& s : l){
         uint32_t x = strtoul(s.c_str(), nullptr, radix);
@@ -94,7 +95,7 @@ std::vector<uint32_t> stringutils::parse_number_list(const char *str, int radix)
 }
 
 // convert the wcs to the string Gcode version
-std::string stringutils::wcs2gcode(int wcs) {
+std::string wcs2gcode(int wcs) {
     std::string str= "G5";
     str.append(1, std::min(wcs, 5) + '4');
     if(wcs >= 6) {
@@ -103,12 +104,12 @@ std::string stringutils::wcs2gcode(int wcs) {
     return str;
 }
 
-std::string stringutils::toUpper(std::string str) {
+std::string toUpper(std::string str) {
     std::transform(str.begin(), str.end(), str.begin(), ::toupper);
     return str;
 }
 
-std::string stringutils::trim(const std::string &s)
+std::string trim(const std::string &s)
 {
     auto wsfront = std::find_if_not(s.begin(), s.end(), [](int c) {return std::isspace(c);});
     auto wsback = std::find_if_not(s.rbegin(), s.rend(), [](int c) {return std::isspace(c);}).base();
@@ -117,7 +118,7 @@ std::string stringutils::trim(const std::string &s)
 
 // Separate command from arguments
 // return command and strip it from line
-std::string stringutils::get_command_arguments(std::string& line )
+std::string get_command_arguments(std::string& line )
 {
     std::string t = line;
     size_t pos = line.find_first_of(" ");
@@ -128,4 +129,5 @@ std::string stringutils::get_command_arguments(std::string& line )
 
     line = line.substr( pos + 1);
     return t.substr(0, pos);
+}
 }

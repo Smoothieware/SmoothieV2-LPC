@@ -79,6 +79,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "break", std::bind( &CommandShell::break_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "reset", std::bind( &CommandShell::reset_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "flash", std::bind( &CommandShell::flash_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "ed", std::bind( &CommandShell::edit_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 20, std::bind(&CommandShell::m20_cmd, this, _1, _2));
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 115, std::bind(&CommandShell::m115_cmd, this, _1, _2));
@@ -1380,6 +1381,33 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
     Conveyor::getInstance()->force_queue();
     Robot::getInstance()->pop_state();
     //os.printf("Jog: %c%f F%f\n", ax, d, scale);
+
+    return true;
+}
+
+namespace ecce {
+    int main(const char *infile, const char *outfile, std::function<void(char)> outfnc);
+    void add_input(char c);
+}
+bool CommandShell::edit_cmd(std::string& params, OutputStream& os)
+{
+    HELP("ed infile outfile - the ecce line editor");
+    if(!Conveyor::getInstance()->is_idle()) {
+        os.printf("ed not allowed while printing or busy\n");
+        return true;
+    }
+
+    std::string infile = stringutils::shift_parameter(params);
+    std::string outfile = stringutils::shift_parameter(params);
+
+    if(infile.empty() || outfile.empty()) {
+        os.printf("Need input file and output file\n");
+        return true;
+    }
+
+    set_capture([](char c) { ecce::add_input(c); });
+    ecce::main(infile.c_str(), outfile.c_str(), [&os](char c){os.write(&c, 1);});
+    set_capture(nullptr);
 
     return true;
 }
