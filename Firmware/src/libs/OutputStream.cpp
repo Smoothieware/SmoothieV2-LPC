@@ -81,8 +81,10 @@ int OutputStream::FdBuf::sync()
 {
 	if(!this->str().empty()) {
 		size_t len = this->str().size();
-		int n = fnc(this->str().c_str(), len);
-		if(n < 0) {
+		if(len == 0) return 0;
+
+		size_t n = fnc(this->str().c_str(), len);
+		if(n == 0) {
 			::printf("OutputStream error: write fnc failed\n");
 			parent->set_closed();
 		}

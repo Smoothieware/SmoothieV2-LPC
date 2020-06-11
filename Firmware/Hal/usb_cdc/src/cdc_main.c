@@ -139,7 +139,7 @@ size_t write_cdc(const char *buf, size_t len)
 		sent += n;
 		if(sent < len) {
 			if(!vcom_connected())
-				return -1;
+				return 0; // indicates error
 			// yield some time
 			taskYIELD();
 		}
