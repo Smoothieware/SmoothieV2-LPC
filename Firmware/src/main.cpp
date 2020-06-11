@@ -442,11 +442,13 @@ static void usb_comms(void *)
         if( ulNotificationValue != 1 ) {
             /* The call to ulTaskNotifyTake() timed out. check anyway */
         }
-
-        n = read_cdc(rx_buf, sizeof(rx_buf));
-        if(n > 0) {
-            process_command_buffer(n, rx_buf, &os, line, cnt, discard);
-        }
+        do {
+            // may have more data than our buffer size so read until it is drained
+            n = read_cdc(rx_buf, sizeof(rx_buf));
+            if(n > 0) {
+                process_command_buffer(n, rx_buf, &os, line, cnt, discard);
+            }
+        } while(n > 0);
     }
 }
 
