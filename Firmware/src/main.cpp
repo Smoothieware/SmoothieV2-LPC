@@ -117,27 +117,37 @@ static bool load_config_override(OutputStream& os)
 }
 
 // can be called by modules when in command thread context
-bool dispatch_line(OutputStream& os, const char *cl)
+bool dispatch_line(OutputStream& os, const char *ln)
 {
-    // Don't like this, but we need a writable copy of the input line
-    char line[strlen(cl) + 1];
-    strcpy(line, cl);
-
-    // map some special M codes to commands as they violate the gcode spec and pass a string parameter
-    // M23, M32, M117, M30 => m23, m32, m117, rm and handle as a command
-    if(strncmp(line, "M23 ", 4) == 0) line[0] = 'm';
-    else if(strncmp(line, "M30 ", 4) == 0) { strcpy(line, "rm /sd/"); strcpy(&line[7], &cl[4]); } // make into an rm command
-    else if(strncmp(line, "M32 ", 4) == 0) line[0] = 'm';
-    else if(strncmp(line, "M117 ", 5) == 0) line[0] = 'm';
-
-    // handle save to file M codes:- M28 filename, and M29
-    if(strncmp(line, "M28 ", 4) == 0) {
-        char *upload_filename = &line[4];
-        if(strncmp(upload_filename, "/sd/", 4) != 0) {
-            // prepend /sd/ luckily we have exactly 4 characters before the filename
-            memcpy(line, "/sd/", 4);
-            upload_filename = line;
+    // if in M28 mode then just save all incoming lines to the file until we get M29
+    if(uploading) {
+        // FIXME need to handle line numbers and checksums
+        if(strcmp(ln, "M29") == 0) {
+            // done uploading, close file
+            fclose(upload_fp);
+            upload_fp = nullptr;
+            uploading = false;
+            os.printf("Done saving file.\nok\n");
+            return true;
         }
+        // just save the line to the file
+        if(upload_fp != nullptr) {
+            // write out line
+            if(fprintf(upload_fp, "%s\n", ln) < 0) {
+                // we got an error
+                fclose(upload_fp);
+                upload_fp= nullptr;
+                os.printf("Error:error writing to file.\n");
+            }
+        }
+
+        os.printf("ok\n");
+        return true;
+    }
+
+    // handle save to file:- M28 filename
+    if(strncmp(ln, "M28 ", 4) == 0) {
+        const char *upload_filename = &ln[4];
         upload_fp = fopen(upload_filename, "w");
         if(upload_fp != nullptr) {
             uploading = true;
@@ -148,29 +158,34 @@ bool dispatch_line(OutputStream& os, const char *cl)
         return true;
     }
 
+    // need a mutable copy
+    std::string line(ln);
+
+    // $X could be handled in CommandShell
+    if(line == "$X") {
+        if(Module::is_halted()) {
+            Module::broadcast_halt(false);
+            os.puts("[Caution: Unlocked]\n");
+        }
+        os.puts("ok\n");
+        return true;
+    }
+
+    // map some special M codes to commands as they violate the gcode spec and pass a string parameter
+    // M23, M32, M117, M30 => m23, m32, m117, rm and handle as a command
+    if(line.rfind("M23 ", 0) == 0) line[0] = 'm';
+    else if(line.rfind("M30 ", 0) == 0) line.replace(0, 3, "rm");   // make into an rm command
+    else if(line.rfind("M32 ", 0) == 0) line[0] = 'm';
+    else if(line.rfind("M117 ", 0) == 0) line[0] = 'm';
+
     // see if a command
     if(islower(line[0]) || line[0] == '$') {
-
-        // we could handle this in CommandShell
-        if(line[0] == '$' && strlen(line) >= 2) {
-            if(line[1] == 'X') {
-                // handle $X
-                if(Module::is_halted()) {
-                    Module::broadcast_halt(false);
-                    os.puts("[Caution: Unlocked]\nok\n");
-                } else {
-                    os.puts("ok\n");
-                }
-                return true;
-            }
-        }
-
         // dispatch command
-        if(!THEDISPATCHER->dispatch(line, os)) {
+        if(!THEDISPATCHER->dispatch(line.c_str(), os)) {
             if(line[0] == '$') {
                 os.puts("error:Invalid statement\n");
             } else {
-                os.printf("error:Unsupported command - %s\n", line);
+                os.printf("error:Unsupported command - %s\n", line.c_str());
             }
 
         }else if(!os.is_no_response()) {
@@ -186,7 +201,7 @@ bool dispatch_line(OutputStream& os, const char *cl)
     GCodeProcessor::GCodes_t gcodes;
 
     // Parse gcode
-    if(!gp.parse(line, gcodes)) {
+    if(!gp.parse(line.c_str(), gcodes)) {
         if(gcodes.empty()) {
             // line failed checksum, send resend request
             os.printf("rs N%d\n", gp.get_line_number() + 1);
@@ -197,9 +212,9 @@ bool dispatch_line(OutputStream& os, const char *cl)
             if(g.has_error()) {
                 // Word parse Error
                 if(THEDISPATCHER->is_grbl_mode()) {
-                    os.printf("error:gcode parse failed %s - %s\n", g.get_error_message(), line);
+                    os.printf("error:gcode parse failed %s - %s\n", g.get_error_message(), line.c_str());
                 }else{
-                    os.printf("// WARNING gcode parse failed %s - %s\n", g.get_error_message(), line);
+                    os.printf("// WARNING gcode parse failed %s - %s\n", g.get_error_message(), line.c_str());
                 }
                 // TODO add option to HALT in this case
             }else{
@@ -216,16 +231,6 @@ bool dispatch_line(OutputStream& os, const char *cl)
         return true;
     }
 
-    // if in M28 mode then just save all incoming lines to the file until we get M29
-    if(uploading && gcodes[0].has_m() && gcodes[0].get_code() == 29) {
-        // done uploading, close file
-        fclose(upload_fp);
-        upload_fp = nullptr;
-        uploading = false;
-        os.printf("Done saving file.\nok\n");
-        return true;
-    }
-
     // dispatch gcodes
     // NOTE return one ok per line instead of per GCode only works for regular gcodes like G0-G3, G92 etc
     // gcodes returning data like M114 should NOT be put on multi gcode lines.
@@ -233,23 +238,6 @@ bool dispatch_line(OutputStream& os, const char *cl)
     for(auto& i : gcodes) {
         //i.dump(os);
         if(i.has_m() || i.has_g()) {
-
-            if(uploading) {
-                // just save the gcodes to the file
-                if(upload_fp != nullptr) {
-                    // write out gcode
-                    if(!i.dump(upload_fp)) {
-                        // we got an error
-                        fclose(upload_fp);
-                        upload_fp= nullptr;
-                        os.printf("Error:error writing to file.\n");
-                    }
-                }
-
-                os.printf("ok\n");
-                return true;
-            }
-
             // potentially handle M500 - M503 here
             OutputStream *pos= &os;
             std::fstream *fsout= nullptr;

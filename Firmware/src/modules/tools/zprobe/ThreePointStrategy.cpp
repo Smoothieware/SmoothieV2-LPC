@@ -214,7 +214,7 @@ bool ThreePointStrategy::handle_mcode(GCode& gcode, OutputStream& os)
         probe_offsets = std::make_tuple(x, y, z);
         return true;
 
-    } else if(gcode.get_code() == 500) { // M500 save, M503 display
+    } else if(gcode.get_code() == 500) { // M500 save
         float x, y, z;
         os.printf(";Probe points:\n");
         for (int i = 0; i < 3; ++i) {
