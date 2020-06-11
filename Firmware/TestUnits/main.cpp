@@ -142,6 +142,8 @@ extern "C" size_t write_cdc(const char *buf, size_t len);
 extern "C" size_t read_cdc(char *buf, size_t len);
 extern "C" int setup_cdc(void *taskhandle);
 
+static std::function<bool(char *, size_t)> capture_fnc= nullptr;
+
 extern "C" void usbComTask(void *pvParameters)
 {
     static OutputStream theos([](const char *buf, size_t len){ return write_cdc(buf, len); });
@@ -185,6 +187,17 @@ extern "C" void usbComTask(void *pvParameters)
             // we read as much as we can, process it into lines and send it to the dispatch thread
             // certain characters are sent immediately the rest wait for end of line
             size_t rdCnt = read_cdc(rxBuff, sizeof(rxBuff));
+
+            if(capture_fnc) {
+                if(!capture_fnc(rxBuff, rdCnt)) {
+                    capture_fnc= nullptr;
+                    while(read_cdc(rxBuff, sizeof(rxBuff)) > 0) {
+                        // drain buffers
+                    }
+                }
+                continue;
+            }
+
             for (size_t i = 0; i < rdCnt; ++i) {
                 linebuf[linecnt]= rxBuff[i];
 
@@ -236,6 +249,36 @@ extern "C" void usbComTask(void *pvParameters)
    }
 }
 
+#include "md5.h"
+// test fast streaming from host
+void download_test(OutputStream *os)
+{
+    os->puts("Starting download test...\n");
+    size_t cnt= 0, max= 0;
+    MD5 md5;
+    volatile bool done= false;
+    TickType_t delayms= pdMS_TO_TICKS(1);
+
+    // capture any input
+    capture_fnc= ([&md5, &done, &cnt, &max](char *buf, size_t n) {
+        if(n == 1) {
+            done= true;
+            return false;
+        }
+        if(n > max) max= n;
+        cnt+=n;
+        md5.update(buf, n);
+        return true; });
+
+    while(!done) {
+        // wait for test to complete
+        vTaskDelay(delayms);
+    }
+
+    os->printf("md5: %s, cnt: %u, max: %u\n", md5.finalize().hexdigest().c_str(), cnt, max);
+    os->puts("download test complete\n");
+}
+
 // this would be the command thread in the firmware
 extern "C" void dispatch(void *pvParameters)
 {
@@ -267,6 +310,11 @@ extern "C" void dispatch(void *pvParameters)
 
                     struct mallinfo mi = mallinfo();
                     os->printf("\n\nfree malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
+
+                }else if(strcmp(line, "test") == 0) {
+                    // do a download test
+                    download_test(os);
+
                 }else{
                     os->printf("Got line: %s\n", line);
                 }

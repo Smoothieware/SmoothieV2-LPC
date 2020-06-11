@@ -77,19 +77,13 @@ static int stdout_write_fnc(const char *buf, size_t len)
 static std::ostringstream toss;
 static int partial_write_fnc(const char *buf, size_t len)
 {
-	size_t n= std::min(4U, len);
-	toss.write(buf, n);
-	return n;
-}
-static std::vector<int> chunks;
-static std::vector<char> chunk_data;
-static int chunk_write_fnc(const char *buf, size_t len)
-{
-	chunks.push_back(len);
-	for (size_t i = 0; i < len; ++i) {
-		chunk_data.push_back(buf[i]);
+	size_t sent= 0;
+	while(sent < len) {
+		size_t n= std::min(4U, len-sent);
+		toss.write(buf+sent, n);
+		sent += n;
 	}
-	return len;
+	return sent;
 }
 
 REGISTER_TEST(StreamsTest, OutputStream_fncstream)
@@ -98,7 +92,7 @@ REGISTER_TEST(StreamsTest, OutputStream_fncstream)
 	OutputStream os(fnc); // stdout
 	os.printf("hello world on fd stdout OutputStream\n");
 
-	// test that writes returning < len work
+	// test that write fncs returning < len work
 	TEST_ASSERT_TRUE(toss.str().empty());
 	OutputStream::wrfnc fnc2(partial_write_fnc);
 	OutputStream os2(fnc2);
@@ -106,27 +100,6 @@ REGISTER_TEST(StreamsTest, OutputStream_fncstream)
 	TEST_ASSERT_EQUAL_INT(10, n);
 	TEST_ASSERT_EQUAL_STRING("1234567890", toss.str().c_str());
 	toss.str("");
-
-	// test that writes > 64 get broken up into 64 byte writes
-	char buf[200];
-	for (int i = 0; i < 200; ++i) {
-	    buf[i]= i;
-	}
-	OutputStream::wrfnc fnc3(chunk_write_fnc);
-	OutputStream os3(fnc3);
-	n= os3.write(buf, 200);
-	TEST_ASSERT_EQUAL_INT(200, n);
-	TEST_ASSERT_EQUAL_INT(4, chunks.size());
-	TEST_ASSERT_EQUAL_INT(64, chunks[0]);
-	TEST_ASSERT_EQUAL_INT(64, chunks[1]);
-	TEST_ASSERT_EQUAL_INT(64, chunks[2]);
-	TEST_ASSERT_EQUAL_INT(8, chunks[3]);
-
-	TEST_ASSERT_EQUAL_INT(200, chunk_data.size());
-	for (int i = 0; i < 200; ++i) {
-	    TEST_ASSERT_EQUAL_INT(i, chunk_data[i]);
-	}
-
 }
 
 REGISTER_TEST(StreamsTest, OutputStream_prependok)
