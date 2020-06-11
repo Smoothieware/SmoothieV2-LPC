@@ -251,10 +251,15 @@ uint32_t vcom_bread(uint8_t *pBuf, uint32_t buf_len)
 {
 	VCOM_DATA_T *pVcom = &g_vCOM;
 	uint16_t cnt = 0;
+
 	/* read from the default buffer if any data present */
 	if (pVcom->rx_count) {
-		cnt = (pVcom->rx_count < buf_len) ? pVcom->rx_count : buf_len;
-		memcpy(pBuf, pVcom->rx_buff+pVcom->rx_rd_count, cnt);
+		if ((pVcom->rx_count - pVcom->rx_rd_count) < buf_len) {
+			cnt = (pVcom->rx_count - pVcom->rx_rd_count);
+		}else {
+			cnt = buf_len;
+		}
+		memcpy(pBuf, (pVcom->rx_buff + pVcom->rx_rd_count) , cnt);
 		pVcom->rx_rd_count += cnt;
 
 		/* enter critical section */
