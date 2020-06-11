@@ -160,7 +160,7 @@ extern "C" void usbComTask(void *pvParameters)
     linecnt= 0;
     bool discard= false;
 
-    while (1) {
+    do {
         // Wait to be notified that there has been a USB irq.
         uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
 
@@ -182,11 +182,24 @@ extern "C" void usbComTask(void *pvParameters)
                     write_cdc("Welcome to Smoothev2\r\n", 22);
                 }
             }
+        }
 
-        }else{
+    } while(first);
+
+    while(1) {
+       // Wait to be notified that there has been a USB irq.
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
+
+        if( ulNotificationValue != 1 ) {
+            /* The call to ulTaskNotifyTake() timed out. */
+            timeouts++;
+        }
+
+        while(1) {
             // we read as much as we can, process it into lines and send it to the dispatch thread
             // certain characters are sent immediately the rest wait for end of line
             size_t rdCnt = read_cdc(rxBuff, sizeof(rxBuff));
+            if(rdCnt == 0) break; // wait for more
 
             if(capture_fnc) {
                 if(!capture_fnc(rxBuff, rdCnt)) {
@@ -194,6 +207,7 @@ extern "C" void usbComTask(void *pvParameters)
                     while(read_cdc(rxBuff, sizeof(rxBuff)) > 0) {
                         // drain buffers
                     }
+                    break;
                 }
                 continue;
             }
