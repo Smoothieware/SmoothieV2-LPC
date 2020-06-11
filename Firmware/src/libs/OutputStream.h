@@ -13,7 +13,7 @@
 class OutputStream
 {
 public:
-	using wrfnc = std::function<int(const char *buffer, size_t size)>;
+	using wrfnc = std::function<size_t(const char *buffer, size_t size)>;
 	// create a null output stream
 	OutputStream() : os(nullptr), fdbuf(nullptr), deleteos(false) { clear_flags(); };
 	// create from an existing ostream
