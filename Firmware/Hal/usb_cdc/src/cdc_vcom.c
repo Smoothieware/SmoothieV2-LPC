@@ -36,6 +36,9 @@
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
+#define SRB_SIZE 1024
+static RINGBUFF_T txring;
+__attribute__ ((section (".bss.$RAM3"))) static uint8_t txbuff[SRB_SIZE];
 
 /* Part of WORKAROUND for artf42016. */
 static USB_EP_HANDLER_T g_defaultCdcHdlr;
@@ -54,12 +57,19 @@ VCOM_DATA_T g_vCOM;
  ****************************************************************************/
 
 /* VCOM bulk EP_IN endpoint handler */
+// if we have data queued to be sent we send it
 static ErrorCode_t VCOM_bulk_in_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 {
     VCOM_DATA_T *pVcom = (VCOM_DATA_T *) data;
 
     if (event == USB_EVT_IN) {
-        pVcom->tx_flags &= ~VCOM_TX_BUSY;
+        if(!RingBuffer_IsEmpty(&txring)) {
+            int n= RingBuffer_PopMult(&txring, pVcom->tx_buff, VCOM_TX_BUF_SZ);
+            pVcom->tx_flags |= VCOM_TX_BUSY;
+            USBD_API->hw->WriteEP(pVcom->hUsb, USB_CDC_IN_EP, pVcom->tx_buff, n);
+        }else{
+            pVcom->tx_flags &= ~(VCOM_TX_BUSY);
+        }
     }
     return LPC_OK;
 }
@@ -224,6 +234,12 @@ ErrorCode_t vcom_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
     g_vCOM.rx_buff = (uint8_t *) cdc_param.mem_base;
     cdc_param.mem_base += VCOM_RX_BUF_SZ;
     cdc_param.mem_size -= VCOM_RX_BUF_SZ;
+    if (cdc_param.mem_size < VCOM_TX_BUF_SZ) {
+        return ERR_FAILED;
+    }
+    g_vCOM.tx_buff = (uint8_t *) cdc_param.mem_base;
+    cdc_param.mem_base += VCOM_TX_BUF_SZ;
+    cdc_param.mem_size -= VCOM_TX_BUF_SZ;
 
     /* register endpoint interrupt handler */
     ep_indx = (((USB_CDC_IN_EP & 0x0F) << 1) + 1);
@@ -242,6 +258,9 @@ ErrorCode_t vcom_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
     /* update mem_base and size variables for cascading calls. */
     pUsbParam->mem_base = cdc_param.mem_base;
     pUsbParam->mem_size = cdc_param.mem_size;
+
+    // init ring buffer for send data
+    RingBuffer_Init(&txring, txbuff, 1, SRB_SIZE);
 
     return ret;
 }
@@ -274,57 +293,34 @@ uint32_t vcom_bread(uint8_t *pBuf, uint32_t buf_len)
     return cnt;
 }
 
-/* Virtual com port read routine */
-ErrorCode_t vcom_read_req(uint8_t *pBuf, uint32_t len)
-{
-    VCOM_DATA_T *pVcom = &g_vCOM;
-
-    /* check if we queued Rx buffer */
-    if (pVcom->rx_flags & (VCOM_RX_BUF_QUEUED | VCOM_RX_DB_QUEUED)) {
-        return ERR_BUSY;
-    }
-    /* enter critical section */
-    NVIC_DisableIRQ(LPC_USB_IRQ);
-    /* if not queue the request and return 0 bytes */
-    USBD_API->hw->ReadReqEP(pVcom->hUsb, USB_CDC_OUT_EP, pBuf, len);
-    /* exit critical section */
-    NVIC_EnableIRQ(LPC_USB_IRQ);
-    pVcom->rx_flags |= VCOM_RX_DB_QUEUED;
-
-    return LPC_OK;
-}
-
-/* Gets current read count. */
-uint32_t vcom_read_cnt(void)
-{
-    VCOM_DATA_T *pVcom = &g_vCOM;
-    uint32_t ret = 0;
-
-    if (pVcom->rx_flags & VCOM_RX_DONE) {
-        ret = pVcom->rx_count;
-        pVcom->rx_count = 0;
-    }
-
-    return ret;
-}
-
-/* Virtual com port write routine*/
+/* Virtual com port write routine
+    as the input buffer we get maybe transitory we copy it to our tx buffer
+    but as this is 1024 bytes we will have to send in 1024 byte chunks even
+    though the WriteEP can write upto 32k
+*/
 uint32_t vcom_write(uint8_t *pBuf, uint32_t len)
 {
     VCOM_DATA_T *pVcom = &g_vCOM;
-    uint32_t ret = 0;
+    if((pVcom->tx_flags & VCOM_TX_CONNECTED) == 0) return 0;
 
-    if ( (pVcom->tx_flags & VCOM_TX_CONNECTED) && ((pVcom->tx_flags & VCOM_TX_BUSY) == 0) ) {
+    // Enter critical section
+    NVIC_DisableIRQ(LPC_USB_IRQ);
+
+    // Move as much data as possible into transmit ring buffer
+    uint32_t n= RingBuffer_InsertMult(&txring, pBuf, len);
+
+    if(!RingBuffer_IsEmpty(&txring) && (pVcom->tx_flags & VCOM_TX_BUSY) == 0) {
+        // we have no outstanding tx so send the tx buffer now
+        int s= RingBuffer_PopMult(&txring, pVcom->tx_buff, VCOM_TX_BUF_SZ);
         pVcom->tx_flags |= VCOM_TX_BUSY;
-
-        /* enter critical section */
-        NVIC_DisableIRQ(LPC_USB_IRQ);
-        ret = USBD_API->hw->WriteEP(pVcom->hUsb, USB_CDC_IN_EP, pBuf, len);
-        /* exit critical section */
-        NVIC_EnableIRQ(LPC_USB_IRQ);
+        USBD_API->hw->WriteEP(pVcom->hUsb, USB_CDC_IN_EP, pVcom->tx_buff, s);
+        if(n < len) {
+            // Add additional data to transmit ring buffer if possible
+            n += RingBuffer_InsertMult(&txring, (pBuf + n), (len - n));
+        }
     }
-
-    return ret;
+    NVIC_EnableIRQ(LPC_USB_IRQ);
+    return n;
 }
 
 

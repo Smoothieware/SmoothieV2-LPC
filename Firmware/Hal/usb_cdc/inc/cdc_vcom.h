@@ -44,7 +44,8 @@ extern "C"
  */
 
 #define VCOM_RX_BUF_SZ      512
-#define VCOM_TX_CONNECTED   _BIT(8)		/* connection state is for both RX/Tx */
+#define VCOM_TX_BUF_SZ      1024
+#define VCOM_TX_CONNECTED   _BIT(8)		/* connection state is for both Rx/Tx */
 #define VCOM_TX_BUSY        _BIT(0)
 #define VCOM_RX_DONE        _BIT(0)
 #define VCOM_RX_BUF_FULL    _BIT(1)
@@ -60,6 +61,7 @@ typedef struct VCOM_DATA {
 	uint8_t *rx_buff;
 	uint16_t rx_rd_count;
 	uint16_t rx_count;
+	uint8_t *tx_buff;
 	volatile uint16_t tx_flags;
 	volatile uint16_t rx_flags;
 } VCOM_DATA_T;
@@ -92,13 +94,13 @@ uint32_t vcom_bread (uint8_t *pBuf, uint32_t buf_len);
  * @param	buf_len	: Length of the buffer passed
  * @return	Always returns LPC_OK.
  */
-ErrorCode_t vcom_read_req (uint8_t *pBuf, uint32_t buf_len);
+//ErrorCode_t vcom_read_req (uint8_t *pBuf, uint32_t buf_len);
 
 /**
  * @brief	Gets current read count.
  * @return	Returns current read count.
  */
-uint32_t vcom_read_cnt(void);
+//uint32_t vcom_read_cnt(void);
 
 /**
  * @brief	Check if Vcom is connected

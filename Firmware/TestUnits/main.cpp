@@ -152,7 +152,10 @@ extern "C" void usbComTask(void *pvParameters)
     static char rxBuff[256];
 
     // setup the USB CDC and give it the handle of our task to wake up when we get an interrupt
-    setup_cdc(xTaskGetCurrentTaskHandle());
+    if(setup_cdc(xTaskGetCurrentTaskHandle()) == 0) {
+        printf("setup_cdc failed\n");
+        return;
+    }
 
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
     bool first= true;
@@ -293,10 +296,11 @@ void download_test(OutputStream *os)
     os->puts("download test complete\n");
 }
 
+extern "C" uint32_t vcom_max;
 void send_test(OutputStream *os)
 {
     os->puts("Starting send test...\n");
-    const int n= 1024;
+    const int n= 4096;
     os->printf("Sending %d bytes...\n", n);
     char *buf= (char *)malloc(n+1);
     //assert(buf != NULL);
@@ -306,6 +310,13 @@ void send_test(OutputStream *os)
     }
     write_cdc(buf, n);
     free(buf);
+
+    // now send lots of little lines
+    os->printf("Sending 1000 lines...\n", n);
+    buf= strdup("ok\n");
+    for (int i = 0; i < 1000; ++i) {
+        write_cdc(buf, strlen(buf));
+    }
 }
 
 // this would be the command thread in the firmware
