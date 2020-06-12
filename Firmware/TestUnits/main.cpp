@@ -23,7 +23,7 @@
 
 extern float get_pll1_clk();
 
-//#define TESTCOMMS
+#define TESTCOMMS
 
 // // place holder
 bool dispatch_line(OutputStream& os, const char *line)
@@ -293,6 +293,21 @@ void download_test(OutputStream *os)
     os->puts("download test complete\n");
 }
 
+void send_test(OutputStream *os)
+{
+    os->puts("Starting send test...\n");
+    const int n= 1024;
+    os->printf("Sending %d bytes...\n", n);
+    char *buf= (char *)malloc(n+1);
+    //assert(buf != NULL);
+    buf[0]= 0;
+    for (int i = 0; i < n/16; ++i) {
+        strcat(buf, "123456789ABCDEF\n");
+    }
+    write_cdc(buf, n);
+    free(buf);
+}
+
 // this would be the command thread in the firmware
 extern "C" void dispatch(void *pvParameters)
 {
@@ -325,9 +340,13 @@ extern "C" void dispatch(void *pvParameters)
                     struct mallinfo mi = mallinfo();
                     os->printf("\n\nfree malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
 
-                }else if(strcmp(line, "test") == 0) {
+               }else if(strcmp(line, "rxtest") == 0) {
                     // do a download test
                     download_test(os);
+
+                }else if(strcmp(line, "txtest") == 0) {
+                    // do a USB send test
+                    send_test(os);
 
                 }else{
                     os->printf("Got line: %s\n", line);
