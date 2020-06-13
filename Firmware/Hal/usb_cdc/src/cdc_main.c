@@ -92,11 +92,14 @@ ErrorCode_t EP0_patch(USBD_HANDLE_T hUsb, void *data, uint32_t event)
  */
 void USB_IRQHandler(void)
 {
-    static BaseType_t xHigherPriorityTaskWoken;
-    xHigherPriorityTaskWoken = pdFALSE;
     USBD_API->hw->ISR(g_hUsb);
+}
 
-    /* Notify the task that the transmission is complete. */
+void vcom_notify_recvd()
+{
+    BaseType_t xHigherPriorityTaskWoken= pdFALSE;
+
+    // Notify the task that data is available
     vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }

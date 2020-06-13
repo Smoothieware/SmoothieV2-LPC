@@ -74,6 +74,7 @@ static ErrorCode_t VCOM_bulk_in_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t ev
     return LPC_OK;
 }
 
+extern void vcom_notify_recvd();
 /* VCOM bulk EP_OUT endpoint handler */
 static ErrorCode_t VCOM_bulk_out_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 {
@@ -86,6 +87,7 @@ static ErrorCode_t VCOM_bulk_out_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t e
             pVcom->rx_flags &= ~VCOM_RX_BUF_QUEUED;
             if (pVcom->rx_count != 0) {
                 pVcom->rx_flags |= VCOM_RX_BUF_FULL;
+                vcom_notify_recvd();
             }
 
         }

@@ -425,7 +425,7 @@ static void usb_comms(void *)
     size_t cnt = 0;
     bool discard = false;
     while(1) {
-        // Wait to be notified that there has been a USB irq.
+        // Wait to be notified that there has been a received vcom packet.
         uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
 
         if( ulNotificationValue != 1 ) {
