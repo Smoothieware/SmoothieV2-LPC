@@ -277,7 +277,7 @@ uint32_t vcom_bread(uint8_t *pBuf, uint32_t buf_len)
     // exit critical section
     NVIC_EnableIRQ(LPC_USB_IRQ);
 
-    if(cnt > 0) printf("rb-count: %d, r-size: %lu, size: %u\n", RingBuffer_GetCount(&rxring), buf_len, cnt);
+    // if(cnt > 0) printf("rb-count: %d, r-size: %lu, size: %u\n", RingBuffer_GetCount(&rxring), buf_len, cnt);
     if(pVcom->rx_flags&VCOM_RX_BUF_ERROR) {
         printf("ERROR: vcom_read detected RX buffer error\n");
         pVcom->rx_flags &= ~VCOM_RX_BUF_ERROR;

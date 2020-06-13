@@ -47,9 +47,7 @@ struct query_t
 };
 static RingBuffer<struct query_t, 8> queries; // thread safe FIFO
 
-// set to true when M28 is in effect
-// FIXME needs to be os specific state
-static bool uploading = false;
+// set when M28 is in effect
 static FILE *upload_fp = nullptr;
 static std::string config_error_msg;
 
@@ -121,13 +119,13 @@ static bool load_config_override(OutputStream& os)
 bool dispatch_line(OutputStream& os, const char *ln)
 {
     // if in M28 mode then just save all incoming lines to the file until we get M29
-    if(uploading) {
+    if(os.is_uploading()) {
         // FIXME need to handle line numbers and checksums
         if(strcmp(ln, "M29") == 0) {
             // done uploading, close file
             fclose(upload_fp);
             upload_fp = nullptr;
-            uploading = false;
+            os.set_uploading(false);
             os.printf("Done saving file.\nok\n");
             return true;
         }
@@ -151,7 +149,7 @@ bool dispatch_line(OutputStream& os, const char *ln)
         const char *upload_filename = &ln[4];
         upload_fp = fopen(upload_filename, "w");
         if(upload_fp != nullptr) {
-            uploading = true;
+            os.set_uploading(true);
             os.printf("Writing to file: %s\nok\n", upload_filename);
         } else {
             os.printf("open failed, File: %s.\nok\n", upload_filename);

@@ -38,6 +38,8 @@ public:
 	void set_closed() { closed= true; }
 	void set_done() { done= true; }
 	bool is_done() const { return done; }
+	void set_uploading(bool flg) { uploading= flg; }
+	bool is_uploading() const { return uploading; }
 
 private:
 	// Hack to allow us to create a ostream writing to a supplied write function (used for the USBCDC)
@@ -61,5 +63,6 @@ private:
 		bool deleteos: 1;
 		bool no_response: 1;
 		bool done:1;
+		bool uploading:1;
 	};
 };
