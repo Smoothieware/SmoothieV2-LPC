@@ -63,14 +63,16 @@ void UARTx_IRQHandler(void)
 {
 	/* Want to handle any errors? Do it here. */
 
+	int has_rx_data= Chip_UART_ReadLineStatus(LPC_UARTX) & UART_LSR_RDR;
+
 	/* Use default ring buffer handler. Override this with your own
 	   code if you need more capability. */
 	Chip_UART_IRQRBHandler(LPC_UARTX, &rxring, &txring);
 
-	if(xTaskToNotify != NULL) {
-		/* Notify the task that the transmission is complete. */
-		static BaseType_t xHigherPriorityTaskWoken;
-		xHigherPriorityTaskWoken = pdFALSE;
+	if(xTaskToNotify != NULL && has_rx_data) {
+		// we only do this if there is new incoming data
+		// notify task there is data to read
+		BaseType_t xHigherPriorityTaskWoken= pdFALSE;
 		vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
 		portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 	}
