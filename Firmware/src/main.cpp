@@ -48,6 +48,7 @@ struct query_t
 static RingBuffer<struct query_t, 8> queries; // thread safe FIFO
 
 // set to true when M28 is in effect
+// FIXME needs to be os specific state
 static bool uploading = false;
 static FILE *upload_fp = nullptr;
 static std::string config_error_msg;

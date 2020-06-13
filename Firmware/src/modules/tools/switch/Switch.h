@@ -4,9 +4,7 @@
 #include "ConfigReader.h"
 #include "Pin.h"
 
-
 #include <string>
-#include <atomic>
 
 class GCode;
 class OutputStream;

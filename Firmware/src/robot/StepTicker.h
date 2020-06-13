@@ -4,7 +4,6 @@
 #include <array>
 #include <bitset>
 #include <functional>
-#include <atomic>
 
 #include "ActuatorCoordinates.h"
 
