@@ -481,7 +481,6 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
             if ( limit > 0 && ++newlines >= limit ) {
                 break;
             }
-            if(Module::is_halted()) break;
         };
         fclose(lp);
         if(delay) {
