@@ -43,14 +43,12 @@ extern "C"
  * @{
  */
 
-#define VCOM_RX_BUF_SZ      512
+#define VCOM_RX_BUF_SZ      1024
 #define VCOM_TX_BUF_SZ      1024
 #define VCOM_TX_CONNECTED   _BIT(8)		/* connection state is for both Rx/Tx */
 #define VCOM_TX_BUSY        _BIT(0)
-#define VCOM_RX_DONE        _BIT(0)
-#define VCOM_RX_BUF_FULL    _BIT(1)
-#define VCOM_RX_BUF_QUEUED  _BIT(2)
-#define VCOM_RX_DB_QUEUED   _BIT(3)
+#define VCOM_RX_BUF_QUEUED  _BIT(0)
+#define VCOM_RX_BUF_ERROR   _BIT(1)
 
 /**
  * Structure containing Virtual Comm port control data
@@ -59,8 +57,6 @@ typedef struct VCOM_DATA {
 	USBD_HANDLE_T hUsb;
 	USBD_HANDLE_T hCdc;
 	uint8_t *rx_buff;
-	uint16_t rx_rd_count;
-	uint16_t rx_count;
 	uint8_t *tx_buff;
 	volatile uint16_t tx_flags;
 	volatile uint16_t rx_flags;

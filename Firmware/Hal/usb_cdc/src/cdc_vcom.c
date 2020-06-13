@@ -39,6 +39,9 @@
 #define SRB_SIZE 1024
 static RINGBUFF_T txring;
 __attribute__ ((section (".bss.$RAM3"))) static uint8_t txbuff[SRB_SIZE];
+#define RRB_SIZE VCOM_RX_BUF_SZ*2
+static RINGBUFF_T rxring;
+__attribute__ ((section (".bss.$RAM3"))) static uint8_t rxbuff[RRB_SIZE];
 
 /* Part of WORKAROUND for artf42016. */
 static USB_EP_HANDLER_T g_defaultCdcHdlr;
@@ -78,26 +81,19 @@ static ErrorCode_t VCOM_bulk_in_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t ev
 static ErrorCode_t VCOM_bulk_out_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t event)
 {
     VCOM_DATA_T *pVcom = (VCOM_DATA_T *) data;
-
+    uint32_t rx_count, n;
     switch (event) {
     case USB_EVT_OUT:
-        pVcom->rx_count = USBD_API->hw->ReadEP(hUsb, USB_CDC_OUT_EP, pVcom->rx_buff);
-        if (pVcom->rx_flags & VCOM_RX_BUF_QUEUED) {
-            pVcom->rx_flags &= ~VCOM_RX_BUF_QUEUED;
-            if (pVcom->rx_count != 0) {
-                pVcom->rx_flags |= VCOM_RX_BUF_FULL;
-            }
-
-        }
-        else if (pVcom->rx_flags & VCOM_RX_DB_QUEUED) {
-            pVcom->rx_flags &= ~VCOM_RX_DB_QUEUED;
-            pVcom->rx_flags |= VCOM_RX_DONE;
-        }
+        //  get data into a ring buffer as soon as possible so more data can be recieved
+        rx_count = USBD_API->hw->ReadEP(hUsb, USB_CDC_OUT_EP, pVcom->rx_buff);
+        n= RingBuffer_InsertMult(&rxring, pVcom->rx_buff, rx_count);
+        if(n != rx_count) pVcom->rx_flags |= VCOM_RX_BUF_ERROR;
+        pVcom->rx_flags &= ~VCOM_RX_BUF_QUEUED;
         break;
 
     case USB_EVT_OUT_NAK:
-        /* queue free buffer for RX */
-        if ((pVcom->rx_flags & (VCOM_RX_BUF_FULL | VCOM_RX_BUF_QUEUED)) == 0) {
+        // queue buffer for RX if we have room in ring buffer for it when it completes
+        if(RingBuffer_GetFree(&rxring) >= VCOM_RX_BUF_SZ && (pVcom->rx_flags & VCOM_RX_BUF_QUEUED) == 0) {
             USBD_API->hw->ReadReqEP(hUsb, USB_CDC_OUT_EP, pVcom->rx_buff, VCOM_RX_BUF_SZ);
             pVcom->rx_flags |= VCOM_RX_BUF_QUEUED;
         }
@@ -259,7 +255,8 @@ ErrorCode_t vcom_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
     pUsbParam->mem_base = cdc_param.mem_base;
     pUsbParam->mem_size = cdc_param.mem_size;
 
-    // init ring buffer for send data
+    // init ring buffers
+    RingBuffer_Init(&rxring, rxbuff, 1, RRB_SIZE);
     RingBuffer_Init(&txring, txbuff, 1, SRB_SIZE);
 
     return ret;
@@ -271,24 +268,19 @@ uint32_t vcom_bread(uint8_t *pBuf, uint32_t buf_len)
     VCOM_DATA_T *pVcom = &g_vCOM;
     uint16_t cnt = 0;
 
-    /* read from the default buffer if any data present */
-    if (pVcom->rx_count) {
-        if ((pVcom->rx_count - pVcom->rx_rd_count) < buf_len) {
-            cnt = (pVcom->rx_count - pVcom->rx_rd_count);
-        }else {
-            cnt = buf_len;
-        }
-        memcpy(pBuf, (pVcom->rx_buff + pVcom->rx_rd_count) , cnt);
-        pVcom->rx_rd_count += cnt;
+    // read from the ring buffer if any data present
+    // enter critical section
+    NVIC_DisableIRQ(LPC_USB_IRQ);
+    if (!RingBuffer_IsEmpty(&rxring)) {
+        cnt= RingBuffer_PopMult(&rxring, pBuf, buf_len);
+    }
+    // exit critical section
+    NVIC_EnableIRQ(LPC_USB_IRQ);
 
-        /* enter critical section */
-        NVIC_DisableIRQ(LPC_USB_IRQ);
-        if (pVcom->rx_rd_count >= pVcom->rx_count) {
-            pVcom->rx_flags &= ~VCOM_RX_BUF_FULL;
-            pVcom->rx_rd_count = pVcom->rx_count = 0;
-        }
-        /* exit critical section */
-        NVIC_EnableIRQ(LPC_USB_IRQ);
+    if(cnt > 0) printf("rb-count: %d, r-size: %lu, size: %u\n", RingBuffer_GetCount(&rxring), buf_len, cnt);
+    if(pVcom->rx_flags&VCOM_RX_BUF_ERROR) {
+        printf("ERROR: vcom_read detected RX buffer error\n");
+        pVcom->rx_flags &= ~VCOM_RX_BUF_ERROR;
     }
     return cnt;
 }
