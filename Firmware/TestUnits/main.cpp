@@ -144,6 +144,7 @@ extern "C" int setup_cdc(void *taskhandle);
 
 static std::function<size_t(char *, size_t)> capture_fnc= nullptr;
 
+int maxmq= 0;
 uint32_t timeouts= 0;
 extern "C" void usbComTask(void *pvParameters)
 {
@@ -262,6 +263,7 @@ extern "C" void usbComTask(void *pvParameters)
                     linebuf[linecnt] = '\0'; // remove the \n and nul terminate
                     send_message_queue(linebuf, &theos);
                     linecnt= 0;
+                    maxmq= std::max(get_message_queue_space(), maxmq);
 
                 } else if(linebuf[linecnt] == '\r') {
                     // ignore CR
@@ -372,7 +374,7 @@ extern "C" void dispatch(void *pvParameters)
                 if(strcmp(line, "M29") == 0) {
                     download_mode= false;
                     os->printf("Done saving file.\nok\n");
-                    printf("md5: %s, cnt: %u, timeouts: %u\n", md5.finalize().hexdigest().c_str(), cnt, timeouts);
+                    printf("md5: %s, cnt: %u, timeouts: %lu, maxmq: %d\n", md5.finalize().hexdigest().c_str(), cnt, timeouts, maxmq);
                     continue;
                 }
                 md5.update(line, strlen(line));
