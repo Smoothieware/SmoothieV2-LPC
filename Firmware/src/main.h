@@ -28,3 +28,8 @@ extern MemoryPool *_RAM2;
 extern MemoryPool *_RAM3;
 extern MemoryPool *_RAM4;
 extern MemoryPool *_RAM5;
+
+// the communications task priority (lower number is lower priority)
+#define COMMS_PRI 2UL
+// The command thread priority
+#define CMDTHRD_PRI 3UL

@@ -37,11 +37,13 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
 static xTaskHandle xTaskToNotify = NULL;
+static xSemaphoreHandle xWriteMutex;
 
 static USBD_HANDLE_T g_hUsb;
 
@@ -92,11 +94,14 @@ ErrorCode_t EP0_patch(USBD_HANDLE_T hUsb, void *data, uint32_t event)
  */
 void USB_IRQHandler(void)
 {
-    static BaseType_t xHigherPriorityTaskWoken;
-    xHigherPriorityTaskWoken = pdFALSE;
     USBD_API->hw->ISR(g_hUsb);
+}
 
-    /* Notify the task that the transmission is complete. */
+void vcom_notify_recvd()
+{
+    BaseType_t xHigherPriorityTaskWoken= pdFALSE;
+
+    // Notify the task that data is available
     vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
@@ -133,11 +138,15 @@ USB_INTERFACE_DESCRIPTOR *find_IntfDesc(const uint8_t *pDesc, uint32_t intfClass
 // Expects entire buffer to be fully written
 // vcom_write will copy the buffer or as much of it as it can
 // so we need to stay here until all requested data has been transfered to the buffer
+// this needs to be protected by a semaphore as it could be preempted by another
+// task which can write to the cdc as well
 size_t write_cdc(const char *buf, size_t len)
 {
     size_t sent= 0;
     while(sent < len) {
+        xSemaphoreTake(xWriteMutex, portMAX_DELAY);
         uint32_t n = vcom_write((uint8_t *)buf+sent, len-sent);
+        xSemaphoreGive(xWriteMutex);
         sent += n;
         if(sent < len) {
             if(!vcom_connected()) return 0; // indicates error
@@ -231,6 +240,7 @@ int setup_cdc(xTaskHandle h)
         return 0;
     }
 
+    xWriteMutex = xSemaphoreCreateMutex();
     return 1;
 }
 

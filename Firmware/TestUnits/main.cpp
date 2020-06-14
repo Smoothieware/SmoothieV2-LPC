@@ -351,7 +351,7 @@ extern "C" void dispatch(void *pvParameters)
                     struct mallinfo mi = mallinfo();
                     os->printf("\n\nfree malloc memory= %d, free sbrk memory= %d, Total free= %d\n", mi.fordblks, xPortGetFreeHeapSize() - mi.fordblks, xPortGetFreeHeapSize());
 
-               }else if(strcmp(line, "rxtest") == 0) {
+                }else if(strcmp(line, "rxtest") == 0) {
                     // do a download test
                     download_test(os);
 
