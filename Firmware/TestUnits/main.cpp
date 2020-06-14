@@ -144,6 +144,7 @@ extern "C" int setup_cdc(void *taskhandle);
 
 static std::function<size_t(char *, size_t)> capture_fnc= nullptr;
 
+uint32_t timeouts= 0;
 extern "C" void usbComTask(void *pvParameters)
 {
     static OutputStream theos([](const char *buf, size_t len){ return write_cdc(buf, len); });
@@ -159,7 +160,6 @@ extern "C" void usbComTask(void *pvParameters)
 
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
     bool first= true;
-    uint32_t timeouts= 0;
     linecnt= 0;
     bool discard= false;
 
@@ -196,7 +196,6 @@ extern "C" void usbComTask(void *pvParameters)
         if( ulNotificationValue != 1 ) {
             /* The call to ulTaskNotifyTake() timed out. */
             timeouts++;
-            continue;
         }
 
         while(1) {
@@ -282,9 +281,10 @@ extern "C" void usbComTask(void *pvParameters)
 TickType_t delayms= pdMS_TO_TICKS(1);
 #include "md5.h"
 // test fast streaming from host
-void download_test(OutputStream *os)
+// reception is mostly in comms thread
+void fast_download_test(OutputStream *os)
 {
-    os->puts("Starting download test\nok\n");
+    os->puts("Starting fast download test\nok\n");
     size_t cnt= 0;
     MD5 md5;
     volatile bool done= false;
@@ -360,10 +360,28 @@ extern "C" void dispatch(void *pvParameters)
 {
     char *line;
     OutputStream *os;
-
+    bool download_mode= false;
+    MD5 md5;
+    size_t cnt= 0;
     while(1) {
         // now read lines and dispatch them
         if( receive_message_queue(&line, &os) ) {
+            // if we are in the download mode (simulating M28)
+            // then just md5 the data until we are done
+            if(download_mode) {
+                if(strcmp(line, "M29") == 0) {
+                    download_mode= false;
+                    os->printf("Done saving file.\nok\n");
+                    printf("md5: %s, cnt: %u, timeouts: %u\n", md5.finalize().hexdigest().c_str(), cnt, timeouts);
+                    continue;
+                }
+                md5.update(line, strlen(line));
+                md5.update("\n", 1);
+                cnt += (strlen(line)+1);
+                os->puts("ok\n");
+                continue;
+            }
+
             // got line
             if(strlen(line) == 1) {
                 switch(line[0]) {
@@ -389,11 +407,18 @@ extern "C" void dispatch(void *pvParameters)
 
                 }else if(strcmp(line, "rxtest") == 0) {
                     // do a download test
-                    download_test(os);
+                    fast_download_test(os);
 
                 }else if(strcmp(line, "txtest") == 0) {
                     // do a USB send test
                     send_test(os);
+
+                }else if(strncmp(line, "M28 ", 4) == 0) {
+                    download_mode= true;
+                    cnt= 0;
+                    md5.reinit();
+                    timeouts= 0;
+                    os->printf("Writing to file: SIMULATION\n");
 
                 }else{
                     os->printf("Got line: %s\n", line);
