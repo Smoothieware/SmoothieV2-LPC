@@ -142,14 +142,14 @@ extern "C" size_t write_cdc(const char *buf, size_t len);
 extern "C" size_t read_cdc(char *buf, size_t len);
 extern "C" int setup_cdc(void *taskhandle);
 
-static std::function<bool(char *, size_t)> capture_fnc= nullptr;
+static std::function<size_t(char *, size_t)> capture_fnc= nullptr;
 
 extern "C" void usbComTask(void *pvParameters)
 {
     static OutputStream theos([](const char *buf, size_t len){ return write_cdc(buf, len); });
-    static char linebuf[MAX_LINE_LENGTH];
-    static size_t linecnt;
-    static char rxBuff[256];
+    char linebuf[MAX_LINE_LENGTH];
+    size_t linecnt;
+    char rxBuff[256];
 
     // setup the USB CDC and give it the handle of our task to wake up when we get an interrupt
     if(setup_cdc(xTaskGetCurrentTaskHandle()) == 0) {
@@ -182,7 +182,7 @@ extern "C" void usbComTask(void *pvParameters)
                     }
                 }
                 if(!first) {
-                    write_cdc("Welcome to Smoothev2\r\n", 22);
+                    write_cdc("Welcome to Smoothev2\nok\n", 24);
                 }
             }
         }
@@ -196,6 +196,7 @@ extern "C" void usbComTask(void *pvParameters)
         if( ulNotificationValue != 1 ) {
             /* The call to ulTaskNotifyTake() timed out. */
             timeouts++;
+            continue;
         }
 
         while(1) {
@@ -205,14 +206,25 @@ extern "C" void usbComTask(void *pvParameters)
             if(rdCnt == 0) break; // wait for more
 
             if(capture_fnc) {
-                if(!capture_fnc(rxBuff, rdCnt)) {
+                // returns used characters, if used < rdCnt then it is done
+                // so we reset it and give the rest to the normal processing
+                // if used > rdCnt then it is done but we used all the characters
+                size_t used= capture_fnc(rxBuff, rdCnt);
+                if(used < rdCnt) {
                     capture_fnc= nullptr;
-                    while(read_cdc(rxBuff, sizeof(rxBuff)) > 0) {
-                        // drain buffers
+                    if(used > 0) {
+                        memmove(rxBuff, &rxBuff[used], rdCnt-used);
+                        rdCnt= rdCnt-used;
                     }
-                    break;
+                    // drop through to process the rest
+
+                }else if(used > rdCnt) {
+                    // we used all the data but we are done now
+                    capture_fnc= nullptr;
+                    continue;
+                }else{
+                    continue;
                 }
-                continue;
             }
 
             for (size_t i = 0; i < rdCnt; ++i) {
@@ -245,6 +257,7 @@ extern "C" void usbComTask(void *pvParameters)
                     // discard long lines
                     discard = true;
                     linecnt = 0;
+                    printf("Discarding long line\n");
 
                 } else if(linebuf[linecnt] == '\n') {
                     linebuf[linecnt] = '\0'; // remove the \n and nul terminate
@@ -266,33 +279,56 @@ extern "C" void usbComTask(void *pvParameters)
    }
 }
 
+TickType_t delayms= pdMS_TO_TICKS(1);
 #include "md5.h"
 // test fast streaming from host
 void download_test(OutputStream *os)
 {
-    os->puts("Starting download test...\n");
-    size_t cnt= 0, max= 0;
+    os->puts("Starting download test\nok\n");
+    size_t cnt= 0;
     MD5 md5;
     volatile bool done= false;
-    TickType_t delayms= pdMS_TO_TICKS(1);
 
-    // capture any input
-    capture_fnc= ([&md5, &done, &cnt, &max](char *buf, size_t n) {
-        if(buf[n-1] == 4) {
-            done= true;
-            --n;
+    // capture any input, return used number of characters
+    // if we return < n or > n then capture_fnc is terminated
+    // < n means process the rest of the buffer normally
+    // Note that this call is in comms thread not command thread
+    capture_fnc= ([&md5, &done, &cnt](char *b, size_t n) {
+        size_t s;
+        // if we get a 0x04 then that is the end of the stream
+        char *p = (char *)memchr(b, 4, n); // see if we have termination character
+        if(p != NULL) {
+            // we do
+            s= p-b; // number of characters before the terminator
+            if(p == b+n-1) {
+                // we used the entire buffer as terminator is at end
+                n= n+1; // mark it so we terminate but used all the buffer
+            }else{
+                // we used partial buffer
+                n= s+1;
+            }
+
+        }else{
+            // we can use entire buffer and keep going
+            s= n;
         }
-        if(n > max) max= n;
-        cnt+=n;
-        md5.update(buf, n);
-        return !done; });
+
+        if(s > 0){
+            md5.update(b, s);
+            cnt+=s;
+        }
+
+        // do this last as we may get preempted
+        if(p!=NULL) done= true;
+
+        return n;
+    });
 
     while(!done) {
-        // wait for test to complete
         vTaskDelay(delayms);
     }
 
-    os->printf("md5: %s, cnt: %u, max: %u\n", md5.finalize().hexdigest().c_str(), cnt, max);
+    os->printf("md5: %s, cnt: %u\n", md5.finalize().hexdigest().c_str(), cnt);
     os->puts("download test complete\n");
 }
 
@@ -463,8 +499,8 @@ int main()   //int argc, char *argv[])
         __asm("bkpt #0");
     }
 
-    xTaskCreate(usbComTask, "usbComTask", 256, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
-    xTaskCreate(dispatch, "dispatch", 512, NULL, (tskIDLE_PRIORITY + 3UL), NULL);
+    xTaskCreate(usbComTask, "usbComTask", 1024, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
+    xTaskCreate(dispatch, "dispatch", 512, NULL, (tskIDLE_PRIORITY + 4UL), NULL);
 #endif
 
     struct mallinfo mi = mallinfo();

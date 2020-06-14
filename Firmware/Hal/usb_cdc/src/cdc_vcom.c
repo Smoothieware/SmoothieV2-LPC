@@ -87,10 +87,14 @@ static ErrorCode_t VCOM_bulk_out_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_t e
     case USB_EVT_OUT:
         //  get data into a ring buffer as soon as possible so more data can be recieved
         rx_count = USBD_API->hw->ReadEP(hUsb, USB_CDC_OUT_EP, pVcom->rx_buff);
-        n= RingBuffer_InsertMult(&rxring, pVcom->rx_buff, rx_count);
-        if(n != rx_count) pVcom->rx_flags |= VCOM_RX_BUF_ERROR;
-        pVcom->rx_flags &= ~VCOM_RX_BUF_QUEUED;
-        vcom_notify_recvd();
+        if(pVcom->rx_flags & VCOM_RX_BUF_QUEUED) {
+            pVcom->rx_flags &= ~VCOM_RX_BUF_QUEUED;
+            if(rx_count != 0) {
+                n= RingBuffer_InsertMult(&rxring, pVcom->rx_buff, rx_count);
+                if(n != rx_count) pVcom->rx_flags |= VCOM_RX_BUF_ERROR;
+                vcom_notify_recvd();
+            }
+        }
         break;
 
     case USB_EVT_OUT_NAK:
