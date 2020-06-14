@@ -182,7 +182,7 @@ extern "C" void usbComTask(void *pvParameters)
                     }
                 }
                 if(!first) {
-                    write_cdc("Welcome to Smoothev2\r\n", 22);
+                    write_cdc("Welcome to Smoothev2\nok\n", 24);
                 }
             }
         }
@@ -270,7 +270,7 @@ extern "C" void usbComTask(void *pvParameters)
 // test fast streaming from host
 void download_test(OutputStream *os)
 {
-    os->puts("Starting download test...\n");
+    os->puts("Starting download test\nok\n");
     size_t cnt= 0, max= 0;
     MD5 md5;
     volatile bool done= false;
@@ -278,14 +278,14 @@ void download_test(OutputStream *os)
 
     // capture any input
     capture_fnc= ([&md5, &done, &cnt, &max](char *buf, size_t n) {
-        if(n == 1) {
+        if(buf[n-1] == 4) {
             done= true;
-            return false;
+            --n;
         }
         if(n > max) max= n;
         cnt+=n;
         md5.update(buf, n);
-        return true; });
+        return !done; });
 
     while(!done) {
         // wait for test to complete

@@ -885,7 +885,7 @@ static void smoothie_startup(void *)
         printf("Error: failed to create comms i/o queue\n");
     }
 
-    // Start comms threads Lower priority than the command thread
+    // Start comms threads higher priority than the command thread
     // fixed stack size of 4k Bytes each
     xTaskCreate(usb_comms, "USBCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + COMMS_PRI), (TaskHandle_t *) NULL);
     xTaskCreate(uart_comms, "UARTCommsThread", 1500/4, NULL, (tskIDLE_PRIORITY + COMMS_PRI), (TaskHandle_t *) NULL);
@@ -963,7 +963,7 @@ int main(int argc, char *argv[])
     Board_LED_Set(3, true);
 
     // launch the startup thread which will become the command thread that executes all incoming commands
-    // set to be higher priority than comms
+    // set to be lower priority than comms
     // 10000 Bytes stack
     xTaskCreate(smoothie_startup, "CommandThread", 10000/4, NULL, (tskIDLE_PRIORITY + CMDTHRD_PRI), (TaskHandle_t *) NULL);
 
