@@ -278,14 +278,14 @@ void download_test(OutputStream *os)
 
     // capture any input
     capture_fnc= ([&md5, &done, &cnt, &max](char *buf, size_t n) {
-        if(n == 1) {
+        if(buf[n-1] == 4) {
             done= true;
-            return false;
+            --n;
         }
         if(n > max) max= n;
         cnt+=n;
         md5.update(buf, n);
-        return true; });
+        return !done; });
 
     while(!done) {
         // wait for test to complete
