@@ -142,14 +142,19 @@ extern "C" size_t write_cdc(const char *buf, size_t len);
 extern "C" size_t read_cdc(char *buf, size_t len);
 extern "C" int setup_cdc(void *taskhandle);
 
-static std::function<bool(char *, size_t)> capture_fnc= nullptr;
+static std::function<size_t(char *, size_t)> capture_fnc= nullptr;
 
+int maxmq= 20;
+uint32_t timeouts= 0;
 extern "C" void usbComTask(void *pvParameters)
 {
     static OutputStream theos([](const char *buf, size_t len){ return write_cdc(buf, len); });
-    static char linebuf[MAX_LINE_LENGTH];
-    static size_t linecnt;
-    static char rxBuff[256];
+    char linebuf[MAX_LINE_LENGTH];
+    size_t linecnt= 0;
+    char rxBuff[256];
+    bool first= true;
+    bool discard= false;
+    const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
     // setup the USB CDC and give it the handle of our task to wake up when we get an interrupt
     if(setup_cdc(xTaskGetCurrentTaskHandle()) == 0) {
@@ -157,11 +162,6 @@ extern "C" void usbComTask(void *pvParameters)
         return;
     }
 
-    const TickType_t waitms = pdMS_TO_TICKS( 300 );
-    bool first= true;
-    uint32_t timeouts= 0;
-    linecnt= 0;
-    bool discard= false;
 
     do {
         // Wait to be notified that there has been a USB irq.
@@ -191,9 +191,9 @@ extern "C" void usbComTask(void *pvParameters)
 
     while(1) {
        // Wait to be notified that there has been a USB irq.
-        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdFALSE, waitms );
 
-        if( ulNotificationValue != 1 ) {
+        if( ulNotificationValue == 0 ) {
             /* The call to ulTaskNotifyTake() timed out. */
             timeouts++;
         }
@@ -205,16 +205,96 @@ extern "C" void usbComTask(void *pvParameters)
             if(rdCnt == 0) break; // wait for more
 
             if(capture_fnc) {
-                if(!capture_fnc(rxBuff, rdCnt)) {
+                // returns used characters, if used < rdCnt then it is done
+                // so we reset it and give the rest to the normal processing
+                // if used > rdCnt then it is done but we used all the characters
+                size_t used= capture_fnc(rxBuff, rdCnt);
+                if(used < rdCnt) {
                     capture_fnc= nullptr;
-                    while(read_cdc(rxBuff, sizeof(rxBuff)) > 0) {
-                        // drain buffers
+                    if(used > 0) {
+                        memmove(rxBuff, &rxBuff[used], rdCnt-used);
+                        rdCnt= rdCnt-used;
                     }
-                    break;
+                    // drop through to process the rest
+
+                }else if(used > rdCnt) {
+                    // we used all the data but we are done now
+                    capture_fnc= nullptr;
+                    continue;
+                }else{
+                    continue;
                 }
-                continue;
             }
 
+            #if 0
+            // NOT MUCH FASTER...
+            // process line faster just split into lines for now
+            char *bp= rxBuff;
+            char *eob= &rxBuff[rdCnt];
+            size_t bl= rdCnt; // bytes left in read buffer
+            while(bp < eob) {
+                // find the newline
+                char *p = (char *)memchr(bp, '\n', bl);
+                if(p == NULL) {
+                    if(discard) {
+                        bp= eob;
+                        continue;
+                    }
+                    // no newline found transfer to line buffer if not too long
+                    if(bl >= (sizeof(linebuf)-linecnt)) {
+                        theos.printf("Discarding long line a\nok\n");
+                        discard = true;
+                        linecnt= 0;
+                    }else{
+                        memcpy(&linebuf[linecnt], bp, bl);
+                        linecnt += bl;
+                    }
+                    break; // we need to read a new buffer
+
+                }else{
+                    // we have found a newline
+                    if(discard) {
+                        discard= false;
+                        bp= ++p;
+                        bl -= (p-bp); // bytes left
+                        linecnt= 0;
+                    }else{
+                        *p++ = '\0'; // replace \n with \0 and point to next character
+                        if(linecnt > 0) {
+                            // we have a partial line in linebuf
+                            size_t n= p-bp;
+                            if((linecnt+n) < sizeof(linebuf)) {
+                                // append this to the partial line
+                                memcpy(&linebuf[linecnt], bp, n);
+                                if(!send_message_queue(linebuf, &theos)) {
+                                    theos.printf("Discarding long line b\nok\n");
+                                    discard = true;
+                                }
+                            }else{
+                                // line would be too long
+                                theos.printf("Discarding long line c\nok\n");
+                                discard = true;
+                            }
+                            bp= p;
+                            bl -= n;
+                            linecnt= 0;
+                            continue;
+                        }
+                        // this will ignore a line that is too long
+                        if(!send_message_queue(bp, &theos)) {
+                            theos.printf("Discarding long line d\nok\n");
+                            discard = true;
+                        }
+                        bl -= (p-bp); // bytes left
+                        bp= p;
+                        maxmq= std::min(get_message_queue_space(), maxmq);
+                    }
+                }
+            }
+
+            #else
+
+            // process line character by character (pretty slow)
             for (size_t i = 0; i < rdCnt; ++i) {
                 linebuf[linecnt]= rxBuff[i];
 
@@ -245,11 +325,13 @@ extern "C" void usbComTask(void *pvParameters)
                     // discard long lines
                     discard = true;
                     linecnt = 0;
+                    printf("Discarding long line\n");
 
                 } else if(linebuf[linecnt] == '\n') {
                     linebuf[linecnt] = '\0'; // remove the \n and nul terminate
                     send_message_queue(linebuf, &theos);
                     linecnt= 0;
+                    maxmq= std::min(get_message_queue_space(), maxmq);
 
                 } else if(linebuf[linecnt] == '\r') {
                     // ignore CR
@@ -262,37 +344,62 @@ extern "C" void usbComTask(void *pvParameters)
                     ++linecnt;
                 }
            }
+#endif
        }
    }
 }
 
+TickType_t delayms= pdMS_TO_TICKS(1);
 #include "md5.h"
 // test fast streaming from host
-void download_test(OutputStream *os)
+// reception is mostly in comms thread
+void fast_download_test(OutputStream *os)
 {
-    os->puts("Starting download test\nok\n");
-    size_t cnt= 0, max= 0;
+    os->puts("Starting fast download test\nok\n");
+    size_t cnt= 0;
     MD5 md5;
     volatile bool done= false;
-    TickType_t delayms= pdMS_TO_TICKS(1);
 
-    // capture any input
-    capture_fnc= ([&md5, &done, &cnt, &max](char *buf, size_t n) {
-        if(buf[n-1] == 4) {
-            done= true;
-            --n;
+    // capture any input, return used number of characters
+    // if we return < n or > n then capture_fnc is terminated
+    // < n means process the rest of the buffer normally
+    // Note that this call is in comms thread not command thread
+    capture_fnc= ([&md5, &done, &cnt](char *b, size_t n) {
+        size_t s;
+        // if we get a 0x04 then that is the end of the stream
+        char *p = (char *)memchr(b, 4, n); // see if we have termination character
+        if(p != NULL) {
+            // we do
+            s= p-b; // number of characters before the terminator
+            if(p == b+n-1) {
+                // we used the entire buffer as terminator is at end
+                n= n+1; // mark it so we terminate but used all the buffer
+            }else{
+                // we used partial buffer
+                n= s+1;
+            }
+
+        }else{
+            // we can use entire buffer and keep going
+            s= n;
         }
-        if(n > max) max= n;
-        cnt+=n;
-        md5.update(buf, n);
-        return !done; });
+
+        if(s > 0){
+            md5.update(b, s);
+            cnt+=s;
+        }
+
+        // do this last as we may get preempted
+        if(p!=NULL) done= true;
+
+        return n;
+    });
 
     while(!done) {
-        // wait for test to complete
         vTaskDelay(delayms);
     }
 
-    os->printf("md5: %s, cnt: %u, max: %u\n", md5.finalize().hexdigest().c_str(), cnt, max);
+    os->printf("md5: %s, cnt: %u\n", md5.finalize().hexdigest().c_str(), cnt);
     os->puts("download test complete\n");
 }
 
@@ -324,10 +431,28 @@ extern "C" void dispatch(void *pvParameters)
 {
     char *line;
     OutputStream *os;
-
+    bool download_mode= false;
+    MD5 md5;
+    size_t cnt= 0;
     while(1) {
         // now read lines and dispatch them
         if( receive_message_queue(&line, &os) ) {
+            // if we are in the download mode (simulating M28)
+            // then just md5 the data until we are done
+            if(download_mode) {
+                if(strcmp(line, "M29") == 0) {
+                    download_mode= false;
+                    os->printf("Done saving file.\nok\n");
+                    printf("md5: %s, cnt: %u, timeouts: %lu, maxmq: %d\n", md5.finalize().hexdigest().c_str(), cnt, timeouts, maxmq);
+                    continue;
+                }
+                md5.update(line, strlen(line));
+                md5.update("\n", 1);
+                cnt += (strlen(line)+1);
+                os->puts("ok\n");
+                continue;
+            }
+
             // got line
             if(strlen(line) == 1) {
                 switch(line[0]) {
@@ -353,11 +478,18 @@ extern "C" void dispatch(void *pvParameters)
 
                 }else if(strcmp(line, "rxtest") == 0) {
                     // do a download test
-                    download_test(os);
+                    fast_download_test(os);
 
                 }else if(strcmp(line, "txtest") == 0) {
                     // do a USB send test
                     send_test(os);
+
+                }else if(strncmp(line, "M28 ", 4) == 0) {
+                    download_mode= true;
+                    cnt= 0;
+                    md5.reinit();
+                    timeouts= 0;
+                    os->printf("Writing to file: SIMULATION\n");
 
                 }else{
                     os->printf("Got line: %s\n", line);
@@ -463,8 +595,8 @@ int main()   //int argc, char *argv[])
         __asm("bkpt #0");
     }
 
-    xTaskCreate(usbComTask, "usbComTask", 256, NULL, (tskIDLE_PRIORITY + 4UL), (TaskHandle_t *) NULL);
-    xTaskCreate(dispatch, "dispatch", 512, NULL, (tskIDLE_PRIORITY + 3UL), NULL);
+    xTaskCreate(usbComTask, "usbComTask", 1024, NULL, (tskIDLE_PRIORITY + 3UL), (TaskHandle_t *) NULL);
+    xTaskCreate(dispatch, "dispatch", 512, NULL, (tskIDLE_PRIORITY + 4UL), NULL);
 #endif
 
     struct mallinfo mi = mallinfo();

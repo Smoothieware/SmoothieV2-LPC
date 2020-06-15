@@ -58,6 +58,7 @@ public:
     MD5 &finalize();
     std::string hexdigest() const;
     void bindigest(void *buf, int len) const;
+    void reinit() { init(); }
 
 private:
     void init();
