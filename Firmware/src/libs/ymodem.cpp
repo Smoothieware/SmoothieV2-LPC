@@ -49,7 +49,8 @@ int YModem::_inbyte(int msec)
 {
 	while (inbuf.empty()) {
 		vTaskDelay(pdMS_TO_TICKS(1));
-		if (msec-- <= 0)
+		msec -= 10;
+		if (msec <= 0)
 			return -1;
 	}
 	int c= inbuf.pop_front();

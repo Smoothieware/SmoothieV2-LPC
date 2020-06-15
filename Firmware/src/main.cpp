@@ -387,23 +387,29 @@ static void usb_comms(void *)
         printf("FATAL: CDC setup failed\n");
         return;
     }
+    // we set this to 1024 so ymodem will run faster (but if not needed then it can be as low as 256)
+    const size_t usb_rx_buf_sz= 1024;
+    char *usb_rx_buf= (char *)_RAM3->alloc(usb_rx_buf_sz);
+    if(usb_rx_buf == nullptr) {
+        printf("FATAL: no memory in RAM3 for usb_rx_buf\n");
+        return;
+    }
 
     // on first connect we send a welcome message after getting a '\n'
     static const char *welcome_message = "Welcome to Smoothie\nok\n";
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
     size_t n;
-    char rx_buf[256];
     bool done = false;
 
     // first we wait for an initial '\n' sent from host
     while (!done) {
         // Wait to be notified that there has been a USB irq.
         ulTaskNotifyTake( pdTRUE, waitms );
-        n = read_cdc(rx_buf, sizeof(rx_buf));
+        n = read_cdc(usb_rx_buf, usb_rx_buf_sz);
         if(n > 0) {
             for (size_t i = 0; i < n; ++i) {
-                if(rx_buf[i] == '\n') {
+                if(usb_rx_buf[i] == '\n') {
                     if(config_error_msg.empty()) {
                         write_cdc(welcome_message, strlen(welcome_message));
                     }else{
@@ -434,9 +440,9 @@ static void usb_comms(void *)
         }
         do {
             // may have more data than our buffer size so read until it is drained
-            n = read_cdc(rx_buf, sizeof(rx_buf));
+            n = read_cdc(usb_rx_buf, usb_rx_buf_sz);
             if(n > 0) {
-                process_command_buffer(n, rx_buf, &os, line, cnt, discard);
+                process_command_buffer(n, usb_rx_buf, &os, line, cnt, discard);
             }
         } while(n > 0);
     }

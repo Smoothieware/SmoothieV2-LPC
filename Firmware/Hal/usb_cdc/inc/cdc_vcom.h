@@ -43,7 +43,7 @@ extern "C"
  * @{
  */
 
-#define VCOM_RX_BUF_SZ      512
+#define VCOM_RX_BUF_SZ      1024
 #define VCOM_TX_BUF_SZ      1024
 #define VCOM_TX_CONNECTED   _BIT(8)		/* connection state is for both Rx/Tx */
 #define VCOM_TX_BUSY        _BIT(0)
