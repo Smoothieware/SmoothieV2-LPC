@@ -426,9 +426,10 @@ static void usb_comms(void *)
     bool discard = false;
     while(1) {
         // Wait to be notified that there has been a received vcom packet.
-        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
+        // treat as a counting semaphore, so will only block if count is zero.
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdFALSE, waitms );
 
-        if( ulNotificationValue != 1 ) {
+        if( ulNotificationValue == 0 ) {
             /* The call to ulTaskNotifyTake() timed out. check anyway */
         }
         do {
@@ -458,7 +459,7 @@ static void uart_comms(void *)
     bool discard = false;
     while(1) {
         // Wait to be notified that there has been a UART irq. (it may have been rx or tx so may not be anything to read)
-        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdFALSE, waitms );
 
         if( ulNotificationValue != 1 ) {
             /* The call to ulTaskNotifyTake() timed out. check anyway */
@@ -488,7 +489,7 @@ static void uart3_comms(void *)
     bool discard = false;
     while(1) {
         // Wait to be notified that there has been a UART irq. (it may have been rx or tx so may not be anything to read)
-        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdFALSE, waitms );
 
         if( ulNotificationValue != 1 ) {
             /* The call to ulTaskNotifyTake() timed out. check anyway */
