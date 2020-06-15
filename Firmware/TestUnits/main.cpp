@@ -433,7 +433,7 @@ extern "C" void dispatch(void *pvParameters)
     OutputStream *os;
     bool download_mode= false;
     MD5 md5;
-    size_t cnt= 0;
+    size_t cnt= 0, lcnt= 0;
     while(1) {
         // now read lines and dispatch them
         if( receive_message_queue(&line, &os) ) {
@@ -449,6 +449,7 @@ extern "C" void dispatch(void *pvParameters)
                 md5.update(line, strlen(line));
                 md5.update("\n", 1);
                 cnt += (strlen(line)+1);
+                ++lcnt;
                 os->puts("ok\n");
                 continue;
             }
@@ -487,6 +488,7 @@ extern "C" void dispatch(void *pvParameters)
                 }else if(strncmp(line, "M28 ", 4) == 0) {
                     download_mode= true;
                     cnt= 0;
+                    lcnt= 0;
                     md5.reinit();
                     timeouts= 0;
                     os->printf("Writing to file: SIMULATION\n");
