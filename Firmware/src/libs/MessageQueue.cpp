@@ -32,13 +32,17 @@ int get_message_queue_space()
 // the line is copied into the message so can be on the stack
 // This call will block until there is room in the queue
 // eg USB serial, UART serial, Network, SDCard player thread
+// returns false if line was discarded for being too long
 bool send_message_queue(char *pline, OutputStream *pos)
 {
     comms_msg_t msg_buffer;
-	strcpy(msg_buffer.pline, pline);
+    if(strlen(pline) >= MAX_LINE_LENGTH) {
+        return false;
+    }else{
+	   strcpy(msg_buffer.pline, pline);
+    }
 	msg_buffer.pos= pos;
 	xQueueSend( queue_handle, ( void * )&msg_buffer, portMAX_DELAY);
-
     return true;
 }
 bool send_message_queue(char *pline, void *pos)
