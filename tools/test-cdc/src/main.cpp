@@ -47,12 +47,13 @@ char seq_char()
 
 size_t stream_data(MySerial& serial, size_t& lines)
 {
-    const size_t buflen=26;
+    const size_t buflen=27;
 	size_t cnt_sent= 0, lcnt= 0;
     MD5 md5;
 
     while(cnt_sent < 10000*buflen) {
-        std::string l(std::to_string(++lcnt));
+        std::string l("G");
+        l.append(std::to_string(++lcnt));
         l.append(":");
         size_t n= buflen-l.size()-1;
         std::string s(n, '\0');

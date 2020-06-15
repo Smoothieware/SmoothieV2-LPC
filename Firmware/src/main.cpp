@@ -964,7 +964,8 @@ int main(int argc, char *argv[])
     Board_LED_Set(3, true);
 
     // launch the startup thread which will become the command thread that executes all incoming commands
-    // set to be lower priority than comms
+    // set to be lower priority than comms, although it maybe better to invert them as we don;t really
+    // want the commandthread preempted by the comms thread everytime it gets data.
     // 10000 Bytes stack
     xTaskCreate(smoothie_startup, "CommandThread", 10000/4, NULL, (tskIDLE_PRIORITY + CMDTHRD_PRI), (TaskHandle_t *) NULL);
 
