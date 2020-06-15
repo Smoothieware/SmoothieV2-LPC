@@ -191,9 +191,9 @@ extern "C" void usbComTask(void *pvParameters)
 
     while(1) {
        // Wait to be notified that there has been a USB irq.
-        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, waitms );
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdFALSE, waitms );
 
-        if( ulNotificationValue != 1 ) {
+        if( ulNotificationValue == 0 ) {
             /* The call to ulTaskNotifyTake() timed out. */
             timeouts++;
         }
