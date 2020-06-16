@@ -8,10 +8,12 @@ import os
 import argparse
 import serial
 
+
 def signal_term_handler(signal, frame):
-   global intrflg
-   print('got SIGTERM...')
-   sys.quit()
+    global intrflg
+    print('got SIGTERM...')
+    sys.quit()
+
 
 signal.signal(signal.SIGTERM, signal_term_handler)
 
@@ -19,41 +21,44 @@ signal.signal(signal.SIGTERM, signal_term_handler)
 parser = argparse.ArgumentParser(description='ymodem upload file to smoothie')
 parser.add_argument('file', help='filename to be uploaded')
 parser.add_argument('device', help='Smoothie Serial Device')
-parser.add_argument('-v','--verbose',action='store_true', default=False, help='verbose output')
-parser.add_argument('-f','--flash',action='store_true', default=False, help='flash')
+parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose output')
+parser.add_argument('-f', '--flash', action='store_true', default=False, help='flash')
+parser.add_argument('-1', '--onek', action='store_true', default=False, help='1k blocks')
 args = parser.parse_args()
 
-file_path= args.file
-dev= "/dev/tty{}".format(args.device)
+file_path = args.file
+dev = "/dev/tty{}".format(args.device)
 
 print("Uploading file: {} to {}".format(file_path, dev))
 
-fin= open(dev, "rb", buffering=0)
-fout= open(dev, "wb", buffering=0)
+fin = open(dev, "rb", buffering=0)
+fout = open(dev, "wb", buffering=0)
 
 fout.write(b'\n')
-rep1= fin.readline()
+rep1 = fin.readline()
 fout.write(b'ry -q\n')
-#rep2= fin.readline()
+# rep2= fin.readline()
 
 if args.verbose:
-    print(rep1.decode('utf-8'))
-    print(rep2.decode('utf-8'))
-    varg= '-vvv'
+    varg = '-vvv'
 else:
-    varg= '-q'
+    varg = '-q'
 
-ok= False
+karg = ''
+if args.onek:
+    karg = '-k'
+
+ok = False
 
 try:
-    p = subprocess.Popen(['sx', '--ymodem', varg, file_path], bufsize=0, stdin=fin, stdout=fout, stderr=sys.stderr)
+    p = subprocess.Popen(['sx', '--ymodem', '-k', varg, file_path], bufsize=0, stdin=fin, stdout=fout, stderr=sys.stderr)
     result, err = p.communicate()
     if p.returncode != 0:
         print("Failed")
-        ok= False
+        ok = False
     else:
         print("uploaded ok")
-        ok= True
+        ok = True
 
 except:
     print('Exception: {}'.format(traceback.format_exc()))
