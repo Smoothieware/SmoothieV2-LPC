@@ -307,6 +307,7 @@ bool dispatch_line(OutputStream& os, const char *ln)
     return true;
 }
 
+// FIXME this should not be global, needs to be per os or one os at a time.
 static std::function<void(char)> capture_fnc;
 void set_capture(std::function<void(char)> cf)
 {
