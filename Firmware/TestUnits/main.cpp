@@ -226,74 +226,6 @@ extern "C" void usbComTask(void *pvParameters)
                 }
             }
 
-            #if 0
-            // NOT MUCH FASTER...
-            // process line faster just split into lines for now
-            char *bp= rxBuff;
-            char *eob= &rxBuff[rdCnt];
-            size_t bl= rdCnt; // bytes left in read buffer
-            while(bp < eob) {
-                // find the newline
-                char *p = (char *)memchr(bp, '\n', bl);
-                if(p == NULL) {
-                    if(discard) {
-                        bp= eob;
-                        continue;
-                    }
-                    // no newline found transfer to line buffer if not too long
-                    if(bl >= (sizeof(linebuf)-linecnt)) {
-                        theos.printf("Discarding long line a\nok\n");
-                        discard = true;
-                        linecnt= 0;
-                    }else{
-                        memcpy(&linebuf[linecnt], bp, bl);
-                        linecnt += bl;
-                    }
-                    break; // we need to read a new buffer
-
-                }else{
-                    // we have found a newline
-                    if(discard) {
-                        discard= false;
-                        bp= ++p;
-                        bl -= (p-bp); // bytes left
-                        linecnt= 0;
-                    }else{
-                        *p++ = '\0'; // replace \n with \0 and point to next character
-                        if(linecnt > 0) {
-                            // we have a partial line in linebuf
-                            size_t n= p-bp;
-                            if((linecnt+n) < sizeof(linebuf)) {
-                                // append this to the partial line
-                                memcpy(&linebuf[linecnt], bp, n);
-                                if(!send_message_queue(linebuf, &theos)) {
-                                    theos.printf("Discarding long line b\nok\n");
-                                    discard = true;
-                                }
-                            }else{
-                                // line would be too long
-                                theos.printf("Discarding long line c\nok\n");
-                                discard = true;
-                            }
-                            bp= p;
-                            bl -= n;
-                            linecnt= 0;
-                            continue;
-                        }
-                        // this will ignore a line that is too long
-                        if(!send_message_queue(bp, &theos)) {
-                            theos.printf("Discarding long line d\nok\n");
-                            discard = true;
-                        }
-                        bl -= (p-bp); // bytes left
-                        bp= p;
-                        maxmq= std::min(get_message_queue_space(), maxmq);
-                    }
-                }
-            }
-
-            #else
-
             // process line character by character (pretty slow)
             for (size_t i = 0; i < rdCnt; ++i) {
                 linebuf[linecnt]= rxBuff[i];
@@ -344,7 +276,6 @@ extern "C" void usbComTask(void *pvParameters)
                     ++linecnt;
                 }
            }
-#endif
        }
    }
 }
