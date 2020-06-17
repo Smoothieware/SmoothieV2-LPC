@@ -23,7 +23,7 @@ parser.add_argument('file', help='filename to be uploaded')
 parser.add_argument('device', help='Smoothie Serial Device')
 parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose output')
 parser.add_argument('-f', '--flash', action='store_true', default=False, help='flash')
-parser.add_argument('-1', '--onek', action='store_true', default=False, help='1k blocks')
+parser.add_argument('-1', '--notonek', action='store_true', default=False, help='256 blocks')
 args = parser.parse_args()
 
 file_path = args.file
@@ -44,14 +44,14 @@ if args.verbose:
 else:
     varg = '-q'
 
-karg = ''
-if args.onek:
-    karg = '-k'
-
 ok = False
 
 try:
-    p = subprocess.Popen(['sx', '--ymodem', '-k', varg, file_path], bufsize=0, stdin=fin, stdout=fout, stderr=sys.stderr)
+    if not args.notonek:
+        p = subprocess.Popen(['sx', '--ymodem', '-k', varg, file_path], bufsize=0, stdin=fin, stdout=fout, stderr=sys.stderr)
+    else:
+        p = subprocess.Popen(['sx', '--ymodem', varg, file_path], bufsize=0, stdin=fin, stdout=fout, stderr=sys.stderr)
+
     result, err = p.communicate()
     if p.returncode != 0:
         print("Failed")
