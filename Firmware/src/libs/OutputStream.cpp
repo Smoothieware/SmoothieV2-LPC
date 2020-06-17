@@ -82,7 +82,7 @@ int OutputStream::FdBuf::sync()
 	int ret= 0;
 	size_t len= this->str().size();
 	if(len > 0) {
-		// fnc is expected to write everything or
+		// fnc is expected to write everything
 		size_t n = fnc(this->str().c_str(), len);
 		if(n != len) {
 			::printf("OutputStream error: write fnc failed\n");

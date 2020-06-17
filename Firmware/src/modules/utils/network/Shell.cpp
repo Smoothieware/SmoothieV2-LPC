@@ -29,6 +29,8 @@ struct shell_state_t {
     char line[132];
     size_t cnt = 0;
     bool discard = false;
+    bool need_write;
+    RingBuffer<char, 256> *write_rb;
     uint32_t magic;
 };
 using shell_t = struct shell_state_t;
@@ -39,6 +41,8 @@ static shell_t *shell_list = nullptr;
 static RingBuffer<OutputStream*, MAX_SERV*2> gc;
 
 // callback from command thread to write data to the socket
+// lwip_write should not be called from a different thread
+// so we use a ring buffer to get the main thread to do the write
 static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
 {
     if(p_shell->magic != MAGIC) {
@@ -47,22 +51,14 @@ static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
         return -1;
     }
     // NOTE must write entire buffer
-    size_t sent= 0;
-    while(sent < len) {
-        int n;
-        if ( (n = lwip_write(p_shell->socket, rbuf+sent, len-sent)) < 0) {
-            //close_chargen(p_shell);
-            printf("shell: write_back: error writing\n");
-            p_shell->magic= 1;
-            return -1;
+    for (size_t i = 0; i < len; ++i) {
+        while(p_shell->write_rb->full()) {
+            // yield some time if full
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
-        sent += n;
-        // need to yield here if not all sent
-        if(sent < len) {
-            // yield some time
-            taskYIELD();
-        }
+        p_shell->write_rb->push_back(rbuf[i]);
     }
+    p_shell->need_write= true;
     return len;
 }
 
@@ -83,6 +79,7 @@ static void close_shell(shell_t *p_shell)
         p_shell->os->set_closed();
         gc.push_back(p_shell->os);
     }
+    delete p_shell->write_rb;
 
     printf("shell: closing shell connection: %d\n", p_shell->socket);
     lwip_close(p_shell->socket);
@@ -158,6 +155,10 @@ static void shell_thread(void *arg)
         LWIP_ASSERT("shell_thread: Listen failed.", 0);
     }
 
+    struct timeval timeout;
+    timeout.tv_sec= 0;
+    timeout.tv_usec= 100000; // 100ms
+
     /* Wait forever for network input: This could be connections or data */
     for (;;) {
         maxfdp1 = listenfd + 1;
@@ -171,11 +172,13 @@ static void shell_thread(void *arg)
                 maxfdp1 = p_shell->socket + 1;
             }
             FD_SET(p_shell->socket, &readset);
-            //FD_SET(p_shell->socket, &writeset); // this will just always be ready
+            if(p_shell->need_write){
+                FD_SET(p_shell->socket, &writeset);
+            }
         }
 
-        /* Wait for data or a new connection */
-        i = lwip_select(maxfdp1, &readset, &writeset, 0, 0);
+        // Wait for data or a new connection, we have a timeout so we can check if we need to wait on write
+        i = lwip_select(maxfdp1, &readset, &writeset, 0, &timeout);
 
         if (i == 0) {
             continue;
@@ -198,9 +201,11 @@ static void shell_thread(void *arg)
                     printf("shell: accepted shell connection: %d\n", p_shell->socket);
                 }
                 // initialise command buffer state
+                p_shell->need_write= false;
                 p_shell->cnt = 0;
                 p_shell->discard = false;
                 p_shell->os = new OutputStream([p_shell](const char *ibuf, size_t ilen) { return write_back(p_shell, ibuf, ilen); });
+                p_shell->write_rb= new RingBuffer<char, 256>;
                 //output_streams.push_back(p_shell->os);
                 p_shell->magic= MAGIC;
                 lwip_write(p_shell->socket, "Welcome to the Smoothie Shell\n", 30);
@@ -221,9 +226,9 @@ static void shell_thread(void *arg)
 
         /* Go through list of connected clients and process data */
         for (p_shell = shell_list; p_shell; p_shell = p_shell->next) {
+            char buf[BUFSIZE];
             if (FD_ISSET(p_shell->socket, &readset)) {
                 // This socket is ready for reading.
-                char buf[BUFSIZE];
                 size_t n = lwip_read(p_shell->socket, buf, BUFSIZE);
                 if (n > 0) {
                     if(strncmp(buf, "quit\n", 5) == 0 || strncmp(buf, "quit\r\n", 6) == 0) {
@@ -235,6 +240,33 @@ static void shell_thread(void *arg)
                 } else {
                     close_shell(p_shell);
                     break;
+                }
+            }
+            if (FD_ISSET(p_shell->socket, &writeset)) {
+                // request to write data
+                while(!p_shell->write_rb->empty()) {
+                    // this is slow but makes it a lot easier otherwise if we can't write
+                    // all the data we wold need another buffer to stick it on for when it is ready
+                    // we could use ring_buffer but would need mutexes.
+                    buf[0]= p_shell->write_rb->peek_front();
+                    size_t n;
+                    if((n=lwip_write(p_shell->socket, buf, 1)) < 0) {
+                        printf("shell: write: error writing\n");
+                        close_shell(p_shell);
+                        p_shell= nullptr;
+                        break;
+                    }
+                    if(n == 1){
+                        // pop data
+                        p_shell->write_rb->pop_front();
+                    }else{
+                        // can't write anymore at the moment try again next time
+                        break;
+                    }
+                }
+                if(p_shell == nullptr) break;
+                if(p_shell->write_rb->empty()) {
+                    p_shell->need_write= false;
                 }
             }
         }

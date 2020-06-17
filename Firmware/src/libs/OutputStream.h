@@ -40,7 +40,7 @@ public:
 	bool is_done() const { return done; }
 
 private:
-	// Hack to allow us to create a ostream writing to a supplied write function (used for the USBCDC)
+	// Hack to allow us to create a ostream writing to a supplied write function
 	class FdBuf : public std::stringbuf
 	{
 	public:

@@ -143,6 +143,11 @@ class RingBuffer
             return buffer[tail];
         }
 
+        void flush()
+        {
+            tail= head;
+        }
+
     private:
         kind *buffer;
         size_t tail;   //Pointer to the oldest object
