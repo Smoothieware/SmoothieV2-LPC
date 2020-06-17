@@ -13,9 +13,9 @@
 #if !(LWIP_SOCKET && LWIP_SOCKET_SELECT)
 #error LWIP_SOCKET_SELECT and  LWIP_SOCKET needed
 #endif
-#ifndef LWIP_NETCONN_FULLDUPLEX
-#error LWIP_NETCONN_FULLDUPLEX is required for this to work
-#endif
+// #if LWIP_NETCONN_FULLDUPLEX != 1
+// #error LWIP_NETCONN_FULLDUPLEX is required for this to work
+// #endif
 
 #define MAX_SERV 3
 #define BUFSIZE 256
