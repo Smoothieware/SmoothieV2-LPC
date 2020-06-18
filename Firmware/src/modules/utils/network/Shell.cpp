@@ -21,8 +21,8 @@
 // #error LWIP_NETCONN_FULLDUPLEX is required for this to work
 // #endif
 
-#define DEBUG_PRINTF(...)
-//#define DEBUG_PRINTF printf
+//#define DEBUG_PRINTF(...)
+#define DEBUG_PRINTF printf
 
 #define MAX_SERV 3
 #define BUFSIZE 256
