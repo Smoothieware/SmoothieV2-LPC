@@ -21,6 +21,9 @@
 // #error LWIP_NETCONN_FULLDUPLEX is required for this to work
 // #endif
 
+#define DEBUG_PRINTF(...)
+//#define DEBUG_PRINTF printf
+
 #define MAX_SERV 3
 #define BUFSIZE 256
 #define MAGIC 0x6013D852
@@ -81,19 +84,19 @@ static void close_shell(shell_t *p_shell)
 {
     p_shell->magic= 0; // safety
 
-    //printf("shell: closing shell connection: %d\n", p_shell->socket);
+    DEBUG_PRINTF("shell: closing shell connection: %d\n", p_shell->socket);
     lwip_close(p_shell->socket);
 
     // if we delete the OutputStream now and command thread is still outputting stuff we will crash
     // it needs to stick around until the command has completed
     // this is also true of the tx_queue
     if(p_shell->os->is_done()) {
-        //printf("shell: releasing output stream: %p\n", p_shell->os);
+        DEBUG_PRINTF("shell: releasing output stream: %p\n", p_shell->os);
         delete p_shell->os;
         if(p_shell->tx_queue != 0) vQueueDelete(p_shell->tx_queue);
 
     }else{
-        //printf("shell: delaying releasing output stream: %p\n", p_shell->os);
+        DEBUG_PRINTF("shell: delaying releasing output stream: %p\n", p_shell->os);
         p_shell->os->set_closed();
         xQueueReset(p_shell->tx_queue);
         gc.push_back({p_shell->os, p_shell->tx_queue});
@@ -120,7 +123,7 @@ static void os_garbage_collector( TimerHandle_t xTimer )
             auto td= gc.pop_front();
             delete std::get<0>(td);
             vQueueDelete(std::get<1>(td));
-            //printf("shell: releasing output stream: %p\n", os);
+            DEBUG_PRINTF("shell: releasing output stream: %p\n", os);
         } else {
             // if this is not done then we presume the newer ones aren't either
             break;
@@ -247,7 +250,7 @@ static void shell_thread(void *arg)
                     // add shell state to our set of shells
                     shells.insert(p_shell);
 
-                    printf("shell: accepted shell connection: %d\n", p_shell->socket);
+                    DEBUG_PRINTF("shell: accepted shell connection: %d\n", p_shell->socket);
 
                     // initialise command buffer state
                     p_shell->need_write= false;
@@ -332,7 +335,7 @@ static void shell_thread(void *arg)
                     }
 
                 } else {
-                    printf("shell: got close on read: %d\n", errno);
+                    DEBUG_PRINTF("shell: got close on read: %d\n", errno);
                     close_shell(p_shell);
                     break;
                 }
