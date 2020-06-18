@@ -23,7 +23,7 @@
 #define BUFSIZE 256
 #define MAGIC 0x6013D852
 struct shell_state_t {
-    struct shell_state_t *next;
+    struct shell_state_t *next; // TODO just use a std::vector or std::set
     int socket;
     struct sockaddr_storage cliaddr;
     socklen_t clilen;
@@ -234,29 +234,31 @@ static void shell_thread(void *arg)
                 if (p_shell->socket < 0) {
                     mem_free(p_shell);
                     printf("shell: accept socket error: %d\n", errno);
+
                 } else {
                     /* Keep this shell state in our list */
                     p_shell->next = shell_list;
                     shell_list = p_shell;
                     printf("shell: accepted shell connection: %d\n", p_shell->socket);
-                }
-                // initialise command buffer state
-                p_shell->need_write= false;
-                p_shell->cnt = 0;
-                p_shell->discard = false;
-                // setup tx queue so we keep reads and writes in the same thread due to lwip limitations
-                p_shell->tx_queue= xQueueCreate(4, sizeof(tx_msg_t));
-                if(p_shell->tx_queue == 0) {
-                    // Failed to create the queue.
-                    printf("shell: failed to create tx_queue - out of memory\n");
-                    close_shell(p_shell);
 
-                } else {
-                    p_shell->os = new OutputStream([p_shell](const char *ibuf, size_t ilen) { return write_back(p_shell, ibuf, ilen); });
+                    // initialise command buffer state
+                    p_shell->need_write= false;
+                    p_shell->cnt = 0;
+                    p_shell->discard = false;
+                    // setup tx queue so we keep reads and writes in the same thread due to lwip limitations
+                    p_shell->tx_queue= xQueueCreate(4, sizeof(tx_msg_t));
+                    if(p_shell->tx_queue == 0) {
+                        // Failed to create the queue.
+                        printf("shell: failed to create tx_queue - out of memory\n");
+                        close_shell(p_shell);
 
-                    //output_streams.push_back(p_shell->os);
-                    p_shell->magic= MAGIC;
-                    lwip_write(p_shell->socket, "Welcome to the Smoothie Shell\n", 30);
+                    } else {
+                        p_shell->os = new OutputStream([p_shell](const char *ibuf, size_t ilen) { return write_back(p_shell, ibuf, ilen); });
+
+                        //output_streams.push_back(p_shell->os);
+                        p_shell->magic= MAGIC;
+                        lwip_write(p_shell->socket, "Welcome to the Smoothie Shell\n", 30);
+                    }
                 }
 
             } else {
