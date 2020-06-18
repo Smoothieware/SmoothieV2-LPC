@@ -61,7 +61,11 @@ static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
     }
     memcpy(p, rbuf, len);
     tx_msg_t msg {p, (uint16_t)len, 0};
-    xQueueSend(p_shell->tx_queue, (void *)&msg, portMAX_DELAY);
+    if(xQueueSend(p_shell->tx_queue, (void *)&msg, portMAX_DELAY) != pdTRUE) {
+        delete [] p;
+        return 0;
+    }
+
     p_shell->need_write= true;
     return len;
 }
@@ -300,10 +304,17 @@ static void shell_thread(void *arg)
                     // so tell it to not wait, and if it returns false it means it gave up waiting
                     // so process writes while waiting
                     if(!process_command_buffer(n, buf, p_shell->os, p_shell->line, p_shell->cnt, p_shell->discard, false)) {
-                        // process any writes, if the shell is closed here we may lose the last command sent
-                        if(!process_writes(p_shell)) break;
-                        // and try to resend
-                        send_message_queue(p_shell->line, p_shell->os, false);
+                        bool closed= false;
+                        // and keep trying to resubmit,this will yield for about 100ms
+                        while(!send_message_queue(p_shell->line, p_shell->os, false)) {
+                            // process any writes
+                            if(!process_writes(p_shell)) {
+                                // the shell closed here we may lose the last command sent
+                                closed= true;
+                                break;
+                            }
+                        }
+                        if(closed) break;
                     }
                 } else {
                     close_shell(p_shell);
