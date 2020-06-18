@@ -317,6 +317,7 @@ void set_capture(std::function<void(char)> cf)
 static std::vector<OutputStream*> output_streams;
 
 // this is here so we do not need to duplicate this logic for USB and UART
+// NOTE this can block if message queue is full.
 void process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line, size_t& cnt, bool& discard)
 {
     for (size_t i = 0; i < n; ++i) {

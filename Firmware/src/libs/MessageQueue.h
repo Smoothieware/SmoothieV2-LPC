@@ -12,11 +12,7 @@ bool send_message_queue(char *pline, OutputStream *pos);
 bool receive_message_queue(char **ppline, OutputStream **ppos);
 int get_message_queue_space();
 #else
-
-struct dispatch_message_t {
-    char line[MAX_LINE_LENGTH];
-    void *os;
-};
+// for c calls
 bool send_message_queue(char *pline, void *pos);
 #endif
 

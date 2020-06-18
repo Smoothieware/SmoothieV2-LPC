@@ -50,6 +50,7 @@ private:
 		OutputStream *parent;
 		wrfnc fnc;
 	};
+	void *xWriteMutex;
 
 	std::ostream *os;
 	FdBuf *fdbuf;
