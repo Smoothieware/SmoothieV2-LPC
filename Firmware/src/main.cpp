@@ -1087,6 +1087,7 @@ extern "C" void HardFault_Handler(void) {
     for( ;; );
 }
 
+extern "C" {
 // replace newlib printf, snprintf, vsnprintf
 static void my_outchar(void *, char c)
 {
@@ -1094,7 +1095,7 @@ static void my_outchar(void *, char c)
 }
 
 #include "xformatc.h"
-int printf(const char *fmt, ...)
+int __wrap_printf(const char *fmt, ...)
 {
     xSemaphoreTake(xPrintMutex, portMAX_DELAY);
     va_list list;
@@ -1120,7 +1121,7 @@ static void my_stroutchar(void *arg, char c)
     }
 }
 
-int snprintf(char *str, size_t size, const char *fmt, ...)
+int __wrap_snprintf(char *str, size_t size, const char *fmt, ...)
 {
     va_list list;
     va_start(list, fmt);
@@ -1132,11 +1133,24 @@ int snprintf(char *str, size_t size, const char *fmt, ...)
     return count >= size ? size : cnt;
 }
 
-int vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
+int __wrap_sprintf(char *str, const char *fmt, ...)
+{
+    va_list list;
+    va_start(list, fmt);
+    size_t cnt= 0;
+    parg_t arg {&str, 1024, &cnt};
+    size_t count= xvformat(my_stroutchar, &arg, fmt, list);
+    str[cnt]= '\0';
+    va_end(list);
+    return count;
+}
+
+int __wrap_vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
 {
     size_t cnt= 0;
     parg_t arg {&str, size-1, &cnt};
     size_t count= xvformat(my_stroutchar, &arg, fmt, ap);
     str[cnt]= '\0';
     return count >= size ? size : cnt;
+}
 }
