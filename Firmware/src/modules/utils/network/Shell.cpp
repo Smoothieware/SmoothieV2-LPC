@@ -30,6 +30,7 @@ struct shell_state_t {
     socklen_t clilen;
     OutputStream *os;
     QueueHandle_t tx_queue;
+    size_t wr_off;
     char line[132];
     size_t cnt;
     bool discard;
@@ -39,10 +40,11 @@ struct shell_state_t {
 using shell_t = struct shell_state_t;
 static std::set<shell_t*> shells;
 
-using tx_msg_t = struct{char *buf; uint16_t size:16; uint16_t off:16; };
+using tx_msg_t = struct{char buf[128]; size_t size;};
 
 // Stores OutputStreams that need to be deleted when done
-static RingBuffer<OutputStream*, MAX_SERV*2> gc;
+using gc_t = std::tuple<OutputStream*, QueueHandle_t>;
+static RingBuffer<gc_t, MAX_SERV*2> gc;
 
 // callback from command thread to write data to the socket
 // lwip_write should not be called from a different thread
@@ -54,17 +56,18 @@ static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
         printf("shell: write_back: ERROR magic was bad\n");
         return 0;
     }
-
-    char *p= new char[len];
-    if(p == nullptr) {
-        printf("shell: out of memory in write_back\n");
-        return 0;
-    }
-    memcpy(p, rbuf, len);
-    tx_msg_t msg {p, (uint16_t)len, 0};
-    if(xQueueSend(p_shell->tx_queue, (void *)&msg, portMAX_DELAY) != pdTRUE) {
-        delete [] p;
-        return 0;
+    size_t sz= len;
+    tx_msg_t msg;
+    while(sz > 0) {
+        if(p_shell->os->is_closed()) break;
+        size_t n= std::min(sz, sizeof(msg.buf));
+        memcpy(msg.buf, rbuf, n);
+        msg.size= n;
+        if(xQueueSend(p_shell->tx_queue, (void *)&msg, portMAX_DELAY) != pdTRUE) {
+            return 0;
+        }
+        sz-=n;
+        rbuf += n;
     }
 
     p_shell->need_write= true;
@@ -77,29 +80,27 @@ static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
 static void close_shell(shell_t *p_shell)
 {
     p_shell->magic= 0; // safety
-    // if we delete the OutputStream now and command thread is still outputting stuff we will crash
-    // it needs to stick around until the command has completed
-    if(p_shell->os->is_done()) {
-        printf("shell: releasing output stream: %p\n", p_shell->os);
-        delete p_shell->os;
-    }else{
-        printf("shell: delaying releasing output stream: %p\n", p_shell->os);
-        p_shell->os->set_closed();
-        gc.push_back(p_shell->os);
-    }
-    // before deleting the queue free up any buffers in it
-    while(uxQueueMessagesWaiting(p_shell->tx_queue) > 0) {
-        tx_msg_t msg;
-        if(xQueueReceive(p_shell->tx_queue, &msg, 0) == pdTRUE) {
-            delete [] msg.buf;
-        }
-    }
-    vQueueDelete(p_shell->tx_queue);
 
-    printf("shell: closing shell connection: %d\n", p_shell->socket);
+    //printf("shell: closing shell connection: %d\n", p_shell->socket);
     lwip_close(p_shell->socket);
 
-    // Free shell
+    // if we delete the OutputStream now and command thread is still outputting stuff we will crash
+    // it needs to stick around until the command has completed
+    // this is also true of the tx_queue
+    if(p_shell->os->is_done()) {
+        //printf("shell: releasing output stream: %p\n", p_shell->os);
+        delete p_shell->os;
+        if(p_shell->tx_queue != 0) vQueueDelete(p_shell->tx_queue);
+
+    }else{
+        //printf("shell: delaying releasing output stream: %p\n", p_shell->os);
+        p_shell->os->set_closed();
+        xQueueReset(p_shell->tx_queue);
+        gc.push_back({p_shell->os, p_shell->tx_queue});
+    }
+
+
+    // Free shell state
     if(shells.erase(p_shell) != 1) {
         printf("shell: erasing shell not found\n");
     }
@@ -108,15 +109,18 @@ static void close_shell(shell_t *p_shell)
 
 // This will delete any OutputStreams that are done
 // we need to do this so that we don't crash when an OutputStream is deleted before it is done
+// ditto with the tx_queue
 static void os_garbage_collector( TimerHandle_t xTimer )
 {
     while(!gc.empty()) {
         // we only check the oldest, presuming it will be done before newer ones
-        OutputStream *os= gc.peek_front();
+        auto t= gc.peek_front();
+        OutputStream *os= std::get<0>(t);
         if(os->is_done()) {
-            os= gc.pop_front();
-            delete os;
-            printf("shell: releasing output stream: %p\n", os);
+            auto td= gc.pop_front();
+            delete std::get<0>(td);
+            vQueueDelete(std::get<1>(td));
+            //printf("shell: releasing output stream: %p\n", os);
         } else {
             // if this is not done then we presume the newer ones aren't either
             break;
@@ -131,18 +135,20 @@ static bool process_writes(shell_t *p_shell)
     tx_msg_t msg;
     if(xQueuePeek(p_shell->tx_queue, &msg, 0) == pdTRUE) {
         int n;
-        if((n=lwip_write(p_shell->socket, msg.buf+msg.off, msg.size-msg.off)) < 0) {
-            printf("shell: error writing\n");
+        int sz= msg.size - p_shell->wr_off;
+        if((n=lwip_write(p_shell->socket, msg.buf+p_shell->wr_off, sz)) < 0) {
+            printf("shell: error writing: %d\n", errno);
             close_shell(p_shell);
             return false;
         }
-        if(n == (msg.size-msg.off)) {
+        if(n == sz) {
             // all written, so remove from queue
-            delete [] msg.buf;
             xQueueReceive(p_shell->tx_queue, &msg, 0);
+            p_shell->wr_off= 0;
+
         }else{
             // can't write anymore at the moment try again next time
-            msg.off += n;
+            p_shell->wr_off += n;
         }
     }
     return true;
@@ -155,15 +161,9 @@ static void shell_thread(void *arg)
     struct sockaddr_in shell_saddr;
     fd_set readset;
     fd_set writeset;
-    int i, maxfdp1;
+    int maxfdp1;
 
     printf("Network: Shell thread started\n");
-
-    // OutputStream garbage collector timer
-    TimerHandle_t timer_handle= xTimerCreate("osgarbage", pdMS_TO_TICKS(1000), pdTRUE, nullptr, os_garbage_collector);
-    if( xTimerStart( timer_handle, 1000 ) != pdPASS ) {
-        printf("shell_thread: ERROR: Failed to start the timer\n");
-    }
 
     // does not do anything unless LWIP_NETCONN_SEM_PER_THREAD==1
     lwip_socket_thread_init();
@@ -176,15 +176,26 @@ static void shell_thread(void *arg)
     shell_saddr.sin_addr.s_addr = PP_HTONL(INADDR_ANY);
     shell_saddr.sin_port = lwip_htons(23); /* telnet server port */
 
-    LWIP_ASSERT("shell_thread: Socket create failed.", listenfd >= 0);
+    if(listenfd < 0) {
+        printf("shell_thread: ERROR: Socket create failed: %d", errno);
+        return;
+    }
 
     if (lwip_bind(listenfd, (struct sockaddr *) &shell_saddr, sizeof (shell_saddr)) == -1) {
-        LWIP_ASSERT("shell_thread: Socket bind failed.", 0);
+        printf("shell_thread: ERROR: Socket bind failed: %d", errno);
+        return;
     }
 
     /* Put socket into listening mode */
     if (lwip_listen(listenfd, MAX_SERV) == -1) {
-        LWIP_ASSERT("shell_thread: Listen failed.", 0);
+        printf("shell_thread: ERROR: Listen failed: %d", errno);
+        return;
+    }
+
+    // OutputStream garbage collector timer
+    TimerHandle_t timer_handle= xTimerCreate("osgarbage", pdMS_TO_TICKS(1000), pdTRUE, nullptr, os_garbage_collector);
+    if(timer_handle == NULL || xTimerStart(timer_handle, 1000) != pdPASS) {
+        printf("shell_thread: WARNING: Failed to start the osgarbage timer\n");
     }
 
     struct timeval timeout;
@@ -210,9 +221,14 @@ static void shell_thread(void *arg)
         }
 
         // Wait for data or a new connection, we have a timeout so we can check if we need to wait on write
-        i = lwip_select(maxfdp1, &readset, &writeset, 0, &timeout);
+        int i = lwip_select(maxfdp1, &readset, &writeset, 0, &timeout);
 
         if (i == 0) {
+            continue;
+        }
+        if(i < 0) {
+            // we got an error
+            printf("shell: ERROR: select returned an error: %d\n", errno);
             continue;
         }
 
@@ -222,7 +238,7 @@ static void shell_thread(void *arg)
             /* create a new control block */
             shell_t *p_shell = (shell_t *) mem_malloc(sizeof(shell_t));
             if(p_shell != nullptr) {
-                p_shell->socket = lwip_accept(listenfd, (struct sockaddr *) &p_shell->cliaddr, &p_shell->clilen);
+                p_shell->socket= lwip_accept(listenfd, (struct sockaddr *) &p_shell->cliaddr, &p_shell->clilen);
                 if (p_shell->socket < 0) {
                     mem_free(p_shell);
                     printf("shell: accept socket error: %d\n", errno);
@@ -235,8 +251,11 @@ static void shell_thread(void *arg)
 
                     // initialise command buffer state
                     p_shell->need_write= false;
-                    p_shell->cnt = 0;
-                    p_shell->discard = false;
+                    p_shell->cnt= 0;
+                    p_shell->wr_off= 0;
+                    p_shell->discard= false;
+                    p_shell->os= new OutputStream([p_shell](const char *ibuf, size_t ilen) { return write_back(p_shell, ibuf, ilen); });
+
                     // setup tx queue so we keep reads and writes in the same thread due to lwip limitations
                     p_shell->tx_queue= xQueueCreate(4, sizeof(tx_msg_t));
                     if(p_shell->tx_queue == 0) {
@@ -245,8 +264,6 @@ static void shell_thread(void *arg)
                         close_shell(p_shell);
 
                     } else {
-                        p_shell->os = new OutputStream([p_shell](const char *ibuf, size_t ilen) { return write_back(p_shell, ibuf, ilen); });
-
                         //output_streams.push_back(p_shell->os);
                         p_shell->magic= MAGIC;
                         lwip_write(p_shell->socket, "Welcome to the Smoothie Shell\n", 30);
@@ -297,9 +314,10 @@ static void shell_thread(void *arg)
                         close_shell(p_shell);
                         break;
                     }
-                    // this could block which would then also block any output that the command thread needs to make
+                    // this could block which would then also block any output that the
+                    // command thread needs to make causing deadlock
                     // so tell it to not wait, and if it returns false it means it gave up waiting
-                    // so process writes while waiting
+                    // process writes while waiting so coammnad thread won't block
                     if(!process_command_buffer(n, buf, p_shell->os, p_shell->line, p_shell->cnt, p_shell->discard, false)) {
                         // and keep trying to resubmit, this will yield for about 100ms
                         while(!send_message_queue(p_shell->line, p_shell->os, false)) {
@@ -314,6 +332,7 @@ static void shell_thread(void *arg)
                     }
 
                 } else {
+                    printf("shell: got close on read: %d\n", errno);
                     close_shell(p_shell);
                     break;
                 }
@@ -325,5 +344,6 @@ static void shell_thread(void *arg)
 
 void shell_init(void)
 {
-    sys_thread_new("shell_thread", shell_thread, NULL, 350, DEFAULT_THREAD_PRIO);
+    // make same priority as other comms threads
+    sys_thread_new("shell_thread", shell_thread, NULL, 350, COMMS_PRI);
 }

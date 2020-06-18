@@ -24,7 +24,8 @@ OutputStream::~OutputStream()
 		delete os;
 	if(fdbuf)
 		delete fdbuf;
-	vSemaphoreDelete(xWriteMutex);
+	if(xWriteMutex != nullptr)
+		vSemaphoreDelete(xWriteMutex);
 };
 
 int OutputStream::flush_prepend()
@@ -43,14 +44,16 @@ int OutputStream::flush_prepend()
 int OutputStream::write(const char *buffer, size_t size)
 {
 	if(os == nullptr || closed) return 0;
-	xSemaphoreTake(xWriteMutex, portMAX_DELAY);
+	if(xWriteMutex != nullptr)
+		xSemaphoreTake(xWriteMutex, portMAX_DELAY);
 	if(prepend_ok) {
 		prepending.append(buffer, size);
 	} else {
 		// this is expected to always write everything out
 		os->write(buffer, size);
 	}
-	xSemaphoreGive(xWriteMutex);
+	if(xWriteMutex != nullptr)
+		xSemaphoreGive(xWriteMutex);
 	return size;
 }
 
@@ -90,7 +93,7 @@ int OutputStream::FdBuf::sync()
 {
 	int ret= 0;
 	size_t len= this->str().size();
-	if(len > 0) {
+	if(!parent->closed && len > 0) {
 		// fnc is expected to write everything
 		size_t n = fnc(this->str().data(), len);
 		if(n != len) {

@@ -15,9 +15,9 @@ class OutputStream
 public:
 	using wrfnc = std::function<size_t(const char *buffer, size_t size)>;
 	// create a null output stream
-	OutputStream() : os(nullptr), fdbuf(nullptr), deleteos(false) { clear_flags(); };
+	OutputStream() : xWriteMutex(nullptr), os(nullptr), fdbuf(nullptr), deleteos(false) { clear_flags(); };
 	// create from an existing ostream
-	OutputStream(std::ostream *o) : os(o), fdbuf(nullptr), deleteos(false) { clear_flags(); };
+	OutputStream(std::ostream *o) : xWriteMutex(nullptr), os(o), fdbuf(nullptr), deleteos(false) { clear_flags(); };
 	// create using a supplied write fnc
 	OutputStream(wrfnc f);
 
@@ -36,6 +36,7 @@ public:
 	int flush_prepend();
 	void clear_flags() { append_nl= prepend_ok= no_response= done= false; }
 	void set_closed() { closed= true; }
+	bool is_closed() const { return closed; }
 	void set_done() { done= true; }
 	bool is_done() const { return done; }
 

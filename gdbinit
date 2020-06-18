@@ -272,7 +272,7 @@ end
 
 # Command to dump the heap allocations (in-use and free).
 define heapwalk
-    set var $chunk_curr=((unsigned int)&__HeapBase)
+    set var $chunk_curr=(((unsigned int)&__HeapBase+7)&~7)
     set var $chunk_number=1
     set var $used_bytes=(unsigned int)0
     set var $free_bytes=(unsigned int)0
