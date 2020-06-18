@@ -12,6 +12,8 @@
 #include "timers.h"
 #include "queue.h"
 
+#include <set>
+
 #if !(LWIP_SOCKET && LWIP_SOCKET_SELECT)
 #error LWIP_SOCKET_SELECT and  LWIP_SOCKET needed
 #endif
@@ -23,20 +25,19 @@
 #define BUFSIZE 256
 #define MAGIC 0x6013D852
 struct shell_state_t {
-    struct shell_state_t *next; // TODO just use a std::vector or std::set
     int socket;
     struct sockaddr_storage cliaddr;
     socklen_t clilen;
     OutputStream *os;
     QueueHandle_t tx_queue;
     char line[132];
-    size_t cnt = 0;
-    bool discard = false;
+    size_t cnt;
+    bool discard;
     bool need_write;
     uint32_t magic;
 };
 using shell_t = struct shell_state_t;
-static shell_t *shell_list = nullptr;
+static std::set<shell_t*> shells;
 
 using tx_msg_t = struct{char *buf; uint16_t size:16; uint16_t off:16; };
 
@@ -75,7 +76,6 @@ static int write_back(shell_t *p_shell, const char *rbuf, size_t len)
  **************************************************************/
 static void close_shell(shell_t *p_shell)
 {
-    shell_t *p_search_shell;
     p_shell->magic= 0; // safety
     // if we delete the OutputStream now and command thread is still outputting stuff we will crash
     // it needs to stick around until the command has completed
@@ -100,15 +100,8 @@ static void close_shell(shell_t *p_shell)
     lwip_close(p_shell->socket);
 
     // Free shell
-    if (shell_list == p_shell) {
-        shell_list = p_shell->next;
-    } else {
-        for (p_search_shell = shell_list; p_search_shell; p_search_shell = p_search_shell->next) {
-            if (p_search_shell->next == p_shell) {
-                p_search_shell->next = p_shell->next;
-                break;
-            }
-        }
+    if(shells.erase(p_shell) != 1) {
+        printf("shell: erasing shell not found\n");
     }
     mem_free(p_shell);
 }
@@ -163,7 +156,6 @@ static void shell_thread(void *arg)
     fd_set readset;
     fd_set writeset;
     int i, maxfdp1;
-    shell_t *p_shell;
 
     printf("Network: Shell thread started\n");
 
@@ -207,7 +199,7 @@ static void shell_thread(void *arg)
         FD_ZERO(&readset);
         FD_ZERO(&writeset);
         FD_SET(listenfd, &readset);
-        for (p_shell = shell_list; p_shell; p_shell = p_shell->next) {
+        for(auto p_shell : shells) {
             if (maxfdp1 < p_shell->socket + 1) {
                 maxfdp1 = p_shell->socket + 1;
             }
@@ -228,7 +220,7 @@ static void shell_thread(void *arg)
         if (FD_ISSET(listenfd, &readset)) {
             /* We have a new connection request */
             /* create a new control block */
-            p_shell = (shell_t *) mem_malloc(sizeof(shell_t));
+            shell_t *p_shell = (shell_t *) mem_malloc(sizeof(shell_t));
             if(p_shell != nullptr) {
                 p_shell->socket = lwip_accept(listenfd, (struct sockaddr *) &p_shell->cliaddr, &p_shell->clilen);
                 if (p_shell->socket < 0) {
@@ -236,9 +228,9 @@ static void shell_thread(void *arg)
                     printf("shell: accept socket error: %d\n", errno);
 
                 } else {
-                    /* Keep this shell state in our list */
-                    p_shell->next = shell_list;
-                    shell_list = p_shell;
+                    // add shell state to our set of shells
+                    shells.insert(p_shell);
+
                     printf("shell: accepted shell connection: %d\n", p_shell->socket);
 
                     // initialise command buffer state
@@ -278,20 +270,23 @@ static void shell_thread(void *arg)
         // Go through list of connected clients and process write requests
         // we do this first to avoid deadlock when a read request tries to write
         // can still deadlock though if there is a lot to write (eg cat file)
-        for (p_shell = shell_list; p_shell; p_shell = p_shell->next) {
+        for(auto p_shell : shells) {
             if (FD_ISSET(p_shell->socket, &writeset)) {
                 // request to write data
-                if(!process_writes(p_shell)) break;
+                if(process_writes(p_shell)) {
+                    if(uxQueueMessagesWaiting(p_shell->tx_queue) == 0) {
+                        // if nothing left to write don't select on write ready anymore
+                        p_shell->need_write= false;
+                    }
 
-                if(uxQueueMessagesWaiting(p_shell->tx_queue) == 0) {
-                    // if nothing left to write don't select on write ready anymore
-                    p_shell->need_write= false;
+                }else {
+                    break;
                 }
             }
         }
 
         // check for read requests
-        for (p_shell = shell_list; p_shell; p_shell = p_shell->next) {
+        for (auto p_shell : shells) {
             if (FD_ISSET(p_shell->socket, &readset)) {
                 char buf[BUFSIZE];
                 // This socket is ready for reading.
@@ -306,18 +301,18 @@ static void shell_thread(void *arg)
                     // so tell it to not wait, and if it returns false it means it gave up waiting
                     // so process writes while waiting
                     if(!process_command_buffer(n, buf, p_shell->os, p_shell->line, p_shell->cnt, p_shell->discard, false)) {
-                        bool closed= false;
-                        // and keep trying to resubmit,this will yield for about 100ms
+                        // and keep trying to resubmit, this will yield for about 100ms
                         while(!send_message_queue(p_shell->line, p_shell->os, false)) {
                             // process any writes
                             if(!process_writes(p_shell)) {
+                                p_shell= nullptr;
                                 // the shell closed here we may lose the last command sent
-                                closed= true;
                                 break;
                             }
                         }
-                        if(closed) break;
+                        if(p_shell == nullptr) break;
                     }
+
                 } else {
                     close_shell(p_shell);
                     break;
