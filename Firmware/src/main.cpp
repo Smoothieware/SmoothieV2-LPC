@@ -316,9 +316,10 @@ void set_capture(std::function<void(char)> cf)
 
 static std::vector<OutputStream*> output_streams;
 
-// this is here so we do not need to duplicate this logic for USB and UART
-// NOTE this can block if message queue is full.
-void process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line, size_t& cnt, bool& discard)
+// this is here so we do not need to duplicate this logic for
+// USB serial, UART serial, Network Shell, SDCard player thread
+// NOTE this can block if message queue is full. set wait to false to not wait too long
+bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line, size_t& cnt, bool& discard, bool wait)
 {
     for (size_t i = 0; i < n; ++i) {
         line[cnt] = rx_buf[i];
@@ -360,7 +361,12 @@ void process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
                 }
 
             }else{
-                send_message_queue(line, os);
+                if(!send_message_queue(line, os, wait)) {
+                    // we were told not to wait and the queue was full
+                    // the caller will now need to call send_message_queue()
+                    cnt= 0;
+                    return false;
+                }
             }
             cnt = 0;
 
@@ -375,6 +381,8 @@ void process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
             ++cnt;
         }
     }
+
+    return true;
 }
 
 extern "C" size_t write_cdc(const char *buf, size_t len);

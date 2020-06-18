@@ -6,6 +6,7 @@
 #include "main.h"
 #include "OutputStream.h"
 #include "RingBuffer.h"
+#include "MessageQueue.h"
 
 #include "FreeRTOS.h"
 #include "timers.h"
@@ -124,6 +125,30 @@ static void os_garbage_collector( TimerHandle_t xTimer )
             break;
         }
     }
+}
+
+// process any write requests coming from other threads
+// return false if the shell closed
+static bool process_writes(shell_t *p_shell)
+{
+    tx_msg_t msg;
+    if(xQueuePeek(p_shell->tx_queue, &msg, 0) == pdTRUE) {
+        int n;
+        if((n=lwip_write(p_shell->socket, msg.buf+msg.off, msg.size-msg.off)) < 0) {
+            printf("shell: error writing\n");
+            close_shell(p_shell);
+            return false;
+        }
+        if(n == (msg.size-msg.off)) {
+            // all written, so remove from queue
+            delete [] msg.buf;
+            xQueueReceive(p_shell->tx_queue, &msg, 0);
+        }else{
+            // can't write anymore at the moment try again next time
+            msg.off += n;
+        }
+    }
+    return true;
 }
 
 static void shell_thread(void *arg)
@@ -250,26 +275,8 @@ static void shell_thread(void *arg)
         for (p_shell = shell_list; p_shell; p_shell = p_shell->next) {
             if (FD_ISSET(p_shell->socket, &writeset)) {
                 // request to write data
-                tx_msg_t msg;
-                if(xQueuePeek(p_shell->tx_queue, &msg, 0) == pdTRUE) {
-                    int n;
-                    if((n=lwip_write(p_shell->socket, msg.buf+msg.off, msg.size-msg.off)) < 0) {
-                        printf("shell: write: error writing\n");
-                        close_shell(p_shell);
-                        p_shell= nullptr;
-                        break;
-                    }
-                    if(n == (msg.size-msg.off)) {
-                        // all written, so remove from queue
-                        delete [] msg.buf;
-                        xQueueReceive(p_shell->tx_queue, &msg, 0);
-                    }else{
-                        // can't write anymore at the moment try again next time
-                        msg.off += n;
-                        break;
-                    }
-                }
-                if(p_shell == nullptr) break;
+                if(!process_writes(p_shell)) break;
+
                 if(uxQueueMessagesWaiting(p_shell->tx_queue) == 0) {
                     // if nothing left to write don't select on write ready anymore
                     p_shell->need_write= false;
@@ -289,8 +296,15 @@ static void shell_thread(void *arg)
                         close_shell(p_shell);
                         break;
                     }
-                    // FIXME this can block which would then also block any output that the command thread needs to make
-                    process_command_buffer(n, buf, p_shell->os, p_shell->line, p_shell->cnt, p_shell->discard);
+                    // this could block which would then also block any output that the command thread needs to make
+                    // so tell it to not wait, and if it returns false it means it gave up waiting
+                    // so process writes while waiting
+                    if(!process_command_buffer(n, buf, p_shell->os, p_shell->line, p_shell->cnt, p_shell->discard, false)) {
+                        // process any writes, if the shell is closed here we may lose the last command sent
+                        if(!process_writes(p_shell)) break;
+                        // and try to resend
+                        send_message_queue(p_shell->line, p_shell->os, false);
+                    }
                 } else {
                     close_shell(p_shell);
                     break;

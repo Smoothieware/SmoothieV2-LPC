@@ -12,7 +12,7 @@ void register_startup(StartupFunc_t sf);
 
 // TODO may move to Dispatcher
 bool dispatch_line(OutputStream& os, const char *line);
-void process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, size_t& cnt, bool& discard);
+bool process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, size_t& cnt, bool& discard, bool wait=true);
 
 // print string to all connected consoles
 void print_to_all_consoles(const char *);

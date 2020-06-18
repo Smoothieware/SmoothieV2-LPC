@@ -30,17 +30,18 @@ int get_message_queue_space()
 
 // can be called by several threads to submit messages to the dispatcher
 // the line is copied into the message so can be on the stack
-// This call will block until there is room in the queue
-// eg USB serial, UART serial, Network, SDCard player thread
-bool send_message_queue(char *pline, OutputStream *pos)
+// This call will block until there is room in the queue unless wait is false
+// in which case it will only wait for 100ms
+bool send_message_queue(char *pline, OutputStream *pos, bool wait)
 {
     comms_msg_t msg_buffer;
 	strcpy(msg_buffer.pline, pline);
 	msg_buffer.pos= pos;
-	xQueueSend( queue_handle, ( void * )&msg_buffer, portMAX_DELAY);
-
-    return true;
+    TickType_t waitms = wait ? portMAX_DELAY : pdMS_TO_TICKS(100);
+	BaseType_t r= xQueueSend( queue_handle, ( void * )&msg_buffer, waitms);
+    return r == pdTRUE;
 }
+
 bool send_message_queue(char *pline, void *pos)
 {
 	return send_message_queue(pline, (OutputStream*)pos);
