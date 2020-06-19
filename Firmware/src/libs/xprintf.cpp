@@ -1,14 +1,16 @@
 #include <stdio.h>
 
 #include <tuple>
+#include <sstream>
 
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-extern "C" {
-
+using parg_t = std::tuple<char **, size_t, size_t*>;
+using farg_t = std::tuple<std::string*, FILE*, bool*>;
 static QueueHandle_t xPrintMutex;
 
+extern "C" {
 void setup_xprintf()
 {
     xPrintMutex= xSemaphoreCreateMutex();
@@ -34,7 +36,6 @@ int __wrap_printf(const char *fmt, ...)
     return count;
 }
 
-using parg_t = std::tuple<char **, size_t, size_t*>;
 static void my_stroutchar(void *arg, char c)
 {
     parg_t *a= static_cast<parg_t*>(arg);
@@ -89,16 +90,23 @@ int __wrap_vsprintf(char *str, const char *fmt, va_list ap)
 }
 
 #if 0
-using farg_t = std::tuple<char *, FILE*, bool*>;
+// this should work but is untested
 static void my_foutchar(void *arg, char c)
 {
     farg_t *a= static_cast<farg_t*>(arg);
-    char *b= std::get<0>(*a);
+    std::string *b= std::get<0>(*a);
     FILE *fp= std::get<1>(*a);
     bool *err= std::get<2>(*a);
-    if(*cnt < size) {
-        *(*s)++ = c;
-        ++(*cnt);
+    if(*err) return;
+
+    b->push_back(c);
+    size_t n= b->size();
+    if(n >= 1024) {
+        if(fwrite(b->data(), 1, n, fp) != n) {
+            *err= true;
+            return;
+        }
+        b->clear();
     }
 }
 
@@ -106,13 +114,21 @@ int __wrap_fprintf(FILE *fp, const char *fmt, ...)
 {
     va_list list;
     unsigned count;
-
+    std::string buf;
     va_start(list, fmt);
     bool err= false;
-    char buf[1024];
-    parg_t arg {buf, fp, &err};
+    farg_t arg {&buf, fp, &err};
     count = xvformat(my_foutchar, &arg, fmt, list);
     va_end(list);
+    if(err) return -1;
+
+    size_t n= buf.size();
+    if(n > 0) {
+        if(fwrite(buf.data(), 1, n, fp) != n) {
+            err= true;
+        }
+    }
+
     return err ? -1 : count;
 }
 #endif

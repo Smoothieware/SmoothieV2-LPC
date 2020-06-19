@@ -39,6 +39,8 @@ public:
 	bool is_closed() const { return closed; }
 	void set_done() { done= true; }
 	bool is_done() const { return done; }
+    void set_uploading(bool flg) { uploading= flg; }
+    bool is_uploading() const { return uploading; }
 
 private:
 	// Hack to allow us to create a ostream writing to a supplied write function
@@ -57,6 +59,7 @@ private:
 	FdBuf *fdbuf;
 	std::string prepending;
 	bool closed{false};
+	bool uploading{false};
 	struct {
 		bool append_nl: 1;
 		bool prepend_ok: 1;

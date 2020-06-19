@@ -47,9 +47,6 @@ struct query_t
 };
 static RingBuffer<struct query_t, 8> queries; // thread safe FIFO
 
-// set to true when M28 is in effect
-// FIXME needs to be os specific state
-static bool uploading = false;
 static FILE *upload_fp = nullptr;
 static std::string config_error_msg;
 
@@ -120,45 +117,6 @@ static bool load_config_override(OutputStream& os)
 // can be called by modules when in command thread context
 bool dispatch_line(OutputStream& os, const char *ln)
 {
-    // if in M28 mode then just save all incoming lines to the file until we get M29
-    if(uploading) {
-        // FIXME need to handle line numbers and checksums
-        if(strcmp(ln, "M29") == 0) {
-            // done uploading, close file
-            fclose(upload_fp);
-            upload_fp = nullptr;
-            uploading = false;
-            os.printf("Done saving file.\nok\n");
-            return true;
-        }
-        // just save the line to the file
-        if(upload_fp != nullptr) {
-            // write out line
-            if(fputs(ln, upload_fp) < 0 || fputc('\n', upload_fp) < 0) {
-                // we got an error
-                fclose(upload_fp);
-                upload_fp= nullptr;
-                os.printf("Error:error writing to file.\n");
-            }
-        }
-
-        os.printf("ok\n");
-        return true;
-    }
-
-    // handle save to file:- M28 filename
-    if(strncmp(ln, "M28 ", 4) == 0) {
-        const char *upload_filename = &ln[4];
-        upload_fp = fopen(upload_filename, "w");
-        if(upload_fp != nullptr) {
-            uploading = true;
-            os.printf("Writing to file: %s\nok\n", upload_filename);
-        } else {
-            os.printf("open failed, File: %s.\nok\n", upload_filename);
-        }
-        return true;
-    }
-
     // need a mutable copy
     std::string line(ln);
 
@@ -226,9 +184,47 @@ bool dispatch_line(OutputStream& os, const char *ln)
         }
     }
 
+    // if we are uploading (M28) just save entire line, we do this here to take advantage
+    // of the line resend if needed
+    if(os.is_uploading()) {
+        if(line == "M29") {
+            // done uploading, close file
+            fclose(upload_fp);
+            upload_fp = nullptr;
+            os.set_uploading(false);
+            os.printf("Done saving file.\nok\n");
+            return true;
+        }
+        // just save the line to the file
+        if(upload_fp != nullptr) {
+            // write out line
+            if(fputs(line.c_str(), upload_fp) < 0 || fputc('\n', upload_fp) < 0) {
+                // we got an error
+                fclose(upload_fp);
+                upload_fp= nullptr;
+                os.printf("Error:error writing to file.\n");
+            }
+        }
+        os.printf("ok\n");
+        return true;
+    }
+
     if(gcodes.empty()) {
         // if gcodes is empty then was a M110, just send ok
         os.puts("ok\n");
+        return true;
+    }
+
+    // handle save to file:- M28 filename
+    if(line.rfind("M28 ", 0) == 0) {
+        const char *upload_filename = line.substr(4).c_str();
+        upload_fp = fopen(upload_filename, "w");
+        if(upload_fp != nullptr) {
+            os.set_uploading(true);
+            os.printf("Writing to file: %s\nok\n", upload_filename);
+        } else {
+            os.printf("open failed, File: %s.\nok\n", upload_filename);
+        }
         return true;
     }
 
