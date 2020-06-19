@@ -487,8 +487,12 @@ extern "C" void vApplicationMallocFailedHook( void )
     for( ;; );
 }
 
+extern "C" void setup_xprintf();
+
 int main()   //int argc, char *argv[])
 {
+    setup_xprintf();
+
     //HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
     NVIC_SetPriorityGrouping( 0 );
 

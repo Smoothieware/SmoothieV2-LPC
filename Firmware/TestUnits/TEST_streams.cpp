@@ -3,6 +3,7 @@
 #include <set>
 #include <tuple>
 #include <vector>
+#include <cstring>
 
 #include "OutputStream.h"
 #include "prettyprint.hpp"
@@ -23,6 +24,24 @@ REGISTER_TEST(StreamsTest, stringstream)
 	oss2.write("hello", 5);
 
 	TEST_ASSERT_STRING_S(oss2.str().c_str(), "hello");
+}
+
+REGISTER_TEST(StreamsTest, xprintf)
+{
+	printf("Hello %s\n", "xprintf");
+	char buf[32]{0};
+	int n= snprintf(buf, 31, "%s", "This is a test");
+	TEST_ASSERT_EQUAL_INT(14, n);
+	TEST_ASSERT_STRING_S(buf, "This is a test");
+
+	char *str= new char[25];
+	*str= '\0';
+	strcpy(str, "12345678901234567890");
+	n= snprintf(buf, 10, "%s", str);
+	TEST_ASSERT_EQUAL_INT(20, n);
+	TEST_ASSERT_STRING_S(buf, "123456789");
+
+
 }
 
 REGISTER_TEST(StreamsTest, cout)
@@ -61,10 +80,10 @@ REGISTER_TEST(StreamsTest, OutputStream_sstream)
 {
 	std::ostringstream oss;
 	OutputStream os(&oss);
-	os.printf("hello world");
+	os.printf("hello world: %1.1f", 1.2F);
 	printf("oss = %s\n", oss.str().c_str());
 	std::cout << oss.str() << "\n";
-	TEST_ASSERT_EQUAL_STRING("hello world", oss.str().c_str());
+	TEST_ASSERT_EQUAL_STRING("hello world: 1.2", oss.str().c_str());
 	// also test cout
 	OutputStream os2(&std::cout);
 	os2.printf("hello world from cout OutputStream\n");
