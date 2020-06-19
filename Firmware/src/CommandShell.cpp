@@ -1283,7 +1283,8 @@ bool CommandShell::reset_cmd(std::string& params, OutputStream& os)
     HELP("reset board");
     os.printf("Reset will occur in 5 seconds, make sure to disconnect before that\n");
     vTaskDelay(pdMS_TO_TICKS(5000));
-    *(volatile int*)0x40053100 = 1; // reset core
+    //*(volatile int*)0x40053100 = 1; // reset core
+    Chip_RGU_TriggerReset(RGU_CORE_RST); // reset core
     return true;
 }
 

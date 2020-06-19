@@ -132,10 +132,23 @@ bool dispatch_line(OutputStream& os, const char *ln)
 
     // map some special M codes to commands as they violate the gcode spec and pass a string parameter
     // M23, M32, M117, M30 => m23, m32, m117, rm and handle as a command
+    // also M28
     if(line.rfind("M23 ", 0) == 0) line[0] = 'm';
     else if(line.rfind("M30 ", 0) == 0) line.replace(0, 3, "rm");   // make into an rm command
     else if(line.rfind("M32 ", 0) == 0) line[0] = 'm';
     else if(line.rfind("M117 ", 0) == 0) line[0] = 'm';
+    else if(line.rfind("M28 ", 0) == 0) {
+        // handle save to file:- M28 filename
+        const char *upload_filename = line.substr(4).c_str();
+        upload_fp = fopen(upload_filename, "w");
+        if(upload_fp != nullptr) {
+            os.set_uploading(true);
+            os.printf("Writing to file: %s\nok\n", upload_filename);
+        } else {
+            os.printf("open failed, File: %s.\nok\n", upload_filename);
+        }
+        return true;
+    }
 
     // see if a command
     if(islower(line[0]) || line[0] == '$') {
@@ -165,23 +178,23 @@ bool dispatch_line(OutputStream& os, const char *ln)
             // line failed checksum, send resend request
             os.printf("rs N%d\n", gp.get_line_number() + 1);
             return true;
-
-        }else {
-            auto& g= gcodes.back();
-            if(g.has_error()) {
-                // Word parse Error
-                if(THEDISPATCHER->is_grbl_mode()) {
-                    os.printf("error:gcode parse failed %s - %s\n", g.get_error_message(), line.c_str());
-                }else{
-                    os.printf("// WARNING gcode parse failed %s - %s\n", g.get_error_message(), line.c_str());
-                }
-                // TODO add option to HALT in this case
-            }else{
-                // this shouldn't happen
-                printf("WARNING: parse returned false but no error\n");
-            }
-            gcodes.pop_back();
         }
+
+        auto& g= gcodes.back();
+        // we have to check for certain gcodes which are known to violate spec (eg M28)
+        if(g.has_error()) {
+            // Word parse Error
+            if(THEDISPATCHER->is_grbl_mode()) {
+                os.printf("error:gcode parse failed %s - %s\n", g.get_error_message(), line.c_str());
+            }else{
+                os.printf("// WARNING gcode parse failed %s - %s\n", g.get_error_message(), line.c_str());
+            }
+            // TODO add option to HALT in this case
+        }else{
+            // this shouldn't happen
+            printf("WARNING: parse returned false but no error\n");
+        }
+        gcodes.pop_back();
     }
 
     // if we are uploading (M28) just save entire line, we do this here to take advantage
@@ -212,19 +225,6 @@ bool dispatch_line(OutputStream& os, const char *ln)
     if(gcodes.empty()) {
         // if gcodes is empty then was a M110, just send ok
         os.puts("ok\n");
-        return true;
-    }
-
-    // handle save to file:- M28 filename
-    if(line.rfind("M28 ", 0) == 0) {
-        const char *upload_filename = line.substr(4).c_str();
-        upload_fp = fopen(upload_filename, "w");
-        if(upload_fp != nullptr) {
-            os.set_uploading(true);
-            os.printf("Writing to file: %s\nok\n", upload_filename);
-        } else {
-            os.printf("open failed, File: %s.\nok\n", upload_filename);
-        }
         return true;
     }
 
