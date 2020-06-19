@@ -83,8 +83,38 @@ int __wrap_vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
     return count;
 }
 
-// int __wrap_vsprintf(char *str, const char *fmt, va_list ap)
-// {
-//     return __wrap_vsnprintf(str, 1000000, fmt, ap);
-// }
+int __wrap_vsprintf(char *str, const char *fmt, va_list ap)
+{
+    return __wrap_vsnprintf(str, 1000000, fmt, ap);
+}
+
+#if 0
+using farg_t = std::tuple<char *, FILE*, bool*>;
+static void my_foutchar(void *arg, char c)
+{
+    farg_t *a= static_cast<farg_t*>(arg);
+    char *b= std::get<0>(*a);
+    FILE *fp= std::get<1>(*a);
+    bool *err= std::get<2>(*a);
+    if(*cnt < size) {
+        *(*s)++ = c;
+        ++(*cnt);
+    }
+}
+
+int __wrap_fprintf(FILE *fp, const char *fmt, ...)
+{
+    va_list list;
+    unsigned count;
+
+    va_start(list, fmt);
+    bool err= false;
+    char buf[1024];
+    parg_t arg {buf, fp, &err};
+    count = xvformat(my_foutchar, &arg, fmt, list);
+    va_end(list);
+    return err ? -1 : count;
+}
+#endif
+
 }

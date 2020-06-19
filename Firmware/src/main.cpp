@@ -134,7 +134,7 @@ bool dispatch_line(OutputStream& os, const char *ln)
         // just save the line to the file
         if(upload_fp != nullptr) {
             // write out line
-            if(fprintf(upload_fp, "%s\n", ln) < 0) {
+            if(fputs(ln, upload_fp) < 0 || fputc('\n', upload_fp) < 0) {
                 // we got an error
                 fclose(upload_fp);
                 upload_fp= nullptr;

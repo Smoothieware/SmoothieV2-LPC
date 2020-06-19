@@ -35,18 +35,3 @@ bool GCode::dump(OutputStream &o) const
 	return true;
 }
 
-bool GCode::dump(FILE *fp) const
-{
-	if(fprintf(fp, "%s%u", is_g?"G":is_m?"M":"", code) < 0) return false;
-	if(subcode != 0) {
-		if(fprintf(fp, ".%u",  subcode) < 0) return false;
-	}
-	if(fprintf(fp, " ") < 0) return false;
-	for(auto& i : args) {
-		if(fprintf(fp, "%c%1.5f ", i.first, i.second) < 0) return false;
-	}
-	if(fprintf(fp, "\n") < 0) return false;
-
-	return true;
-}
-
