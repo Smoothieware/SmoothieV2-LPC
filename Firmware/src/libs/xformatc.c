@@ -16,14 +16,14 @@
  * - HCS08 with Freescale compiler.
  *
  * - SDCC (Z80 and 8051)
- * 
+ *
  * @author	Mario Viara
- * 
- * 
+ *
+ *
  * @copyright	Copyright Mario Viara 2014	- License Open Source (LGPL)
  * This is a free software and is opened for education, research and commercial
  * developments under license policy of following terms:
- * 
+ *
  * - This is a free software and there is NO WARRANTY.
  * - No restriction on use. You can use, modify and redistribute it for personal,
  *	 non-profit or commercial product UNDER YOUR RESPONSIBILITY.
@@ -132,7 +132,7 @@ struct param_s
 
 #endif
 
-	
+
 	/**
 	 * Current length of the output buffer
 	 */
@@ -210,7 +210,7 @@ struct param_s
 
 /**
  * Enum for the internal state machine
- */ 
+ */
 enum State
 {
 	/* Normal state outputting literal */
@@ -235,12 +235,12 @@ enum State
 	ST_SIZE = 6,
 
 	/* Just read the type specifier */
-	ST_TYPE = 7 
+	ST_TYPE = 7
 };
 
 /**
  * Enum for char class
- */ 
+ */
 enum CharClass
 {
 	/* Other char */
@@ -324,7 +324,7 @@ static const char *checkFloat(DOUBLE value)
 #endif
 
 #endif
-   
+
 /*
  * This table contains the next state for all char and it will be
  * generate using xformattable.c
@@ -332,20 +332,19 @@ static const char *checkFloat(DOUBLE value)
 
 static const unsigned char formatStates[] =
 {
-	0x06,0x00,0x00,0x06,0x00,0x01,0x00,0x00,
-	0x10,0x00,0x03,0x06,0x00,0x06,0x02,0x10,
-	0x04,0x45,0x45,0x45,0x45,0x05,0x05,0x05,
-	0x05,0x35,0x30,0x00,0x50,0x60,0x00,0x00,
-	0x00,0x20,0x28,0x38,0x50,0x50,0x00,0x00,
-	0x00,0x30,0x30,0x30,0x50,0x50,0x00,0x00,
-	0x08,0x20,0x20,0x28,0x20,0x20,0x20,0x00,
-	0x08,0x60,0x60,0x60,0x60,0x60,0x60,0x00,
-	0x00,0x70,0x78,0x78,0x78,0x70,0x78,0x00,
-	0x07,0x08,0x00,0x00,0x07,0x00,0x00,0x08,
-	0x08,0x00,0x00,0x08,0x00,0x08,0x00,0x00,
-	0x08,0x00,0x07
+        0x06,0x00,0x00,0x06,0x00,0x01,0x00,0x00,
+        0x10,0x00,0x03,0x06,0x00,0x06,0x02,0x10,
+        0x04,0x45,0x45,0x45,0x45,0x05,0x05,0x05,
+        0x05,0x35,0x30,0x00,0x50,0x60,0x00,0x00,
+        0x00,0x20,0x28,0x38,0x50,0x50,0x00,0x00,
+        0x00,0x30,0x30,0x30,0x50,0x50,0x00,0x00,
+        0x08,0x20,0x20,0x28,0x20,0x20,0x20,0x00,
+        0x08,0x60,0x60,0x60,0x60,0x60,0x60,0x00,
+        0x00,0x70,0x78,0x78,0x78,0x70,0x78,0x08,
+        0x07,0x08,0x00,0x00,0x07,0x00,0x00,0x08,
+        0x08,0x00,0x00,0x08,0x00,0x08,0x00,0x00,
+        0x08,0x00,0x07
 };
-
 
 static const char ms_digits[] = "0123456789abcdef";
 
@@ -406,14 +405,14 @@ U2A(ullong2a,unsigned LONGLONG,llvalue)
 
 /**
  * Printf like using variable arguments.
- * 
+ *
  * @param outchar - Pointer to the function to output one new char.
  * @param arg	- Argument for the output function.
  * @param fmt	- Format options for the list of parameters.
  * @param ...	- Arguments
  *
  * @return The number of char emitted.
- * 
+ *
  * @see xvformat
  */
 unsigned xformat(void (*outchar)(void *,char),void *arg,const char * fmt,...)
@@ -498,15 +497,15 @@ static unsigned outChars(void (*myoutchar)(void *arg,char),void *arg,char ch,int
  * Printf like format function.
  *
  * General format :
- * 
+ *
  * %[width][.precision][flags]type
  *
  * - width Is the minimum size of the field.
- * 
+ *
  * - precision Is the maximum size of the field.
- * 
+ *
  * Supported flags :
- * 
+ *
  * - l	With integer number the argument will be of type long.
  * - ll With integer number the argument will be of type long long.
  * -	Space for positive integer a space will be added before.
@@ -515,9 +514,9 @@ static unsigned outChars(void (*myoutchar)(void *arg,char),void *arg,char ch,int
  * - #	A prefix will be printed (o for octal,0x for hex,0b for binary)
  * - 0	Value will be padded with zero (default is spacwe)
  * - -	Left justify as default filed have rigth justification.
- * 
+ *
  * Supported type :
- * 
+ *
  * - s	Null terminated string of char.
  * - S	Null terminated string of char in upper case.
  * - i	Integer number.
@@ -544,7 +543,7 @@ unsigned xvformat(void (*outchar)(void *,char),void *arg,const char * fmt,va_lis
 	XCFG_FORMAT_STATIC struct param_s param;
 	int i;
 	char c;
-	
+
 #if XCFG_FORMAT_VA_COPY
 	va_list args;
 
@@ -672,7 +671,7 @@ unsigned xvformat(void (*outchar)(void *,char),void *arg,const char * fmt,va_lis
 						/*lint -fallthrough */
 
 						/*
-						 * Pointer 
+						 * Pointer
 						 */
 					case	'p':
 						param.flags &= (unsigned)~FLAG_TYPE_MASK;
@@ -793,6 +792,7 @@ unsigned xvformat(void (*outchar)(void *,char),void *arg,const char * fmt,va_lis
 						/**
 						 * Floating point number
 						 */
+					case 'g':
 					case 'f':
 						if (!(param.flags & FLAG_PREC))
 						{
@@ -888,7 +888,7 @@ unsigned xvformat(void (*outchar)(void *,char),void *arg,const char * fmt,va_lis
 								else
 									param.values.lvalue = (unsigned LONG)va_arg(args,unsigned long);
 								break;
-								
+
 							case FLAG_TYPE_INT:
 								if (param.flags & FLAG_DECIMAL)
 									param.values.lvalue = (LONG)va_arg(args,int);
@@ -924,7 +924,7 @@ unsigned xvformat(void (*outchar)(void *,char),void *arg,const char * fmt,va_lis
 								param.flags |= FLAG_MINUS;
 							}
 						}
-						else 
+						else
 						{
 #endif
 							if ((LONG)param.values.lvalue < 0)
@@ -1001,7 +1001,7 @@ unsigned xvformat(void (*outchar)(void *,char),void *arg,const char * fmt,va_lis
 				param.count += outBuffer(outchar,arg,param.out,param.length,param.flags & FLAG_UPPER);
 				if (param.flags & FLAG_LEFT)
 					param.count += outChars(outchar,arg,param.pad,param.width);
-				
+
 		}
 	}
 

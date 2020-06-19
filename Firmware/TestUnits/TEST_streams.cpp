@@ -47,7 +47,8 @@ REGISTER_TEST(StreamsTest, xprintf)
 REGISTER_TEST(StreamsTest, cout)
 {
 	std::cout << "Hello World!" << "\n";
-	std::cout << "Hello World, " << 1.234F << " that was a number\n";
+	std::cout << "Hello World, " << 1.234F << " that was a float 1.234\n";
+	std::cout << "Hello World, " << 1234 << " that was an int 1234\n";
 	std::set<int> s;
 	s.insert(1);
 	s.insert(2);
