@@ -14,7 +14,7 @@ define hookpost-load
 end
 
 define hook-load
-monitor reset
+    monitor reset
 end
 
 # Command to enable/disable catching of Cortex-M faults as soon as they occur.
