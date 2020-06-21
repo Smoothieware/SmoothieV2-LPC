@@ -44,7 +44,10 @@
  ****************************************************************************/
 static xTaskHandle xTaskToNotify = NULL;
 
-static USBD_HANDLE_T g_hUsb;
+USBD_HANDLE_T g_hUsb;
+
+extern  ErrorCode_t DFU_reset_handler(USBD_HANDLE_T hUsb);
+extern  bool setup_dfu();
 
 /* Endpoint 0 patch that prevents nested NAK event processing */
 static uint32_t g_ep0RxBusy = 0;/* flag indicating whether EP0 OUT/RX buffer is busy. */
@@ -160,6 +163,8 @@ size_t read_cdc(char *buf, size_t len)
 
 // Setup CDC, then process the incoming buffers
 __attribute__ ((section (".bss.$RAM3"))) static char usb_cdc_buffer[USB_STACK_MEM_SIZE];
+USBD_API_INIT_PARAM_T usb_param;
+
 int setup_cdc(xTaskHandle h)
 {
     // check memory is on 4KB aligned memory
@@ -168,7 +173,6 @@ int setup_cdc(xTaskHandle h)
         return 0;
     }
 
-    USBD_API_INIT_PARAM_T usb_param;
     USB_CORE_DESCS_T desc;
     ErrorCode_t ret = LPC_OK;
     USB_CORE_CTRL_T *pCtrl;
@@ -188,6 +192,7 @@ int setup_cdc(xTaskHandle h)
     usb_param.max_num_ep = 4;
     usb_param.mem_base = (uint32_t) &usb_cdc_buffer; // USB_STACK_MEM_BASE; AHB32 RAM3
     usb_param.mem_size = USB_STACK_MEM_SIZE;
+    usb_param.USB_Reset_Event = DFU_reset_handler;
 
     /* Set the USB descriptors */
     desc.device_desc = (uint8_t *) USB_DeviceDescriptor;
@@ -203,7 +208,7 @@ int setup_cdc(xTaskHandle h)
      */
     desc.high_speed_desc = USB_FsConfigDescriptor;
     desc.full_speed_desc = USB_FsConfigDescriptor;
-    desc.device_qualifier = 0;
+    desc.device_qualifier = 0;f
 #endif
 
     /* USB Initialization */
@@ -224,6 +229,11 @@ int setup_cdc(xTaskHandle h)
         /* Init VCOM interface */
         ret = vcom_init(g_hUsb, &desc, &usb_param);
         if (ret == LPC_OK) {
+            // we also setup DFU here as it depends on the cdc which sets up the USB
+            if(!setup_dfu()) {
+                printf("WARNING: DFU setup failed\n");
+            }
+
             /*  enable USB interrupts */
             NVIC_SetPriority(LPC_USB_IRQ, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
             NVIC_EnableIRQ(LPC_USB_IRQ);
@@ -244,8 +254,6 @@ void shutdown_cdc()
     //USBD_API->hw->Reset(g_hUsb);
     NVIC_DisableIRQ(LPC_USB_IRQ);
 }
-
-
 
 
 

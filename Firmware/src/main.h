@@ -15,7 +15,8 @@ bool dispatch_line(OutputStream& os, const char *line);
 bool process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line, size_t& cnt, bool& discard, bool wait=true);
 
 // print string to all connected consoles
-void print_to_all_consoles(const char *);
+extern "C" void print_to_all_consoles(const char *);
+
 // sleep for given ms, but don't block things like ?
 void safe_sleep(uint32_t ms);
 // get the vmotor and vfet voltages

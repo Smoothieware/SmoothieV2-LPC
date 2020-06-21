@@ -59,6 +59,11 @@ extern "C"
 #define USB_HS_MAX_BULK_PACKET  512		/*!< MAXP for HS bulk EPs used for building USBD ROM. DON'T CHANGE. */
 #define USB_DFU_XFER_SIZE       2048	/*!< Max DFU transfer size used for building USBD ROM. DON'T CHANGE. */
 
+/* DFU boot definitions */
+#define DFU_MAX_IMAGE_LEN     (32 * 1024)
+#define DFU_XFER_BLOCK_SZ     (USB_DFU_XFER_SIZE)
+#define DFU_MAX_BLOCKS        (DFU_MAX_IMAGE_LEN / DFU_XFER_BLOCK_SZ)
+
 /* Manifest constants to select appropriate USB instance */
 #ifdef USE_USB0
 #define LPC_USB_BASE            LPC_USB0_BASE
@@ -78,8 +83,8 @@ extern "C"
 /* Manifest constants defining interface numbers and endpoints used by a
    particular interface in this application.
  */
-#define USB_CDC_CIF_NUM         0
-#define USB_CDC_DIF_NUM         1
+#define USB_CDC_CIF_NUM         1
+#define USB_CDC_DIF_NUM         2
 #define USB_CDC_IN_EP           0x81
 #define USB_CDC_OUT_EP          0x01
 #define USB_CDC_INT_EP          0x83

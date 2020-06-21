@@ -79,6 +79,7 @@ bool CommandShell::initialize()
     THEDISPATCHER->add_handler( "break", std::bind( &CommandShell::break_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "reset", std::bind( &CommandShell::reset_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "flash", std::bind( &CommandShell::flash_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "dfu", std::bind( &CommandShell::dfu_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "ed", std::bind( &CommandShell::edit_cmd, this, _1, _2) );
 
     THEDISPATCHER->add_handler(Dispatcher::MCODE_HANDLER, 20, std::bind(&CommandShell::m20_cmd, this, _1, _2));
@@ -1330,6 +1331,20 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 
     // should never get here
     __asm("bkpt #0");
+    return true;
+}
+
+extern "C" void DFU_Tasks(void);
+
+bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
+{
+    HELP("enable dfu upload");
+
+    os.printf("NOTE: A reset will be required to resume if dfu-util is not run\n");
+
+    // call the DFU tasks, does not return as it will have turned off the USB anyway
+    DFU_Tasks();
+
     return true;
 }
 

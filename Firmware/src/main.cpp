@@ -393,6 +393,7 @@ static void usb_comms(void *)
         printf("FATAL: CDC setup failed\n");
         return;
     }
+
     // we set this to 1024 so ymodem will run faster (but if not needed then it can be as low as 256)
     const size_t usb_rx_buf_sz= 1024;
     char *usb_rx_buf= (char *)_RAM3->alloc(usb_rx_buf_sz);
