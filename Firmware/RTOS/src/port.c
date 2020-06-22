@@ -116,7 +116,7 @@ debugger. */
  * generate the tick interrupt.
  */
 void vPortSetupTimerInterrupt( void );
-
+void vPortStopTickTimer( void );
 /*
  * Exception handlers.
  */
@@ -394,9 +394,7 @@ BaseType_t xPortStartScheduler( void )
 
 void vPortEndScheduler( void )
 {
-	/* Not implemented in ports where there is nothing to return to.
-	Artificially force an assert. */
-	configASSERT( uxCriticalNesting == 1000UL );
+	vPortStopTickTimer();
 }
 /*-----------------------------------------------------------*/
 
@@ -694,6 +692,14 @@ __attribute__(( weak )) void vPortSetupTimerInterrupt( void )
 	/* Configure SysTick to interrupt at the requested rate. */
 	portNVIC_SYSTICK_LOAD_REG = ( configSYSTICK_CLOCK_HZ / configTICK_RATE_HZ ) - 1UL;
 	portNVIC_SYSTICK_CTRL_REG = ( portNVIC_SYSTICK_CLK_BIT | portNVIC_SYSTICK_INT_BIT | portNVIC_SYSTICK_ENABLE_BIT );
+}
+
+void vPortStopTickTimer(void)
+{
+	/* Stop and clear the SysTick. */
+	portNVIC_SYSTICK_CTRL_REG = 0UL;
+	portNVIC_SYSTICK_CURRENT_VALUE_REG = 0UL;
+	//portENABLE_INTERRUPTS(); // set back to what it was
 }
 /*-----------------------------------------------------------*/
 

@@ -9,11 +9,38 @@
 #include <sys/times.h>
 #include <fcntl.h>
 
+#include "board_api.h"
+
 /*
  * Map newlib calls to fflib
  */
 
 #define __debugbreak()  { __asm volatile ("bkpt #0"); }
+
+int _write(int file, char *buffer, int length)
+{
+    if(file < 3) {
+        // Note this will block until all sent
+        for (int i = 0; i < length; ++i) {
+            Board_UARTPutChar(buffer[i]);
+        }
+    }
+
+    return length;
+}
+
+int _read(int file, char *buffer, int length)
+{
+    if(file < 3) {
+        // Note this can return less than request or even 0
+        for (int i = 0; i < length; ++i) {
+            buffer[i]= Board_UARTGetChar();
+        }
+
+    }
+
+    return length;
+}
 
 int _getpid(void)
 {

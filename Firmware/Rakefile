@@ -321,8 +321,8 @@ end
 
 # create the dfu flash loader object from the binary
 # TODO do this for any bins in standalonebins directory
-file "#{OBJDIR}/dfuloader.o" => ['./standalonebins/periph_blinky.bin'] do |t|
-  puts "handling dfu loader #{t.source} -> #{t.name}"
+file "#{OBJDIR}/flashloader.o" => ['./standalonebins/flashloader.bin'] do |t|
+  puts "handling flash loader #{t.source} -> #{t.name}"
   sh "#{OBJCOPY} -I binary -O elf32-littlearm -B arm --readonly-text --rename-section .data=.rodata.dfuloader #{t.source} #{t.name}"
 end
 
@@ -331,9 +331,9 @@ file "#{OBJDIR}/#{PROG}.bin" => ["#{OBJDIR}/#{PROG}.elf"] do |t|
   sh "#{OBJCOPY} -O binary #{OBJDIR}/#{PROG}.elf #{OBJDIR}/#{PROG}.bin"
 end
 
-file "#{OBJDIR}/#{PROG}.elf" => ["#{OBJDIR}/libhal.a", "#{OBJDIR}/dfuloader.o"] + OBJ do |t|
+file "#{OBJDIR}/#{PROG}.elf" => ["#{OBJDIR}/libhal.a", "#{OBJDIR}/flashloader.o"] + OBJ do |t|
   puts "Linking #{t.name} to #{SPIFI ? 'SPIFI' : 'FLASH'}"
-  sh "#{$using_cpp ? LDCPP : LD} #{OBJ} #{OBJDIR}/dfuloader.o -L#{OBJDIR} -lhal #{LDFLAGS} -o #{t.name}"
+  sh "#{$using_cpp ? LDCPP : LD} #{OBJ} #{OBJDIR}/flashloader.o -L#{OBJDIR} -lhal #{LDFLAGS} -o #{t.name}"
 end
 
 file "#{OBJDIR}/libhal.a" => HAL_OBJ do |t|

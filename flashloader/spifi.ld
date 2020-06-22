@@ -1,11 +1,11 @@
 INCLUDE "spifi_memory.ld"
 
-ENTRY(flashloaderinit)
+ENTRY(ResetISR)
 
 SECTIONS
 {
     /* MAIN TEXT SECTION */
-    .flashtext : ALIGN(4)
+    .text : ALIGN(4)
     {
         FILL(0xff)
         __vectors_start__ = ABSOLUTE(.) ;
@@ -30,9 +30,9 @@ SECTIONS
         /* End of Global Section Table */
 
         *(.after_vectors*)
-        *(.flash_text*)
 
-    } > SPIFI
+    } > RamLoc128
+
 
     .text : ALIGN(4)
     {
@@ -69,7 +69,7 @@ SECTIONS
             KEEP (*crtend.o(.dtors))
             . = ALIGN(4);
             /* End C++ */
-    } > RamLoc72 AT> SPIFI
+    } > RamLoc128
     /*
      * for exception handling/unwind - some Newlib functions (in common
      * with C++ and STDC++) use this.
@@ -77,14 +77,14 @@ SECTIONS
     .ARM.extab : ALIGN(4)
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } > RamLoc72 AT> SPIFI
+    } > RamLoc128
 
     __exidx_start = .;
 
     .ARM.exidx : ALIGN(4)
     {
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > SPIFI
+    } > RamLoc128
     __exidx_end = .;
 
     _etext = .;
@@ -101,7 +101,7 @@ SECTIONS
         *(.data.$RamLoc72*)
         . = ALIGN(4) ;
         PROVIDE(__end_data_RAM2 = .) ;
-     } > RamLoc72 AT>SPIFI
+     } > RamLoc72 AT>RamLoc128
     /* DATA section for RamAHB32 */
 
     .data_RAM3 : ALIGN(4)
@@ -114,7 +114,7 @@ SECTIONS
         *(.data.$RamAHB32*)
         . = ALIGN(4) ;
         PROVIDE(__end_data_RAM3 = .) ;
-     } > RamAHB32 AT>SPIFI
+     } > RamAHB32 AT>RamLoc128
     /* DATA section for RamAHB16 */
 
     .data_RAM4 : ALIGN(4)
@@ -127,7 +127,7 @@ SECTIONS
         *(.data.$RamAHB16*)
         . = ALIGN(4) ;
         PROVIDE(__end_data_RAM4 = .) ;
-     } > RamAHB16 AT>SPIFI
+     } > RamAHB16 AT>RamLoc128
     /* DATA section for RamAHB_ETB16 */
 
     .data_RAM5 : ALIGN(4)
@@ -140,7 +140,7 @@ SECTIONS
         *(.data.$RamAHB_ETB16*)
         . = ALIGN(4) ;
         PROVIDE(__end_data_RAM5 = .) ;
-     } > RamAHB_ETB16 AT>SPIFI
+     } > RamAHB_ETB16 AT>RamLoc128
     /* MAIN DATA SECTION */
     .uninit_RESERVED : ALIGN(4)
     {
@@ -159,7 +159,7 @@ SECTIONS
        *(.data*)
        . = ALIGN(4) ;
        _edata = . ;
-    } > RamLoc72 AT>SPIFI
+    } > RamLoc128 AT>RamLoc128
 
     /* BSS section for RamLoc72 */
     .bss_RAM2 : ALIGN(4)
@@ -210,7 +210,7 @@ SECTIONS
         . = ALIGN(4) ;
         _ebss = .;
         PROVIDE(end = .);
-    } > RamLoc72
+    } > RamLoc128
 
     /* NOINIT section for RamLoc72 */
     .noinit_RAM2 (NOLOAD) : ALIGN(4)
@@ -253,7 +253,7 @@ SECTIONS
         _end_noinit = .;
     } > RamLoc128
 
-    PROVIDE(__HeapBase = __base_RAM3);
+    PROVIDE(__HeapBase = DEFINED(__user_heap_base) ? __user_heap_base : .);
     PROVIDE(_vStackTop = DEFINED(__user_stack_top) ? __user_stack_top : __top_RamLoc128 - 0);
 
     /* ## Create checksum value (used in startup) ## */

@@ -1292,6 +1292,10 @@ bool CommandShell::reset_cmd(std::string& params, OutputStream& os)
 #include "uart_comms.h"
 extern "C" void shutdown_sdmmc();
 extern "C" void shutdown_cdc();
+extern uint8_t _binary___standalonebins_flashloader_bin_start[];
+extern uint8_t _binary___standalonebins_flashloader_bin_end[];
+extern uint8_t _binary___standalonebins_flashloader_bin_size[];
+
 bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 {
     HELP("flash image - flash flashme.bin");
@@ -1317,18 +1321,27 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
     shutdown_sdmmc();
     shutdown_cdc();
     vTaskSuspendAll();
-    //vTaskEndScheduler();
+    vTaskEndScheduler();
+    taskENABLE_INTERRUPTS(); // we want to set the base pri back
     __disable_irq();
     //NVIC_DisableIRQ(USB0_IRQn);
     //NVIC_DisableIRQ(SysTick_IRQn);
 
-    // get start address of the flash loader
-    uint32_t p = *(uint32_t*)0x14700004;
-    void (*runat)(void) = *(void (*)())p;
-    os.printf("Executing at %p\n", runat);
-    stop_uart();
+    // binary file compiled to load and run at 0x10000000
+    // this program will flash the flashm.bin found on the sdcard then reset
+    uint8_t *data_start     = _binary___standalonebins_flashloader_bin_start;
+    //uint8_t *data_end       = _binary___standalonebins_flashloader_bin_end;
+    size_t data_size  = (size_t)_binary___standalonebins_flashloader_bin_size;
+    // copy to RAM
+    uint32_t *addr= (uint32_t*)0x10000000;
+    // copy to execution area at addr
+    memcpy(addr, data_start, data_size);
 
-    runat();
+    /* get and set the stack pointer of the new image */
+    __set_MSP(*addr++);
+
+    /* jump to new image's execution area */
+    ((void (*)(void)) * addr)();
 
     // should never get here
     __asm("bkpt #0");
@@ -1336,14 +1349,9 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 }
 
 extern "C" void DFU_Tasks(void);
-extern uint8_t _binary___periph_blinky_bin_start[];
-extern uint8_t _binary___periph_blinky_bin_end[];
-extern uint8_t _binary___periph_blinky_bin_size[];
-
 bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 {
     HELP("enable dfu upload");
-
 
      // stop stuff
     f_unmount("sd");
@@ -1352,16 +1360,17 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
     Adc::stop();
     shutdown_sdmmc();
     shutdown_cdc();
-    vTaskSuspendAll();
-    //vTaskEndScheduler();
-    __disable_irq();
     //NVIC_DisableIRQ(USB0_IRQn);
+    vTaskSuspendAll();
+    vTaskEndScheduler();
     //NVIC_DisableIRQ(SysTick_IRQn);
+    taskENABLE_INTERRUPTS(); // we want to set the base pri back
+    __disable_irq();
 
     // binary file compiled to load and run at 0x10000000
-    uint8_t *data_start     = _binary___periph_blinky_bin_start;
-    //uint8_t *data_end       = _binary___periph_blinky_bin_end;
-    size_t data_size  = (size_t)_binary___periph_blinky_bin_size;
+    uint8_t *data_start     = _binary___standalonebins_flashloader_bin_start;
+    //uint8_t *data_end       = _binary___standalonebins_flashloader_bin_end;
+    size_t data_size  = (size_t)_binary___standalonebins_flashloader_bin_size;
     // copy to RAM
     uint32_t *addr= (uint32_t*)0x10000000;
     // copy to execution area at addr

@@ -130,7 +130,7 @@ SRCS.each do |s|
   FileUtils.mkdir_p(d) unless Dir.exists?(d)
 end
 
-include_dirs = ["./lpc_chip_43xx/inc", "./sdmmc/inc", "./sdmmc/fatfs/inc", "./sdmmc/flashloader/inc"]
+include_dirs = ["./lpc_chip_43xx/inc", "./lpc_board/inc", "./sdmmc/inc", "./sdmmc/fatfs/inc", "./sdmmc/flashloader/inc"]
 
 sys_include_dirs = []
 
@@ -138,7 +138,7 @@ sys_include_dirs = []
 
 INCLUDE = (include_dirs).collect { |d| "-I#{d}" }.join(" ") # + " " + (sys_include_dirs).collect { |d| "-isystem #{d}" }.join(" ")
 
-defines = %w(-D__USE_LPCOPEN -DCORE_M4 -D__CODE_RED -D__NEWLIB__ -DCPP_USE_HEAP -D__LPC43XX__ -D__MULTICORE_NONE)
+defines = %w(-DDEBUG_ENABLE -D__USE_LPCOPEN -DCORE_M4 -D__CODE_RED -D__NEWLIB__ -DCPP_USE_HEAP -D__LPC43XX__ -D__MULTICORE_NONE)
 if DEBUG
   defines << "-DDEBUG"
 end
@@ -147,13 +147,12 @@ end
 defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" "
 if TARGET == 'Bambino'
   defines << '-DBOARD_BAMBINO'
-  defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
+
 elsif TARGET == 'Minialpha'
   defines << '-DBOARD_MINIALPHA'
-  defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
+
 elsif TARGET == 'Primealpha'
   defines << '-DBOARD_PRIMEALPHA'
-  defines << '-DSTRING_CONFIG_H=\"string-config-primealpha.h\"'
   defines << '-DFLASH16BIT' unless SPIFI
 else
   raise("Error unhandled target")

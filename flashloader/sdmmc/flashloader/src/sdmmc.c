@@ -33,6 +33,7 @@
 #include <stdio.h>
 
 #include "board.h"
+#include "board_api.h"
 #include "chip.h"
 #include "rtc.h"
 #include "ff.h"
@@ -43,7 +44,7 @@
  ****************************************************************************/
 
 static void debugstr(const char *str) {
-	Chip_UART_SendBlocking(LPC_USART0, str, strlen(str));
+	DEBUGSTR(str);
 }
 
 /* buffer size (in byte) for R/W operations */
@@ -56,8 +57,8 @@ static uint32_t Buff[BUFFER_SIZE/sizeof(uint32_t)];
 static volatile UINT Timer = 0;		/* Performance timer (1kHz increment) */
 static volatile int32_t sdio_wait_exit = 0;
 
-const uint32_t ExtRateIn = 0;
-const uint32_t OscRateIn = 12000000;
+// const uint32_t ExtRateIn = 0;
+// const uint32_t OscRateIn = 12000000;
 
 
 /*****************************************************************************
@@ -134,7 +135,7 @@ static void App_SDMMC_Init()
 	sdcardinfo.card_info.msdelay_func = sdmmc_waitms;
 
 	/*  SD/MMC initialization */
-	//Board_SDMMC_Init();
+	Board_SDMMC_Init();
 
 	/* The SDIO driver needs to know the SDIO clock rate */
 	Chip_SDIF_Init(LPC_SDMMC);
@@ -190,12 +191,12 @@ void spifi_init(void) {
 
 	// when booting from SPIFI these pins are all enabled as SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_MODE_ZIF_DIS | SCU_MODE_FUNC3
 
-	// LPC_SCU->SFSP[0x3][3] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI CLK */
-	// LPC_SCU->SFSP[0x3][4] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI D3 */
-	// LPC_SCU->SFSP[0x3][5] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI D2 */
-	// LPC_SCU->SFSP[0x3][6] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI D1 */
-	// LPC_SCU->SFSP[0x3][7] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI D0 */
-	// LPC_SCU->SFSP[0x3][8] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI CS/SSEL */
+	LPC_SCU->SFSP[0x3][3] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI CLK */
+	LPC_SCU->SFSP[0x3][4] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI D3 */
+	LPC_SCU->SFSP[0x3][5] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI D2 */
+	LPC_SCU->SFSP[0x3][6] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI D1 */
+	LPC_SCU->SFSP[0x3][7] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI D0 */
+	LPC_SCU->SFSP[0x3][8] = (SCU_PINIO_FAST | SCU_MODE_FUNC3);	/* SPIFI CS/SSEL */
 
 	// enable FBCLK and change defaults
 
@@ -331,87 +332,18 @@ void spifi_4K_write(int address, int * copy) {
 	}
 }
 
-#ifdef BOARD_PRIMEALPHA
-static void Board_LED_Init()
-{
-    const PINMUX_GRP_T ledpinmuxing[] = {
-		/* Board LEDs */
-		{0x7, 4, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_12
-		{0x7, 5, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_13
-		{0x7, 6, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO3_14
-		{0xB, 6, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC4)}  // GPIO5_26
-	};
-	Chip_SCU_SetPinMuxing(ledpinmuxing, sizeof(ledpinmuxing) / sizeof(PINMUX_GRP_T));
-
-	// setup the 4 system leds
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 12);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 13);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 14);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 26);
-
-	/* Set initial states to off */
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 12, (bool) false);
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 13, (bool) false);
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 14, (bool) false);
-	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 26, (bool) false);
-}
-
-void Board_LED_Set(uint8_t LEDNumber, bool On)
-{
-	switch(LEDNumber) {
-		case 0: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 12, (bool)On); break;
-		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 13, (bool)On); break;
-		case 2: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 3, 14, (bool)On); break;
-		case 3: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 5, 26, (bool)On); break;
-	}
-}
-
-bool Board_LED_Test(uint8_t LEDNumber)
-{
-	switch(LEDNumber) {
-		case 0: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 12);
-		case 1: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 13);
-		case 2: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 14);
-		case 3: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 26);
-	}
-
-	return false;
-}
-
-void Board_LED_Toggle(uint8_t LEDNumber)
-{
-	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
-}
-#else
-static void Board_LED_Init(){}
-void Board_LED_Set(uint8_t LEDNumber, bool On){}
-bool Board_LED_Test(uint8_t LEDNumber){return false;}
-void Board_LED_Toggle(uint8_t LEDNumber){}
-#endif
-
-void flashloader()
+int main()
 {
 	FRESULT rc;		/* Result code */
 	UINT br;
 	char *cbuf = (char *) Buff;
 
-	Board_LED_Init();
-
+	/* Initialize board and chip */
 	SystemCoreClockUpdate();
+	Board_Init();
 
-	// do not need to do this if called from a running system
-	//Board_Init();
-
+	// init sdcard H/W
 	App_SDMMC_Init();
-
-    // Reenable interrupts
-	__enable_irq();
-
-	/* There is no need to initialize RTC here it is called by fs init
-	   but it takes long time hence doing it before calling f_open */
-	//debugstr("Initializing RTC (might take few seconds)...");
-	//rtc_initialize();
-	//debugstr("Done\r\n");
 
 	debugstr("Standalone flash loader\n");
 
@@ -424,7 +356,7 @@ void flashloader()
 	debugstr("Opening flashme.bin from SD Card...\n");
 	rc = f_open(&Fil, "flashme.bin", FA_READ);
 	if (rc) {
-		debugstr("no flashme.bin found\r\n");
+		debugstr("no flashme.bin found - reset in 5 seconds\r\n");
 		sdmmc_waitms(5000);
 		*(volatile int*)0x40053100 = 1; // reset core
 	}
@@ -483,96 +415,3 @@ void SysTick_IRQHandler(void)
 	// do nothing
 }
 
-//*****************************************************************************
-// Functions to carry out the initialization of RW and BSS data sections. These
-// are written as separate functions rather than being inlined within the
-// ResetISR() function in order to cope with MCUs with multiple banks of
-// memory.
-//*****************************************************************************
-__attribute__((section(".after_vectors")))
-void data_init(unsigned int romstart, unsigned int start, unsigned int len) {
-    unsigned int *pulDest = (unsigned int*) start;
-    unsigned int *pulSrc = (unsigned int*) romstart;
-    unsigned int loop;
-    for (loop = 0; loop < len; loop = loop + 4)
-        *pulDest++ = *pulSrc++;
-}
-
-__attribute__ ((section(".after_vectors")))
-void bss_init(unsigned int start, unsigned int len) {
-    unsigned int *pulDest = (unsigned int*) start;
-    unsigned int loop;
-    for (loop = 0; loop < len; loop = loop + 4)
-        *pulDest++ = 0;
-}
-
-//*****************************************************************************
-// The following symbols are constructs generated by the linker, indicating
-// the location of various points in the "Global Section Table". This table is
-// created by the linker via the Code Red managed linker script mechanism. It
-// contains the load address, execution address and length of each RW data
-// section and the execution and length of each BSS (zero initialized) section.
-//*****************************************************************************
-extern unsigned int __data_section_table;
-extern unsigned int __data_section_table_end;
-extern unsigned int __bss_section_table;
-extern unsigned int __bss_section_table_end;
-extern void _vStackTop(void);
-
-/**
- * @brief	Main routine for flashloader
- * @return	Nothing
- */
-__attribute__ ((used,section(".flash_text")))
-void flashloaderinit(void)
-{
-	// set stack pointer
-	__set_PSP((uint32_t)&_vStackTop-8);
-	__set_MSP((uint32_t)&_vStackTop-8);
-
-    volatile unsigned int *NVIC_ICPR = (unsigned int *) 0xE000E280;
-    unsigned int irqpendloop;
-    for (irqpendloop = 0; irqpendloop < 8; irqpendloop++) {
-        *(NVIC_ICPR + irqpendloop) = 0xFFFFFFFF;
-    }
-
-    // set vector to point to our handler
-    // SDIO_IRQHandler
-    uint32_t *pVectors= (uint32_t *)(0x10000000+(22*4));
-    *pVectors= (uint32_t)SDIO_IRQHandler;
-    uint32_t *p2Vectors= (uint32_t *)(0x10000000+(15*4));
-    *p2Vectors= (uint32_t)SysTick_IRQHandler;
-
-    //
-    // Copy the text and data sections from flash to SRAM.
-    //
-    unsigned int LoadAddr, ExeAddr, SectionLen;
-    unsigned int *SectionTableAddr;
-
-    // Load base address of Global Section Table
-    SectionTableAddr = &__data_section_table;
-
-    // Copy the data sections from flash to SRAM.
-    while (SectionTableAddr < &__data_section_table_end) {
-        LoadAddr = *SectionTableAddr++;
-        ExeAddr = *SectionTableAddr++;
-        SectionLen = *SectionTableAddr++;
-        data_init(LoadAddr, ExeAddr, SectionLen);
-    }
-    // At this point, SectionTableAddr = &__bss_section_table;
-    // Zero fill the bss segment
-    while (SectionTableAddr < &__bss_section_table_end) {
-        ExeAddr = *SectionTableAddr++;
-        SectionLen = *SectionTableAddr++;
-        bss_init(ExeAddr, SectionLen);
-    }
-
-    flashloader();
-}
-
-
-__attribute__ ((used,section(".isr_vector")))
-void *g_pfnVectors[] = {
- 	(void *)0x5555AAAAUL, // magic number
-    (void*)&flashloaderinit       // start address
-};
