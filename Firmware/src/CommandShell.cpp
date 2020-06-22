@@ -1344,10 +1344,6 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 {
     HELP("enable dfu upload");
 
-    // binary file compiled to load and run at 0x10000000
-    uint8_t *data_start     = _binary___periph_blinky_bin_start;
-    //uint8_t *data_end       = _binary___periph_blinky_bin_end;
-    size_t data_size  = (size_t)_binary___periph_blinky_bin_size;
 
      // stop stuff
     f_unmount("sd");
@@ -1362,6 +1358,10 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
     //NVIC_DisableIRQ(USB0_IRQn);
     //NVIC_DisableIRQ(SysTick_IRQn);
 
+    // binary file compiled to load and run at 0x10000000
+    uint8_t *data_start     = _binary___periph_blinky_bin_start;
+    //uint8_t *data_end       = _binary___periph_blinky_bin_end;
+    size_t data_size  = (size_t)_binary___periph_blinky_bin_size;
     // copy to RAM
     uint32_t *addr= (uint32_t*)0x10000000;
     // copy to execution area at addr
