@@ -319,14 +319,20 @@ task :version do
   $version = ' -D__GITVERSIONSTRING__=\"' + "#{v1[11..-1].chomp}-#{v2}".chomp + '\"'
 end
 
+# create the dfu flash loader object from the binary
+file "#{OBJDIR}/dfuloader.o" => ['./periph_blinky.bin'] do |t|
+  puts "handling dfu loader #{t.source} -> #{t.name}"
+  sh "#{OBJCOPY} -I binary -O elf32-littlearm -B arm --readonly-text --rename-section .data=.rodata.dfuloader #{t.source} #{t.name}"
+end
+
 file "#{OBJDIR}/#{PROG}.bin" => ["#{OBJDIR}/#{PROG}.elf"] do |t|
   puts "Creating #{t.name}"
   sh "#{OBJCOPY} -O binary #{OBJDIR}/#{PROG}.elf #{OBJDIR}/#{PROG}.bin"
 end
 
-file "#{OBJDIR}/#{PROG}.elf" => ["#{OBJDIR}/libhal.a"] + OBJ do |t|
+file "#{OBJDIR}/#{PROG}.elf" => ["#{OBJDIR}/libhal.a", "#{OBJDIR}/dfuloader.o"] + OBJ do |t|
   puts "Linking #{t.name} to #{SPIFI ? 'SPIFI' : 'FLASH'}"
-  sh "#{$using_cpp ? LDCPP : LD} #{OBJ} -L#{OBJDIR} -lhal #{LDFLAGS} -o #{t.name}"
+  sh "#{$using_cpp ? LDCPP : LD} #{OBJ} #{OBJDIR}/dfuloader.o -L#{OBJDIR} -lhal #{LDFLAGS} -o #{t.name}"
 end
 
 file "#{OBJDIR}/libhal.a" => HAL_OBJ do |t|

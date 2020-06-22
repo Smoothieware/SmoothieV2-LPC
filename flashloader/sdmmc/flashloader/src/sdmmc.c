@@ -404,6 +404,9 @@ void flashloader()
 
 	App_SDMMC_Init();
 
+    // Reenable interrupts
+	__enable_irq();
+
 	/* There is no need to initialize RTC here it is called by fs init
 	   but it takes long time hence doing it before calling f_open */
 	//debugstr("Initializing RTC (might take few seconds)...");
@@ -411,9 +414,6 @@ void flashloader()
 	//debugstr("Done\r\n");
 
 	debugstr("Standalone flash loader\n");
-
-    // Reenable interrupts
-	__enable_irq();
 
 	NVIC_DisableIRQ(SDIO_IRQn);
 	/* Enable SD/MMC Interrupt */
