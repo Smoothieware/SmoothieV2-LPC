@@ -320,6 +320,7 @@ task :version do
 end
 
 # create the dfu flash loader object from the binary
+# TODO do this for any bins in standalonebins directory
 file "#{OBJDIR}/dfuloader.o" => ['./standalonebins/periph_blinky.bin'] do |t|
   puts "handling dfu loader #{t.source} -> #{t.name}"
   sh "#{OBJCOPY} -I binary -O elf32-littlearm -B arm --readonly-text --rename-section .data=.rodata.dfuloader #{t.source} #{t.name}"
