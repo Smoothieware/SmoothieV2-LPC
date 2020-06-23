@@ -1292,10 +1292,26 @@ bool CommandShell::reset_cmd(std::string& params, OutputStream& os)
 #include "uart_comms.h"
 extern "C" void shutdown_sdmmc();
 extern "C" void shutdown_cdc();
+
+static void stop_everything(void)
+{
+    // stop stuff
+    f_unmount("sd");
+    FastTicker::getInstance()->stop();
+    StepTicker::getInstance()->stop();
+    Adc::stop();
+    shutdown_sdmmc(); // NVIC_DisableIRQ(SDIO_IRQn);
+    shutdown_cdc(); // NVIC_DisableIRQ(USB0_IRQn);
+    vTaskSuspendAll();
+    vTaskEndScheduler(); // NVIC_DisableIRQ(SysTick_IRQn);
+    taskENABLE_INTERRUPTS(); // we want to set the base pri back
+
+}
+
+// linker added pointers to the included binary
 extern uint8_t _binary___standalonebins_flashloader_bin_start[];
 extern uint8_t _binary___standalonebins_flashloader_bin_end[];
 extern uint8_t _binary___standalonebins_flashloader_bin_size[];
-
 bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 {
     HELP("flash image - flash flashme.bin");
@@ -1313,19 +1329,9 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
     }
     fclose(fp);
 
-    // stop stuff
-    f_unmount("sd");
-    FastTicker::getInstance()->stop();
-    StepTicker::getInstance()->stop();
-    Adc::stop();
-    shutdown_sdmmc();
-    shutdown_cdc();
-    vTaskSuspendAll();
-    vTaskEndScheduler();
-    taskENABLE_INTERRUPTS(); // we want to set the base pri back
-    __disable_irq();
-    //NVIC_DisableIRQ(USB0_IRQn);
-    //NVIC_DisableIRQ(SysTick_IRQn);
+    stop_everything();
+
+     __disable_irq();
 
     // binary file compiled to load and run at 0x10000000
     // this program will flash the flashm.bin found on the sdcard then reset
@@ -1348,15 +1354,15 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
     return true;
 }
 
-extern "C" void DFU_Tasks(void);
+extern "C" void DFU_Tasks(void (*)(void));
 bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 {
     HELP("enable dfu upload");
 
     os.printf("NOTE: A reset will be required to resume if dfu-util is not run\n");
 
-    // call the DFU tasks, does not return as it will have turned off the USB anyway
-    DFU_Tasks();
+    // call the DFU tasks, does not return
+    DFU_Tasks(stop_everything);
 
     // does not return from this
     return true;

@@ -140,31 +140,24 @@ static void dfu_done(void)
 	g_dfu.fDownloadDone = 1;
 }
 
-/* DFU read callback is called during DFU_UPLOAD state. In this example
- * we will return the data present at DFU_DEST_BASE memory.
- */
+// DFU read callback is called during DFU_UPLOAD state.
+// We return the SPIFI image it maybe a little bigger than the actual image
+extern uint32_t _image_start;
+extern uint32_t _image_end;
 static uint32_t dfu_rd(uint32_t block_num, uint8_t * *pBuff, uint32_t length)
 {
-	iprintf("dfu_rd\n");
-	uint32_t src_addr = 0x10000000;
-
-	if (block_num == DFU_MAX_BLOCKS) {
-		return 0;
-	}
-
-	if (block_num > DFU_MAX_BLOCKS) {
-		return DFU_STATUS_errADDRESS;
-	}
+	iprintf("dfu_rd: %lu, %lu, %p\n", length, block_num, *pBuff);
+	uint32_t src_addr= _image_start;
+	uint32_t src_end= _image_end;
 
 	src_addr += (block_num * DFU_XFER_BLOCK_SZ);
+	if(src_addr >= src_end) return 0;
 	*pBuff = (uint8_t *) src_addr;
 
 	return length;
 }
 
-/* DFU write callback is called during DFU_DOWNLOAD state. In this example
- * we will write the data to DFU_DEST_BASE memory area.
- */
+// DFU write callback is called during DFU_DOWNLOAD state.
 uint8_t dfu_wr(uint32_t block_num, uint8_t * *pBuff, uint32_t length, uint8_t *bwPollTimeout)
 {
 	iprintf("dfu_wr: %lu, %lu, %p\n", length, block_num, *pBuff);
@@ -237,7 +230,7 @@ ErrorCode_t DFU_init(USBD_HANDLE_T hUsb,
 }
 
 /* DFU tasks */
-void DFU_Tasks(void)
+void DFU_Tasks(void (*shutdown)(void))
 {
 	while(1) {
 		/* check if we received DFU_DETACH command from host. */
@@ -266,7 +259,29 @@ void DFU_Tasks(void)
 			printf("DFU download done; %lu\n", g_dfu.dnlcount);
 
 			/* wait for 1 sec before executing the new image. */
-			/* execute new image */
+			vTaskDelay(pdMS_TO_TICKS(1000));
+
+			// shuts down all interrupts and tasks
+			(*shutdown)();
+
+
+			#if 0
+		    // this program will flash the flashm.bin found on the sdcard then reset
+		    uint8_t *data_start     = _binary___standalonebins_flashloader_bin_start;
+		    //uint8_t *data_end       = _binary___standalonebins_flashloader_bin_end;
+		    size_t data_size  = (size_t)_binary___standalonebins_flashloader_bin_size;
+		    // copy to RAM
+   	    	// binary file compiled to load and run at 0x10000000
+		    uint32_t *addr= (uint32_t*)0x10000000;
+		    // copy to execution area at addr
+		    memcpy(addr, data_start, data_size);
+
+		    /* get and set the stack pointer of the new image */
+		    __set_MSP(*addr++);
+
+		    /* jump to new image's execution area */
+		    ((void (*)(void)) * addr)();
+			#endif
 		}
 
 		if(g_dfu.fReset) {
