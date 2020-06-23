@@ -192,7 +192,7 @@ int setup_cdc(xTaskHandle h)
     usb_param.max_num_ep = 4;
     usb_param.mem_base = (uint32_t) &usb_cdc_buffer; // USB_STACK_MEM_BASE; AHB32 RAM3
     usb_param.mem_size = USB_STACK_MEM_SIZE;
-    usb_param.USB_Reset_Event = DFU_reset_handler;
+    // usb_param.USB_Reset_Event = DFU_reset_handler;
 
     /* Set the USB descriptors */
     desc.device_desc = (uint8_t *) USB_DeviceDescriptor;
@@ -229,10 +229,10 @@ int setup_cdc(xTaskHandle h)
         /* Init VCOM interface */
         ret = vcom_init(g_hUsb, &desc, &usb_param);
         if (ret == LPC_OK) {
-            // we also setup DFU here as it depends on the cdc which sets up the USB
-            if(!setup_dfu()) {
-                printf("WARNING: DFU setup failed\n");
-            }
+            // // we also setup DFU here as it depends on the cdc which sets up the USB
+            // if(!setup_dfu()) {
+            //     printf("WARNING: DFU setup failed\n");
+            // }
 
             /*  enable USB interrupts */
             NVIC_SetPriority(LPC_USB_IRQ, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);

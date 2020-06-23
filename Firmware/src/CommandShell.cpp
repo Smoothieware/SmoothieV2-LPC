@@ -1349,45 +1349,16 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 }
 
 extern "C" void DFU_Tasks(void);
+extern "C" bool setup_dfu();
 bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 {
     HELP("enable dfu upload");
 
-     // stop stuff
-    f_unmount("sd");
-    FastTicker::getInstance()->stop();
-    StepTicker::getInstance()->stop();
-    Adc::stop();
-    shutdown_sdmmc();
-    shutdown_cdc();
-    //NVIC_DisableIRQ(USB0_IRQn);
-    vTaskSuspendAll();
-    vTaskEndScheduler();
-    //NVIC_DisableIRQ(SysTick_IRQn);
-    taskENABLE_INTERRUPTS(); // we want to set the base pri back
-    __disable_irq();
-
-    // binary file compiled to load and run at 0x10000000
-    uint8_t *data_start     = _binary___standalonebins_flashloader_bin_start;
-    //uint8_t *data_end       = _binary___standalonebins_flashloader_bin_end;
-    size_t data_size  = (size_t)_binary___standalonebins_flashloader_bin_size;
-    // copy to RAM
-    uint32_t *addr= (uint32_t*)0x10000000;
-    // copy to execution area at addr
-    memcpy(addr, data_start, data_size);
-
-    /* get and set the stack pointer of the new image */
-    __set_MSP(*addr++);
-
-    /* jump to new image's execution area */
-    ((void (*)(void)) * addr)();
-
-#if 0
     os.printf("NOTE: A reset will be required to resume if dfu-util is not run\n");
+    setup_dfu();
 
     // call the DFU tasks, does not return as it will have turned off the USB anyway
     DFU_Tasks();
-#endif
 
     return true;
 }
