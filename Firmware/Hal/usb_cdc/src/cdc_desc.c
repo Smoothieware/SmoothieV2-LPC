@@ -78,7 +78,7 @@ ALIGNED(4) const uint8_t USB_DeviceQualifier[] = {
  * USB FSConfiguration Descriptor
  * All Descriptors (Configuration, Interface, Endpoint, Class, Vendor)
  */
-ALIGNED(4) const uint8_t USB_FsConfigDescriptor[] = {
+ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	/* Configuration 1 */
 	USB_CONFIGURATION_DESC_SIZE,			/* bLength */
 	USB_CONFIGURATION_DESCRIPTOR_TYPE,		/* bDescriptorType */
@@ -202,7 +202,7 @@ ALIGNED(4) const uint8_t USB_FsConfigDescriptor[] = {
  * USB HSConfiguration Descriptor
  * All Descriptors (Configuration, Interface, Endpoint, Class, Vendor)
  */
-ALIGNED(4) const uint8_t USB_HsConfigDescriptor[] = {
+ALIGNED(4) uint8_t USB_HsConfigDescriptor[] = {
 	/* Configuration 1 */
 	USB_CONFIGURATION_DESC_SIZE,			/* bLength */
 	USB_CONFIGURATION_DESCRIPTOR_TYPE,		/* bDescriptorType */

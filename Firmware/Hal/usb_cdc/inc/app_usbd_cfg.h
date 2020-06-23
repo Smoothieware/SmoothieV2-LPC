@@ -99,8 +99,8 @@ extern "C"
 
 /* USB descriptor arrays defined *_desc.c file */
 extern const uint8_t USB_DeviceDescriptor[];
-extern const uint8_t USB_HsConfigDescriptor[];
-extern const uint8_t USB_FsConfigDescriptor[];
+extern  uint8_t USB_HsConfigDescriptor[];
+extern  uint8_t USB_FsConfigDescriptor[];
 extern const uint8_t USB_StringDescriptor[];
 extern const uint8_t USB_DeviceQualifier[];
 

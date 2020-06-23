@@ -35,7 +35,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-static ALIGNED(4) const uint8_t DFU_ConfigDescriptor[] = {
+static ALIGNED(4) uint8_t DFU_ConfigDescriptor[] = {
 	/* Configuration 1 */
 	USB_CONFIGURATION_DESC_SIZE,		/* bLength */
 	USB_CONFIGURATION_DESCRIPTOR_TYPE,	/* bDescriptorType */
@@ -124,10 +124,9 @@ static void dfu_detach(USBD_HANDLE_T hUsb)
 
 	/* update configuration descriptors to have only DFU interface before
 	 * reconnecting to host.
-	 * NOTE it is NOT ok to copy these into the existing storage as they are in ROM
 	 */
-	pCtrl->full_speed_desc= (uint8_t *)DFU_ConfigDescriptor;
-	pCtrl->high_speed_desc= (uint8_t *)DFU_ConfigDescriptor;
+	pCtrl->full_speed_desc= DFU_ConfigDescriptor;
+	pCtrl->high_speed_desc= DFU_ConfigDescriptor;
 
 	/* Signal DFU user task that detach command is received. */
 	g_dfu.fDetach = 1;
