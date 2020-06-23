@@ -188,6 +188,12 @@ ErrorCode_t DFU_init(USBD_HANDLE_T hUsb,
 	dfu_param.mem_size = *mem_size;
 	dfu_param.wTransferSize = USB_DFU_XFER_SIZE;
 
+	// check there is enough memory
+	uint32_t mem_req = USBD_API->dfu->GetMemSize(&dfu_param);
+	if(mem_req >= dfu_param.mem_size) {
+		return ERR_FAILED;
+	}
+
 	/* check if interface descriptor pointer is pointing to right interface */
 	if ((pIntfDesc == 0) ||
 		(pIntfDesc->bInterfaceClass != USB_DEVICE_CLASS_APP) ||
@@ -202,8 +208,9 @@ ErrorCode_t DFU_init(USBD_HANDLE_T hUsb,
 	dfu_param.DFU_Done = dfu_done;
 	dfu_param.DFU_Detach = dfu_detach;
 
-	// ret = USBD_API->dfu->init(hUsb, &dfu_param, DFU_STATE_appIDLE);  // DFU_STATE_dfuIDLE
-	ret = USBD_API->dfu->init(hUsb, &dfu_param, DFU_STATE_dfuIDLE);  // DFU_STATE_appIDLE
+	ret = USBD_API->dfu->init(hUsb, &dfu_param, DFU_STATE_appIDLE);
+	// if we wanted to come up in dfu mode we would use this instead
+	//ret = USBD_API->dfu->init(hUsb, &dfu_param, DFU_STATE_dfuIDLE);  // DFU_STATE_appIDLE
 
 	/* update memory variables */
 	*mem_base = dfu_param.mem_base;
@@ -269,15 +276,13 @@ bool setup_dfu()
 {
 	ErrorCode_t ret = LPC_OK;
 
-	USB_INTERFACE_DESCRIPTOR *dfu_interface = find_IntfDesc(&DFU_ConfigDescriptor[0], USB_DEVICE_CLASS_APP);
+	USB_INTERFACE_DESCRIPTOR *dfu_interface = find_IntfDesc(&USB_HsConfigDescriptor[0], USB_DEVICE_CLASS_APP);
 	if ((dfu_interface) && (dfu_interface->bInterfaceSubClass == USB_DFU_SUBCLASS)) {
 		ret = DFU_init(g_hUsb, dfu_interface, &usb_param.mem_base, &usb_param.mem_size);
 		if (ret != LPC_OK) {
 			printf("DFU init failed\n");
 			return false;
 		}
-		// force into dfu idle mode now
-		dfu_detach(g_hUsb);
 
 	}else{
 		printf("DFU interface descriptor not found\n");

@@ -1349,17 +1349,16 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 }
 
 extern "C" void DFU_Tasks(void);
-extern "C" bool setup_dfu();
 bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 {
     HELP("enable dfu upload");
 
     os.printf("NOTE: A reset will be required to resume if dfu-util is not run\n");
-    setup_dfu();
 
     // call the DFU tasks, does not return as it will have turned off the USB anyway
     DFU_Tasks();
 
+    // does not return from this
     return true;
 }
 

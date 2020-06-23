@@ -229,10 +229,10 @@ int setup_cdc(xTaskHandle h)
         /* Init VCOM interface */
         ret = vcom_init(g_hUsb, &desc, &usb_param);
         if (ret == LPC_OK) {
-            // // we also setup DFU here as it depends on the cdc which sets up the USB
-            // if(!setup_dfu()) {
-            //     printf("WARNING: DFU setup failed\n");
-            // }
+            // we also setup DFU here as it depends on the cdc which sets up the USB
+            if(!setup_dfu()) {
+                printf("WARNING: DFU setup failed\n");
+            }
 
             /*  enable USB interrupts */
             NVIC_SetPriority(LPC_USB_IRQ, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);

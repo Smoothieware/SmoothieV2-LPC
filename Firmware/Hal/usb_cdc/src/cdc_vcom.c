@@ -213,6 +213,12 @@ ErrorCode_t vcom_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
     host_connected_cnt= 0;
     host_connected= false;
 
+    // check there is enough memory
+    uint32_t mem_req = USBD_API->cdc->GetMemSize(&cdc_param);
+    if(mem_req >= cdc_param.mem_size) {
+        return ERR_FAILED;
+    }
+
     ret = USBD_API->cdc->init(hUsb, &cdc_param, &g_vCOM.hCdc);
     if (ret != LPC_OK) {
         return ret;
