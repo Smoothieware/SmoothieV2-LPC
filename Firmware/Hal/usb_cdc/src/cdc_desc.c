@@ -100,7 +100,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	USB_CONFIG_SELF_POWERED,			    /* bmAttributes  */
 	USB_CONFIG_POWER_MA(500),				/* bMaxPower */
 
-	/* Interface 4, Alternate Setting 0, DFU Class */
+	/* Interface 0, Alternate Setting 0, DFU Class */
 	USB_INTERFACE_DESC_SIZE,			/* bLength */
 	USB_INTERFACE_DESCRIPTOR_TYPE,		/* bDescriptorType */
 	USB_DFUAPP_IF_NUM,					/* bInterfaceNumber */
@@ -109,7 +109,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	USB_DEVICE_CLASS_APP,				/* bInterfaceClass */
 	USB_DFU_SUBCLASS,					/* bInterfaceSubClass */
 	0x01,								/* bInterfaceProtocol */
-	0x04,								/* iInterface */
+	0x05,								/* iInterface */
 	/* DFU RunTime/DFU Mode Functional Descriptor */
 	DFU_FUNC_DESC_SIZE,					/* bLength */
 	USB_DFU_DESCRIPTOR_TYPE,			/* bDescriptorType */
@@ -129,7 +129,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
     0x00,                                                           /* bFunctionProtocol */
     0x04,                                                           /* iFunction */
 
-    /* Interface 0, Alternate Setting 0, Communication class interface descriptor */
+    /* Interface 1, Alternate Setting 0, Communication class interface descriptor */
 	USB_INTERFACE_DESC_SIZE,			/* bLength */
 	USB_INTERFACE_DESCRIPTOR_TYPE,		/* bDescriptorType */
 	USB_CDC_CIF_NUM,					/* bInterfaceNumber: Number of Interface */
@@ -169,7 +169,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	WBVAL(0x0010),						/* wMaxPacketSize */
 	0x02,			/* 2ms */           /* bInterval */
 
-	/* Interface 1, Alternate Setting 0, Data class interface descriptor*/
+	/* Interface 2, Alternate Setting 0, Data class interface descriptor*/
 	USB_INTERFACE_DESC_SIZE,			/* bLength */
 	USB_INTERFACE_DESCRIPTOR_TYPE,		/* bDescriptorType */
 	USB_CDC_DIF_NUM,					/* bInterfaceNumber: Number of Interface */
@@ -224,7 +224,7 @@ ALIGNED(4) uint8_t USB_HsConfigDescriptor[] = {
 	USB_CONFIG_SELF_POWERED,				/* bmAttributes  */
 	USB_CONFIG_POWER_MA(500),				/* bMaxPower */
 
-	/* Interface 4, Alternate Setting 0, DFU Class */
+	/* Interface 0, Alternate Setting 0, DFU Class */
 	USB_INTERFACE_DESC_SIZE,			/* bLength */
 	USB_INTERFACE_DESCRIPTOR_TYPE,		/* bDescriptorType */
 	USB_DFUAPP_IF_NUM,					/* bInterfaceNumber */
@@ -233,7 +233,7 @@ ALIGNED(4) uint8_t USB_HsConfigDescriptor[] = {
 	USB_DEVICE_CLASS_APP,				/* bInterfaceClass */
 	USB_DFU_SUBCLASS,					/* bInterfaceSubClass */
 	0x01,								/* bInterfaceProtocol */
-	0x04,								/* iInterface */
+	0x05,								/* iInterface */
 	/* DFU RunTime/DFU Mode Functional Descriptor */
 	DFU_FUNC_DESC_SIZE,					/* bLength */
 	USB_DFU_DESCRIPTOR_TYPE,			/* bDescriptorType */
@@ -252,7 +252,7 @@ ALIGNED(4) uint8_t USB_HsConfigDescriptor[] = {
 	0x00,								/* bFunctionProtocol */
 	0x04,								/* iFunction */
 
-	/* Interface 0, Alternate Setting 0, Communication class interface descriptor */
+	/* Interface 1, Alternate Setting 0, Communication class interface descriptor */
 	USB_INTERFACE_DESC_SIZE,			/* bLength */
 	USB_INTERFACE_DESCRIPTOR_TYPE,		/* bDescriptorType */
 	USB_CDC_CIF_NUM,					/* bInterfaceNumber: Number of Interface */
@@ -292,7 +292,7 @@ ALIGNED(4) uint8_t USB_HsConfigDescriptor[] = {
 	WBVAL(0x0010),						/* wMaxPacketSize */
 	0x05,			/* 2ms */           /* bInterval */
 
-	/* Interface 1, Alternate Setting 0, Data class interface descriptor*/
+	/* Interface 2, Alternate Setting 0, Data class interface descriptor*/
 	USB_INTERFACE_DESC_SIZE,			/* bLength */
 	USB_INTERFACE_DESCRIPTOR_TYPE,		/* bDescriptorType */
 	USB_CDC_DIF_NUM,					/* bInterfaceNumber: Number of Interface */
@@ -338,24 +338,24 @@ ALIGNED(4) const uint8_t USB_StringDescriptor[] = {
 	/* Index 0x02: Product */
 	(9 * 2 + 2),						/* bLength */
 	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
-	'V', 0,
-	'C', 0,
-	'O', 0,
-	'M', 0,
-	' ', 0,
-	'P', 0,
+	'S', 0,
+	'm', 0,
 	'o', 0,
-	'r', 0,
+	'o', 0,
 	't', 0,
+	'h', 0,
+	'i', 0,
+	'e', 0,
+	'2', 0,
 	/* Index 0x03: Serial Number */
 	(6 * 2 + 2),						/* bLength (8 Char + Type + length) */
 	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
-	'N', 0,
-	'X', 0,
-	'P', 0,
-	'-', 0,
-	'7', 0,
-	'7', 0,
+	'0', 0,
+	'0', 0,
+	'0', 0,
+	'0', 0,
+	'0', 0,
+	'1', 0,
 	/* Index 0x04: Interface 1, Alternate Setting 0 */
 	( 4 * 2 + 2),						/* bLength (4 Char + Type + length) */
 	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
@@ -363,4 +363,10 @@ ALIGNED(4) const uint8_t USB_StringDescriptor[] = {
 	'C', 0,
 	'O', 0,
 	'M', 0,
+	/* Index 0x05: Interface 0, Alternate Setting 0 */
+	( 3 * 2 + 2),						/* bLength (4 Char + Type + length) */
+	USB_STRING_DESCRIPTOR_TYPE,			/* bDescriptorType */
+	'D', 0,
+	'F', 0,
+	'U', 0,
 };

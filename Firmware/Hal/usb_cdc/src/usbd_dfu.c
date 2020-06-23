@@ -98,10 +98,28 @@ static DFU_Ctrl_T g_dfu;
  * Private functions
  ****************************************************************************/
 
+#define iprintf(...)
+
+#ifndef iprintf
+#include <stdio.h>
+#include <stdarg.h>
+extern size_t write_uart(const char *buf, size_t length);
+// interrupt safe printf
+void iprintf(const char *fmt, ...)
+{
+	va_list list;
+    va_start(list, fmt);
+    char buf[132];
+    size_t n= sizeof(buf);
+    int len= vsnprintf(buf, n, fmt, list);
+    write_uart(buf, len<n ? len : n);
+}
+#endif
+
 /* Rewrite USB descriptors so that DFU is the only interface. */
 static void dfu_detach(USBD_HANDLE_T hUsb)
 {
-	//printf("DFU detach\n");
+	iprintf("dfu_detach\n");
 	USB_CORE_CTRL_T *pCtrl = (USB_CORE_CTRL_T *) hUsb;
 	USB_CONFIGURATION_DESCRIPTOR *pD = (USB_CONFIGURATION_DESCRIPTOR *) &DFU_ConfigDescriptor[0];
 
@@ -118,7 +136,7 @@ static void dfu_detach(USBD_HANDLE_T hUsb)
 /* Set a flag when a DFU firmware reload has finished. */
 static void dfu_done(void)
 {
-	//printf("DFU done\n");
+	iprintf("dfu_done\n");
 	/* Signal DFU user task that DFU download has finished. */
 	g_dfu.fDownloadDone = 1;
 }
@@ -128,6 +146,7 @@ static void dfu_done(void)
  */
 static uint32_t dfu_rd(uint32_t block_num, uint8_t * *pBuff, uint32_t length)
 {
+	iprintf("dfu_rd\n");
 	uint32_t src_addr = 0x10000000;
 
 	if (block_num == DFU_MAX_BLOCKS) {
@@ -149,7 +168,7 @@ static uint32_t dfu_rd(uint32_t block_num, uint8_t * *pBuff, uint32_t length)
  */
 uint8_t dfu_wr(uint32_t block_num, uint8_t * *pBuff, uint32_t length, uint8_t *bwPollTimeout)
 {
-	//printf("dfu_wr: %lu, %lu, %p\n", length, block_num, *pBuff);
+	iprintf("dfu_wr: %lu, %lu, %p\n", length, block_num, *pBuff);
 
 	// if length == 0 it is setup for transfer
 	// if length > 0 then it is the number of bytes transfered into the buffer
