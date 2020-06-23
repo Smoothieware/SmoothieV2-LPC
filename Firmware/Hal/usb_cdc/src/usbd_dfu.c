@@ -121,13 +121,13 @@ static void dfu_detach(USBD_HANDLE_T hUsb)
 {
 	iprintf("dfu_detach\n");
 	USB_CORE_CTRL_T *pCtrl = (USB_CORE_CTRL_T *) hUsb;
-	USB_CONFIGURATION_DESCRIPTOR *pD = (USB_CONFIGURATION_DESCRIPTOR *) &DFU_ConfigDescriptor[0];
 
 	/* update configuration descriptors to have only DFU interface before
 	 * reconnecting to host.
+	 * NOTE it is NOT ok to copy these into the existing storage as they are in ROM
 	 */
-	memcpy(pCtrl->full_speed_desc, (void *) pD, pD->wTotalLength);
-	memcpy(pCtrl->high_speed_desc, (void *) pD, pD->wTotalLength);
+	pCtrl->full_speed_desc= (uint8_t *)DFU_ConfigDescriptor;
+	pCtrl->high_speed_desc= (uint8_t *)DFU_ConfigDescriptor;
 
 	/* Signal DFU user task that detach command is received. */
 	g_dfu.fDetach = 1;

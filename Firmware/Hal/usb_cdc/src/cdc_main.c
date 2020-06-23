@@ -198,8 +198,8 @@ int setup_cdc(xTaskHandle h)
     desc.device_desc = (uint8_t *) USB_DeviceDescriptor;
     desc.string_desc = (uint8_t *) USB_StringDescriptor;
 #ifdef USE_USB0
-    desc.high_speed_desc = USB_HsConfigDescriptor;
-    desc.full_speed_desc = USB_FsConfigDescriptor;
+    desc.high_speed_desc = (uint8_t *) USB_HsConfigDescriptor;
+    desc.full_speed_desc = (uint8_t *) USB_FsConfigDescriptor;
     desc.device_qualifier = (uint8_t *) USB_DeviceQualifier;
 #else
     /* Note, to pass USBCV test full-speed only devices should have both
