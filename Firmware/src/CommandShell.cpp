@@ -1354,17 +1354,23 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
     return true;
 }
 
-extern "C" void DFU_Tasks(void (*)(void));
+extern "C" bool DFU_Tasks(void (*)(void));
 bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 {
     HELP("enable dfu upload");
 
     os.printf("NOTE: A reset will be required to resume if dfu-util is not run\n");
 
-    // call the DFU tasks, does not return
-    DFU_Tasks(stop_everything);
+    // call the DFU tasks, returns true if the file was written
+    // if it returns false it ran out of memory
+    if(!DFU_Tasks(stop_everything)) {
+        os.printf("DFU had an error, not started\n");
+    }else{
+        // we run the flash program
+        //flash_cmd(params, os);
+        printf("We would run the flash_cmd here\n");
+    }
 
-    // does not return from this
     return true;
 }
 

@@ -54,8 +54,8 @@ static uint32_t sdmmc_irq_driven_wait(void)
     }
 
     /* Wait for event */
-    uint32_t ulNotificationValue = ulTaskNotifyTake(pdTRUE, waitms);
-    if( ulNotificationValue != 1 ) {
+    uint32_t ulNotificationValue = ulTaskNotifyTake(pdFALSE, waitms);
+    if( ulNotificationValue == 0 ) {
         /* The call to ulTaskNotifyTake() timed out. */
         return -1;
     }

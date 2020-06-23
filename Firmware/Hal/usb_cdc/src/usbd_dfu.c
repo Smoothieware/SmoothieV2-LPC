@@ -34,6 +34,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "message_buffer.h"
 
 static ALIGNED(4) uint8_t DFU_ConfigDescriptor[] = {
 	/* Configuration 1 */
@@ -78,10 +79,11 @@ static ALIGNED(4) uint8_t DFU_ConfigDescriptor[] = {
  */
 typedef struct {
 	USBD_HANDLE_T hUsb;				/*!< Handle to USB stack. */
-	volatile uint32_t fDetach;		/*!< Flag indicating DFU_DETACH request is received. */
-	volatile uint32_t fDownloadDone;/*!< Flag indicating DFU_DOWNLOAD finished. */
-	volatile uint32_t fReset;       /*!< Flag indicating we got a reset */
-	volatile uint32_t dnlcount;     /*!< number of bytes received */
+	volatile bool fDetach:1;		/*!< Flag indicating DFU_DETACH request is received. */
+	volatile bool fDownloadDone:1; /*!< Flag indicating DFU_DOWNLOAD finished. */
+	volatile bool fReset:1;        /*!< Flag indicating we got a reset */
+	volatile bool fDownloading:1;  /*!< Flag indicating we are in the downloading state */
+	volatile bool fWriteError:1;   /*!< Flag indicating we got a write error */
 } DFU_Ctrl_T;
 
 extern USBD_HANDLE_T g_hUsb;
@@ -90,15 +92,10 @@ extern USBD_API_INIT_PARAM_T usb_param;
 /** Singleton instance of DFU control */
 static DFU_Ctrl_T g_dfu;
 
-/*****************************************************************************
- * Public types/enumerations/variables
- ****************************************************************************/
+static MessageBufferHandle_t xMessageBuffer= NULL;
+const size_t xMessageBufferSizeBytes = USB_DFU_XFER_SIZE*4;
 
-/*****************************************************************************
- * Private functions
- ****************************************************************************/
-
-#define iprintf(...)
+//#define iprintf(...)
 
 #ifndef iprintf
 #include <stdio.h>
@@ -162,13 +159,34 @@ uint8_t dfu_wr(uint32_t block_num, uint8_t * *pBuff, uint32_t length, uint8_t *b
 {
 	iprintf("dfu_wr: %lu, %lu, %p\n", length, block_num, *pBuff);
 
+	if(g_dfu.fWriteError) return DFU_STATUS_errWRITE;
+
 	// if length == 0 it is setup for transfer
 	// if length > 0 then it is the number of bytes transfered into the buffer
 	if(length > 0) {
-		// dump what we got to uart
-		//dump((char *)dest_addr, length);
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE; // Initialised to pdFALSE.
+	    size_t xBytesSent= xMessageBufferSendFromISR(xMessageBuffer, (void *)*pBuff, length, &xHigherPriorityTaskWoken);
+	    if(xBytesSent != length) {
+	    	iprintf("dfu_wr: ERROR out of write buffer queue space\n");
+	    	return DFU_STATUS_errWRITE;
+	    }
+	    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+	} else {
+		// make sure we have enough room for the next buffer, if not tell host to wait a bit
+		uint32_t tmo= 0;
+		if(xMessageBufferSpaceAvailable(xMessageBuffer) < DFU_XFER_BLOCK_SZ*2) tmo= 5000;
+		else if(xMessageBufferSpaceAvailable(xMessageBuffer) < DFU_XFER_BLOCK_SZ*3) tmo= 1000;
+		if(tmo >= 10) {
+			// delay in little endian ms
+			bwPollTimeout[0] = tmo&0xFF;
+			bwPollTimeout[1] = (tmo>>8) & 0xFF;
+			bwPollTimeout[2] = (tmo>>16) & 0xFF;
+			iprintf("dfu_wr: Delay host by %d ms\n", (bwPollTimeout[2]<<16) + (bwPollTimeout[1]<<8) + bwPollTimeout[0]);
+		}else{
+			bwPollTimeout[0]= bwPollTimeout[1]= bwPollTimeout[2]= 0;
+		}
 	}
-	g_dfu.dnlcount += length;
 
 	return DFU_STATUS_OK;
 }
@@ -191,7 +209,9 @@ ErrorCode_t DFU_init(USBD_HANDLE_T hUsb,
 	g_dfu.fDetach= false;
 	g_dfu.fDownloadDone= false;
 	g_dfu.fReset= false;
-	g_dfu.dnlcount= 0;
+	g_dfu.fWriteError= false;
+	g_dfu.fDownloading= false;
+
 
 	/* Init DFU paramas */
 	memset((void *) &dfu_param, 0, sizeof(USBD_DFU_INIT_PARAM_T));
@@ -230,23 +250,75 @@ ErrorCode_t DFU_init(USBD_HANDLE_T hUsb,
 }
 
 /* DFU tasks */
-void DFU_Tasks(void (*shutdown)(void))
+bool DFU_Tasks(void (*shutdown)(void))
 {
+	xMessageBuffer= xMessageBufferCreate(xMessageBufferSizeBytes);
+
+    if(xMessageBuffer == NULL) {
+    	printf("DFU_Tasks: not enough memory for message buffer\n");
+    	return false;
+    }
+
+	FILE *fp= NULL;
+	uint32_t delay_cnt= 0;
 	while(1) {
-		/* check if we received DFU_DETACH command from host. */
-		if (g_dfu.fDetach) {
+		if(g_dfu.fDownloading) {
+			// we are in the process of downloading so we need to write
+			// the data to the file as quickly as possible
+			uint8_t ucRxData[DFU_XFER_BLOCK_SZ];
+
+		    // Receive the next message from the message buffer.  Wait in the Blocked
+		    // state (so not using any CPU processing time) for a maximum of 100ms for
+		    // a message to become available.
+			size_t xReceivedBytes= xMessageBufferReceive(xMessageBuffer,
+		                                            (void *)ucRxData,
+		                                            DFU_XFER_BLOCK_SZ,
+		                                            pdMS_TO_TICKS(100));
+
+			if(g_dfu.fWriteError) continue;
+
+			if(++delay_cnt > 100) {
+				printf("DFU_Tasks: timed out waiting for buffers\n");
+				return false;
+			}
+
+
+		    if( xReceivedBytes > 0 && fp != NULL) {
+		    	delay_cnt= 0;
+				//printf("DFU_Tasks: got %u bytes\n", xReceivedBytes);
+		    	if(fwrite(ucRxData, 1, xReceivedBytes, fp) != xReceivedBytes) {
+		    		printf("DFU_Tasks: Got a write error\n");
+		    		g_dfu.fWriteError= true;
+		    		fclose(fp);
+		    	}
+		    }
+
+		}else if (g_dfu.fDetach) {
+			// reset detach signal
+			g_dfu.fDetach = false;
+
 			printf("DFU Upload about to start...\n");
 
-			/* disconnect */
+			// open file for downloading into
+			fp= fopen("/sd/flashme.bin", "w");
+			if(fp == NULL) {
+				printf("DFU_Tasks: cannot open file flashme.bin\n");
+				g_dfu.fWriteError= true;
+				return false;
+			}
+
+			// move into downloading state
+			g_dfu.fDownloading= true;
+
+			// disconnect
 			USBD_API->hw->Connect(g_dfu.hUsb, 0);
-
-			/* wait for 10 msec before reconnecting */
-			vTaskDelay(pdMS_TO_TICKS(100));
-
-			/* connect the device back */
+			// wait for 10 msec before reconnecting
+			vTaskDelay(pdMS_TO_TICKS(10));
+			// connect the device back
 			USBD_API->hw->Connect(g_dfu.hUsb, 1);
-			/* reset detach signal */
-			g_dfu.fDetach = 0;
+
+		}else{
+			vTaskDelay(pdMS_TO_TICKS(100));
 		}
 
 		/* check if DFU_DOWNLOAD finished. Note, the following code is needed
@@ -256,39 +328,32 @@ void DFU_Tasks(void (*shutdown)(void))
 		 */
 		if (g_dfu.fDownloadDone) {
 			g_dfu.fDownloadDone= 0;
-			printf("DFU download done; %lu\n", g_dfu.dnlcount);
+			printf("DFU download done\n");
+			if(g_dfu.fWriteError) return false;
 
-			/* wait for 1 sec before executing the new image. */
-			vTaskDelay(pdMS_TO_TICKS(1000));
+			// make sure we drain the queue
+			while(!xMessageBufferIsEmpty(xMessageBuffer)) {
+				uint8_t ucRxData[DFU_XFER_BLOCK_SZ];
+				size_t xReceivedBytes= xMessageBufferReceive(xMessageBuffer, (void *)ucRxData, DFU_XFER_BLOCK_SZ, 0);
+			    if( xReceivedBytes > 0 ) {
+			    	if(fwrite(ucRxData, 1, xReceivedBytes, fp) != xReceivedBytes) {
+			    		printf("DFU_Tasks: Got a write error\n");
+			    		g_dfu.fWriteError= true;
+			    	}
+			    }
+			}
+			fclose(fp);
 
-			// shuts down all interrupts and tasks
-			(*shutdown)();
+			// then delete it
+			vMessageBufferDelete(xMessageBuffer);
 
-
-			#if 0
-		    // this program will flash the flashm.bin found on the sdcard then reset
-		    uint8_t *data_start     = _binary___standalonebins_flashloader_bin_start;
-		    //uint8_t *data_end       = _binary___standalonebins_flashloader_bin_end;
-		    size_t data_size  = (size_t)_binary___standalonebins_flashloader_bin_size;
-		    // copy to RAM
-   	    	// binary file compiled to load and run at 0x10000000
-		    uint32_t *addr= (uint32_t*)0x10000000;
-		    // copy to execution area at addr
-		    memcpy(addr, data_start, data_size);
-
-		    /* get and set the stack pointer of the new image */
-		    __set_MSP(*addr++);
-
-		    /* jump to new image's execution area */
-		    ((void (*)(void)) * addr)();
-			#endif
+			return true;
 		}
 
 		if(g_dfu.fReset) {
 			g_dfu.fReset= false;
 			printf("We got a USB reset\n");
 		}
-		vTaskDelay(pdMS_TO_TICKS(100));
 	}
 }
 
@@ -304,7 +369,7 @@ ErrorCode_t DFU_reset_handler(USBD_HANDLE_T hUsb)
 	return LPC_OK;
 }
 
-// DFU stuff
+// DFU setup called from setup_cdc
 bool setup_dfu()
 {
 	ErrorCode_t ret = LPC_OK;
