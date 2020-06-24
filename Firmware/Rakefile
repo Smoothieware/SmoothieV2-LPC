@@ -319,17 +319,19 @@ task :version do
   $version = ' -D__GITVERSIONSTRING__=\"' + "#{v1[11..-1].chomp}-#{v2}".chomp + '\"'
 end
 
+# make sure the flashloader has been built
 file "../flashloader/flashloader_#{TARGET}/flashloader.bin" do |t|
   puts "Running rake on flashloader"
   sh 'cd ../flashloader; rake'
 end
 
+# copy the flashloader bin to our OBJDIR
 file "#{OBJDIR}/flashloader.bin" => ["../flashloader/flashloader_#{TARGET}/flashloader.bin"] do |t|
   puts "Copying #{t.source} to #{t.name}"
   FileUtils.cp(t.source, t.name)
 end
 
-# create the dfu flash loader object from the binary
+# create a flash loader .o from the binary so we can include it in our firmware binary
 file "#{OBJDIR}/flashloader.o" => ["#{OBJDIR}/flashloader.bin"] do |t|
   puts "converting flash loader #{t.source} -> #{t.name}"
   sh "#{OBJCOPY} -I binary -O elf32-littlearm -B arm --readonly-text --rename-section .data=.rodata.dfuloader #{t.source} #{t.name}"

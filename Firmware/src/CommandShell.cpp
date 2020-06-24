@@ -1329,7 +1329,7 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
     __disable_irq();
 
     // binary file compiled to load and run at 0x10000000
-    // this program will flash the flashm.bin found on the sdcard then reset
+    // this program will flash the flashme.bin found on the sdcard then reset
     uint8_t *data_start     = _binary_flashloader_bin_start;
     //uint8_t *data_end       = _binary_flashloader_bin_end;
     size_t data_size  = (size_t)_binary_flashloader_bin_size;
@@ -1352,7 +1352,7 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 extern "C" bool DFU_Tasks(void (*)(void));
 bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 {
-    HELP("enable dfu upload");
+    HELP("enable dfu download, or just run dfu-util");
 
     os.printf("NOTE: A reset will be required to resume if dfu-util is not run\n");
 
@@ -1365,10 +1365,10 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
     Adc::stop();
 
     // TODO if param is empty we start DFU off in dfuIdle() so it is quicker
-    // no need for detach()
+    // no need for detach()  We can't do this as the dfu has been enabled in appIdle.
 
     // call the DFU tasks, returns true if the file was written
-    // if it returns false it ran out of memory
+    // if it returns false it ran out of memory or some other error
     if(DFU_Tasks(stop_everything)) {
          // we run the flash program
         OutputStream nullos;
