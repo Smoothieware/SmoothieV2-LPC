@@ -244,7 +244,7 @@ bool Player::handle_gcode(GCode& gcode, OutputStream& os)
 void Player::play_thread(void*)
 {
     instance->player_thread();
-    vTaskDelete( NULL );
+    vTaskDelete(NULL);
 }
 
 // Play a gcode file by considering each line as if it was received on the serial console

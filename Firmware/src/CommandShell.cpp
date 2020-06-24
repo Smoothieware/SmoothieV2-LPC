@@ -1296,6 +1296,7 @@ extern "C" void shutdown_cdc();
 static void stop_everything(void)
 {
     // stop stuff
+    set_abort_comms();
     f_unmount("sd");
     FastTicker::getInstance()->stop();
     StepTicker::getInstance()->stop();
@@ -1315,11 +1316,6 @@ extern uint8_t _binary___standalonebins_flashloader_bin_size[];
 bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 {
     HELP("flash image - flash flashme.bin");
-    uint32_t magic = *(uint32_t*)0x14700000;
-    if(magic != 0x5555AAAAUL) {
-        os.printf("No magic flashloader: %08X\n", magic);
-        return true;
-    }
 
     // check the flashme.bin is on the disk first
     FILE *fp = fopen("/sd/flashme.bin", "r");
@@ -1361,15 +1357,22 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 
     os.printf("NOTE: A reset will be required to resume if dfu-util is not run\n");
 
+    // we stop all comms
+    set_abort_comms();
+
     // call the DFU tasks, returns true if the file was written
     // if it returns false it ran out of memory
     if(!DFU_Tasks(stop_everything)) {
-        os.printf("DFU had an error, not started\n");
+        printf("DFU had an error, not started\n");
     }else{
         // we run the flash program
-        //flash_cmd(params, os);
-        printf("We would run the flash_cmd here\n");
+        OutputStream nullos;
+        flash_cmd(params, nullos);
+        //printf("We would run the flash_cmd here\n");
     }
+
+    // we do not expect to get here but as all comms are off we may as well sit tight
+    while(1) ;
 
     return true;
 }

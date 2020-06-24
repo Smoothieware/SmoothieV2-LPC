@@ -229,13 +229,15 @@ static ErrorCode_t DFU_ep0_override_hdlr(USBD_HANDLE_T hUsb, void *data, uint32_
   				USBD_API->core->DataInStage(pDfuCtrl->pUsbCtrl);
 
   				// we need to reset this for the next poll otherwise dfu-util gets stuck in a status getting loop
+  				// the default handler always forces the system into DFU_STATE_dfuDNLOAD_IDLE which breaks
+  				// dfu-util out of its loop
 				ptr[0] = ptr[1] = ptr[2] = 0;	// Reset the timeout value
 				return LPC_OK;
 			}
 	   	}
 	}
 
-	// let original handle it
+	// let original handler handle it
 	return g_defaultDFUHdlr(hUsb, data, event);
 }
 
@@ -325,9 +327,8 @@ bool DFU_Tasks(void (*shutdown)(void))
 			                        DFU_XFER_BLOCK_SZ,
 			                        pdMS_TO_TICKS(100));
 
-			if(g_dfu.fWriteError) continue;
 
-			if(++delay_cnt > 100) {
+			if(++delay_cnt > 100 && !g_dfu.fDownloadDone) {
 				printf("DFU_Tasks: timed out waiting for buffers\n");
 				vMessageBufferDelete(xMessageBuffer);
 				if(fp != NULL) fclose(fp);
@@ -337,11 +338,14 @@ bool DFU_Tasks(void (*shutdown)(void))
 
 			if( xReceivedBytes > 0 && fp != NULL) {
 				delay_cnt = 0;
-				//printf("DFU_Tasks: got %u bytes\n", xReceivedBytes);
-				if(fwrite(ucRxData, 1, xReceivedBytes, fp) != xReceivedBytes) {
-					printf("DFU_Tasks: Got a write error\n");
-					g_dfu.fWriteError = true;
-					fclose(fp);
+				if(!g_dfu.fWriteError && fp != NULL) {
+					//printf("DFU_Tasks: got %u bytes\n", xReceivedBytes);
+					if(fwrite(ucRxData, 1, xReceivedBytes, fp) != xReceivedBytes) {
+						printf("DFU_Tasks: Got a write error\n");
+						g_dfu.fWriteError = true;
+						fclose(fp);
+						fp= NULL;
+					}
 				}
 			}
 
@@ -382,7 +386,7 @@ bool DFU_Tasks(void (*shutdown)(void))
 		if (g_dfu.fDownloadDone) {
 			g_dfu.fDownloadDone = 0;
 			printf("DFU download done\n");
-			if(!g_dfu.fWriteError) {
+			if(!g_dfu.fWriteError && fp != NULL) {
 				// make sure we drain the queue
 				while(!xMessageBufferIsEmpty(xMessageBuffer)) {
 					uint8_t ucRxData[DFU_XFER_BLOCK_SZ];
@@ -395,6 +399,7 @@ bool DFU_Tasks(void (*shutdown)(void))
 					}
 				}
 				fclose(fp);
+				fp= NULL;
 			}
 
 			// delete queue

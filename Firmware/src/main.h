@@ -16,6 +16,7 @@ bool process_command_buffer(size_t n, char *rxBuf, OutputStream *os, char *line,
 
 // print string to all connected consoles
 extern "C" void print_to_all_consoles(const char *);
+extern "C" void set_abort_comms();
 
 // sleep for given ms, but don't block things like ?
 void safe_sleep(uint32_t ms);

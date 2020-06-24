@@ -310,7 +310,7 @@ void set_capture(std::function<void(char)> cf)
     capture_fnc = cf;
 }
 
-static std::vector<OutputStream*> output_streams;
+static std::set<OutputStream*> output_streams;
 
 // this is here so we do not need to duplicate this logic for
 // USB serial, UART serial, Network Shell, SDCard player thread
@@ -381,6 +381,12 @@ bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
     return true;
 }
 
+static volatile bool abort_comms= false;
+void set_abort_comms()
+{
+    abort_comms= true;
+}
+
 extern "C" size_t write_cdc(const char *buf, size_t len);
 extern "C" size_t read_cdc(char *buf, size_t len);
 extern "C" int setup_cdc(void *taskhandle);
@@ -410,7 +416,7 @@ static void usb_comms(void *)
     bool done = false;
 
     // first we wait for an initial '\n' sent from host
-    while (!done) {
+    while (!done && !abort_comms) {
         // Wait to be notified that there has been a USB irq.
         ulTaskNotifyTake( pdTRUE, waitms );
         n = read_cdc(usb_rx_buf, usb_rx_buf_sz);
@@ -431,13 +437,13 @@ static void usb_comms(void *)
 
     // create an output stream that writes to the cdc
     static OutputStream os([](const char *buf, size_t len) { return write_cdc(buf, len); });
-    output_streams.push_back(&os);
+    output_streams.insert(&os);
 
     // now read lines and dispatch them
     char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
     bool discard = false;
-    while(1) {
+    while(!abort_comms) {
         // Wait to be notified that there has been a received vcom packet.
         // treat as a counting semaphore, so will only block if count is zero.
         uint32_t ulNotificationValue = ulTaskNotifyTake( pdFALSE, waitms );
@@ -453,6 +459,9 @@ static void usb_comms(void *)
             }
         } while(n > 0);
     }
+    output_streams.erase(&os);
+    printf("DEBUG: USB Comms thread exiting\n");
+    vTaskDelete(NULL);
 }
 
 static void uart_comms(void *)
@@ -462,7 +471,7 @@ static void uart_comms(void *)
 
     // create an output stream that writes to the uart
     static OutputStream os([](const char *buf, size_t len) { return write_uart(buf, len); });
-    output_streams.push_back(&os);
+    output_streams.insert(&os);
 
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
@@ -470,7 +479,7 @@ static void uart_comms(void *)
     char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
     bool discard = false;
-    while(1) {
+    while(!abort_comms) {
         // Wait to be notified that there has been a UART irq. (it may have been rx or tx so may not be anything to read)
         uint32_t ulNotificationValue = ulTaskNotifyTake( pdFALSE, waitms );
 
@@ -483,7 +492,11 @@ static void uart_comms(void *)
            process_command_buffer(n, rx_buf, &os, line, cnt, discard);
         }
     }
+    output_streams.erase(&os);
+    printf("DEBUG: UART Comms thread exiting\n");
+    vTaskDelete(NULL);
 }
+
 #ifdef BOARD_PRIMEALPHA
 static void uart3_comms(void *)
 {
@@ -492,7 +505,7 @@ static void uart3_comms(void *)
 
     // create an output stream that writes to the uart
     static OutputStream os([](const char *buf, size_t len) { return write_uart3(buf, len); });
-    output_streams.push_back(&os);
+    output_streams.insert(&os);
 
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
@@ -500,7 +513,7 @@ static void uart3_comms(void *)
     char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
     bool discard = false;
-    while(1) {
+    while(!abort_comms) {
         // Wait to be notified that there has been a UART irq. (it may have been rx or tx so may not be anything to read)
         uint32_t ulNotificationValue = ulTaskNotifyTake( pdFALSE, waitms );
 
@@ -513,6 +526,9 @@ static void uart3_comms(void *)
            process_command_buffer(n, rx_buf, &os, line, cnt, discard);
         }
     }
+    output_streams.erase(&os);
+    printf("DEBUG: UART3 Comms thread exiting\n");
+    vTaskDelete(NULL);
 }
 #endif
 
