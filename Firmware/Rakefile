@@ -319,11 +319,18 @@ task :version do
   $version = ' -D__GITVERSIONSTRING__=\"' + "#{v1[11..-1].chomp}-#{v2}".chomp + '\"'
 end
 
+file "#{OBJDIR}/flashloader.bin" => ["../flashloader/flashloader_#{TARGET}/flashloader.bin"] do |t|
+  puts "Copying #{t.source} to #{t.name}"
+  FileUtils.cp(t.source, t.name)
+end
+
 # create the dfu flash loader object from the binary
-# TODO do this for any bins in standalonebins directory
-file "#{OBJDIR}/flashloader.o" => ['./standalonebins/flashloader.bin'] do |t|
-  puts "handling flash loader #{t.source} -> #{t.name}"
+file "#{OBJDIR}/flashloader.o" => ["#{OBJDIR}/flashloader.bin"] do |t|
+  puts "converting flash loader #{t.source} -> #{t.name}"
   sh "#{OBJCOPY} -I binary -O elf32-littlearm -B arm --readonly-text --rename-section .data=.rodata.dfuloader #{t.source} #{t.name}"
+  ["start", "end", "size"].each do |n|
+    sh "#{OBJCOPY} --redefine-sym _binary_smoothiev2_#{TARGET}_flashloader_bin_#{n}=_binary_flashloader_bin_#{n} #{t.name}"
+  end
 end
 
 file "#{OBJDIR}/#{PROG}.bin" => ["#{OBJDIR}/#{PROG}.elf"] do |t|

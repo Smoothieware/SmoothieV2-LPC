@@ -1309,9 +1309,9 @@ static void stop_everything(void)
 }
 
 // linker added pointers to the included binary
-extern uint8_t _binary___standalonebins_flashloader_bin_start[];
-extern uint8_t _binary___standalonebins_flashloader_bin_end[];
-extern uint8_t _binary___standalonebins_flashloader_bin_size[];
+extern uint8_t _binary_flashloader_bin_start[];
+extern uint8_t _binary_flashloader_bin_end[];
+extern uint8_t _binary_flashloader_bin_size[];
 bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 {
     HELP("flash image - flash flashme.bin");
@@ -1330,9 +1330,9 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 
     // binary file compiled to load and run at 0x10000000
     // this program will flash the flashm.bin found on the sdcard then reset
-    uint8_t *data_start     = _binary___standalonebins_flashloader_bin_start;
-    //uint8_t *data_end       = _binary___standalonebins_flashloader_bin_end;
-    size_t data_size  = (size_t)_binary___standalonebins_flashloader_bin_size;
+    uint8_t *data_start     = _binary_flashloader_bin_start;
+    //uint8_t *data_end       = _binary_flashloader_bin_end;
+    size_t data_size  = (size_t)_binary_flashloader_bin_size;
     // copy to RAM
     uint32_t *addr= (uint32_t*)0x10000000;
     // copy to execution area at addr
