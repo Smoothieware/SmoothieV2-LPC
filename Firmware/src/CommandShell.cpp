@@ -1364,6 +1364,9 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
     StepTicker::getInstance()->stop();
     Adc::stop();
 
+    // TODO if param is empty we start DFU off in dfuIdle() so it is quicker
+    // no need for detach()
+
     // call the DFU tasks, returns true if the file was written
     // if it returns false it ran out of memory
     if(DFU_Tasks(stop_everything)) {
@@ -1372,7 +1375,7 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
         flash_cmd(params, nullos);
     }
 
-    printf("dfu_cmd should ne4ver get here: reboot needed\n");
+    printf("dfu_cmd should never get here: reboot needed\n");
 
     // we do not expect to get here but as all comms are off we may as well sit tight
     __asm("bkpt #0");

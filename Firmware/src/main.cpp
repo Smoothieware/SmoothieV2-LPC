@@ -565,6 +565,7 @@ static void handle_query(bool need_done)
     }
 }
 
+extern "C" bool DFU_requested_detach();
 /*
  * All commands must be executed in the context of this thread. It is equivalent to the main_loop in v1.
  * Commands are sent to this thread via the message queue from things that can block (like I/O)
@@ -594,6 +595,14 @@ static void command_handler()
                 Board_LED_Toggle(0);
             }
             handle_query(true);
+
+            // special case if we see we got a DFU detach we call the dfu command
+            if(DFU_requested_detach()) {
+                OutputStream nullos;
+                dispatch_line(nullos, "dfu");
+                // we should not return from this
+                __asm("bkpt #0");
+            }
         }
 
         // call in_command_ctx for all modules that want it
@@ -1063,7 +1072,7 @@ extern "C" void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTask
     Board_LED_Set(1, false);
     Board_LED_Set(2, true);
     Board_LED_Set(3, true);
-   __asm("bkpt #0");
+    __asm("bkpt #0");
     for( ;; );
 }
 

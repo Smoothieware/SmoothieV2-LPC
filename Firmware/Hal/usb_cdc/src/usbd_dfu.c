@@ -115,6 +115,11 @@ typedef struct {
 }
 #endif
 
+bool DFU_requested_detach()
+{
+	return(g_dfu.fDetach);
+}
+
 /* Rewrite USB descriptors so that DFU is the only interface. */
 static void dfu_detach(USBD_HANDLE_T hUsb)
 {
