@@ -701,6 +701,7 @@ static void http_server_netconn_serve(struct netconn *conn)
     printf("http_server_netconn_serve: request closed\n");
 }
 
+static bool shutdown= false;
 /** The main function, never returns! */
 static void http_server_thread(void *arg)
 {
@@ -726,7 +727,7 @@ static void http_server_thread(void *arg)
             netconn_close(newconn);
             netconn_delete(newconn);
         }
-    } while(err == ERR_OK);
+    } while(err == ERR_OK && !shutdown);
     printf("http_server_thread: netconn_accept received error %d, shutting down", err);
     netconn_close(conn);
     netconn_delete(conn);
@@ -736,4 +737,9 @@ static void http_server_thread(void *arg)
 void http_server_init(void)
 {
     sys_thread_new("http_server_netconn", http_server_thread, NULL, 450, DEFAULT_THREAD_PRIO);
+}
+
+void http_server_close()
+{
+    shutdown= true;
 }

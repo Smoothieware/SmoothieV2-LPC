@@ -39,6 +39,7 @@ extern "C" {
 #endif
 
 void ftpd_init(void);
+void ftpd_close(void);
 
 #ifdef __cplusplus
 }

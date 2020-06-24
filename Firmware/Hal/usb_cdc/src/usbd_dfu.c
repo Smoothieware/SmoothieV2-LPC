@@ -120,7 +120,8 @@ bool DFU_requested_detach()
 	return(g_dfu.fDetach);
 }
 
-/* Rewrite USB descriptors so that DFU is the only interface. */
+// Rewrite USB descriptors so that DFU is the only interface.
+// signal command thread that we have a detach request
 static void dfu_detach(USBD_HANDLE_T hUsb)
 {
 	iprintf("dfu_detach\n");

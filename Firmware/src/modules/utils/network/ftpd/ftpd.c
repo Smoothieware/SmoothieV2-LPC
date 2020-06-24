@@ -1486,3 +1486,8 @@ void ftpd_init(void)
 	printf("Network: ftpd server started\n");
 	tcpip_callback_with_block((tcpip_callback_fn) _ftpd_init, 0, 0);
 }
+
+void ftpd_close(void)
+{
+	// TODO
+}

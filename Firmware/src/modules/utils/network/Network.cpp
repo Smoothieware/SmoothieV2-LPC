@@ -341,7 +341,7 @@ void Network::network_thread()
 
     /* This loop monitors the PHY link and will handle cable events
        via the PHY driver. */
-    while (1) {
+    while (!abort_network) {
         /* Call the PHY status update state machine once in a while
            to keep the link status up-to-date */
         physts = lpcPHYStsPoll();
@@ -398,14 +398,32 @@ void Network::network_thread()
         /* Delay for link detection (250mS) */
         vTaskDelay(pdMS_TO_TICKS(250));
     }
+    if(ip_address == nullptr) netifapi_dhcp_stop(lpc_netif);
+
+    if(enable_shell) {
+        extern void shell_close(void);
+        shell_close();
+    }
+    if(enable_httpd) {
+        extern void http_server_close(void);
+        http_server_close();
+    }
+
+    if(enable_ftpd) {
+        ftpd_close();
+    }
+
+    NVIC_DisableIRQ(ETHERNET_IRQn);
 
     netconn_thread_cleanup();
 }
 
 void Network::vSetupIFTask(void *arg)
 {
-    static_cast<Network*>(arg)->network_thread();
+    Network *network= static_cast<Network*>(arg);
+    network->network_thread();
     vTaskDelete( NULL );
+    delete network;
 }
 
 bool Network::start()

@@ -157,6 +157,7 @@ static bool process_writes(shell_t *p_shell)
     return true;
 }
 
+static bool abort_shell= false;
 static void shell_thread(void *arg)
 {
     LWIP_UNUSED_ARG(arg);
@@ -206,7 +207,7 @@ static void shell_thread(void *arg)
     timeout.tv_usec= 10000; // 10ms
 
     /* Wait forever for network input: This could be connections or data */
-    for (;;) {
+    while(!abort_shell) {
         maxfdp1 = listenfd + 1;
 
         /* Determine what sockets need to be in readset */
@@ -342,6 +343,11 @@ static void shell_thread(void *arg)
             }
         }
     }
+
+    xTimerDelete(timer_handle, 0);
+    lwip_close(listenfd);
+    for (auto p_shell : shells) close_shell(p_shell);
+
     lwip_socket_thread_cleanup();
 }
 
@@ -349,4 +355,9 @@ void shell_init(void)
 {
     // make same priority as other comms threads
     sys_thread_new("shell_thread", shell_thread, NULL, 350, COMMS_PRI);
+}
+
+void shell_close()
+{
+    abort_shell= true;
 }

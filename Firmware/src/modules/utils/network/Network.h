@@ -13,6 +13,7 @@ class Network : public Module {
         virtual ~Network();
         static bool create(ConfigReader& cr);
         bool configure(ConfigReader& cr);
+        void set_abort() { abort_network= true; }
 
     private:
         static void vSetupIFTask(void *pvParameters);
@@ -27,6 +28,7 @@ class Network : public Module {
         char *ip_mask{nullptr};
         char *ip_gateway{nullptr};
 
+        bool abort_network{false};
         bool enable_shell{false};
         bool enable_httpd{false};
         bool enable_ftpd{false};

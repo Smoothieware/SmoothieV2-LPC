@@ -32,6 +32,7 @@
 #include "RingBuffer.h"
 #include "Conveyor.h"
 #include "Pin.h"
+#include "Network.h"
 
 static bool system_running= false;
 static bool rpi_port_enabled= false;
@@ -385,6 +386,8 @@ static volatile bool abort_comms= false;
 void set_abort_comms()
 {
     abort_comms= true;
+    Network *network= static_cast<Network *>(Module::lookup("network"));
+    if(network != nullptr) network->set_abort();
 }
 
 extern "C" size_t write_cdc(const char *buf, size_t len);
@@ -599,7 +602,7 @@ static void command_handler()
             // special case if we see we got a DFU detach we call the dfu command
             if(DFU_requested_detach()) {
                 OutputStream nullos;
-                dispatch_line(nullos, "dfu");
+                dispatch_line(nullos, "dfu 1");
                 // we should not return from this
                 __asm("bkpt #0");
             }
