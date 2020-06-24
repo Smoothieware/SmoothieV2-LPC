@@ -319,6 +319,11 @@ task :version do
   $version = ' -D__GITVERSIONSTRING__=\"' + "#{v1[11..-1].chomp}-#{v2}".chomp + '\"'
 end
 
+file "../flashloader/flashloader_#{TARGET}/flashloader.bin" do |t|
+  puts "Running rake on flashloader"
+  sh 'cd ../flashloader; rake'
+end
+
 file "#{OBJDIR}/flashloader.bin" => ["../flashloader/flashloader_#{TARGET}/flashloader.bin"] do |t|
   puts "Copying #{t.source} to #{t.name}"
   FileUtils.cp(t.source, t.name)
