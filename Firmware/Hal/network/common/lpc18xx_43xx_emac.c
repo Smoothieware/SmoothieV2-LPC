@@ -866,6 +866,12 @@ void lpc_emac_set_speed(int mbs_100)
 	}
 }
 
+void lpc_enetif_deinit()
+{
+	Chip_ENET_DeInit(LPC_ETHERNET);
+	// TODO could do more like stop the tasks that were started and release the semaphores etc
+}
+
 /* LWIP 18xx/43xx EMAC initialization function */
 err_t lpc_enetif_init(struct netif *netif)
 {

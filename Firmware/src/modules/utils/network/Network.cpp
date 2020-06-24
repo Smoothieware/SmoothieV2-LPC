@@ -258,6 +258,7 @@ extern "C" void msDelay(uint32_t ms)
     vTaskDelay(pdMS_TO_TICKS(ms));
 }
 
+extern "C" void lpc_enetif_deinit();
 
 /* LWIP kickoff and PHY link monitor thread */
 void Network::network_thread()
@@ -414,8 +415,11 @@ void Network::network_thread()
     }
 
     NVIC_DisableIRQ(ETHERNET_IRQn);
+    lpc_enetif_deinit();
 
     netconn_thread_cleanup();
+
+    printf("Network: exiting\n");
 }
 
 void Network::vSetupIFTask(void *arg)
