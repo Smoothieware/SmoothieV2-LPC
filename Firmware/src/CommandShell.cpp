@@ -1306,7 +1306,6 @@ static void stop_everything(void)
     vTaskSuspendAll();
     vTaskEndScheduler(); // NVIC_DisableIRQ(SysTick_IRQn);
     taskENABLE_INTERRUPTS(); // we want to set the base pri back
-
 }
 
 // linker added pointers to the included binary
@@ -1327,7 +1326,7 @@ bool CommandShell::flash_cmd(std::string& params, OutputStream& os)
 
     stop_everything();
 
-     __disable_irq();
+    __disable_irq();
 
     // binary file compiled to load and run at 0x10000000
     // this program will flash the flashm.bin found on the sdcard then reset
@@ -1360,19 +1359,23 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
     // we stop all comms
     set_abort_comms();
 
+    // and stop most of the interrupts
+    FastTicker::getInstance()->stop();
+    StepTicker::getInstance()->stop();
+    Adc::stop();
+
     // call the DFU tasks, returns true if the file was written
     // if it returns false it ran out of memory
-    if(!DFU_Tasks(stop_everything)) {
-        printf("DFU had an error, not started\n");
-    }else{
-        // we run the flash program
+    if(DFU_Tasks(stop_everything)) {
+         // we run the flash program
         OutputStream nullos;
         flash_cmd(params, nullos);
-        //printf("We would run the flash_cmd here\n");
     }
 
+    printf("dfu_cmd should ne4ver get here: reboot needed\n");
+
     // we do not expect to get here but as all comms are off we may as well sit tight
-    while(1) ;
+    __asm("bkpt #0");
 
     return true;
 }
