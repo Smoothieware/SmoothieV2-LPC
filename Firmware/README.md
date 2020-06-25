@@ -10,7 +10,7 @@ The config file is called config.ini on the sdcard and examples are shown in the
 
 The config.ini may also be builtin and is defined in string-config-bambino.h, a #define is needed in the main.cpp to use the builtin config.ini.
 
-Currently the max stepping rate is limited to 100Khz as this seems the upper limit to handle the 10us interrupt.
+Currently the max stepping rate is limited to 150Khz as this seems the upper limit to handle the step interrupt.
 
 Enough modules have been ported to run a 3D printer, also a laser is supported.
 
@@ -45,7 +45,7 @@ The debug UART port is on P6.4 (TX) and P6.5 (RX) on the Bambino Socket 2 pin 4,
 
 Debugging and Flashing
 ----------------------
-You will need a JLink to flash and debug, plug it into the jtag port.
+You will need a JLink to initially flash and debug, plug it into the jtag port.
 Run the jlink gdb server:
 ```/opt/jlink/JLinkGDBServer -device LPC4330_M4 -speed auto -rtos GDBServer/RTOSPlugin_FreeRTOS.so -timeout 10000```
 
@@ -57,6 +57,17 @@ The ```arm-none-eabi-gdb-64bit``` binary is in the tools directory, it is a fixe
 To flash use the load command in gdb, it is recommended you do a ```mon reset``` before and after the load.
 
 Once flashed you use the c command to run.
+
+Once an image has been flashed, new images can be downloaded and flashed using dfu-util or by copying the firmware file to sdcard called flashme.bin and using the flash command.
+There is a YModem reciever and the script in the tools folder called upload-ym.py can be used to write a firmware bin file to the sdcard. This python script uses the linux command sx to do the actual ymodem. You could also use the ymodem built into most screen programs.
+
+As a last resort if you do not have a jlink you can use the built in ROM UART3 bootloader and load the flashloader.bin file using the  tools/boot-uart.py program. This will flash the flashme.bin file on the sdcard.
+To use this you must set the boot pins to  P2.9=1 P2.8=0 P1.2=0 P1.1=0, and use
+P2.3 and P2.4 for the UART.
+
+It is possible to also use the ROM based USB loader as well, but that has not yet been tested. But in theory you could prepend  the required header using 
+-prefix -L -a flashloader.bin, then put the system into USB boot mode P2.9=0 P2.8=1 P1.2=0 P1.1=1, then reset then use dfu-util to load the modified flashloader.bin. Thios again would flash the flashme.bin file on sdcard.
+There are some files available on NXP website called lpcscrypt that can also flash over the USB direct into SPIFI.
 
 Flashing V2 Smoothie using J-Link (Windows)
 ===========================================
