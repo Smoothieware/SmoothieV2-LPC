@@ -61,12 +61,11 @@ Once flashed you use the c command to run.
 Once an image has been flashed, new images can be downloaded and flashed using dfu-util or by copying the firmware file to sdcard called flashme.bin and using the flash command.
 There is a YModem reciever and the script in the tools folder called upload-ym.py can be used to write a firmware bin file to the sdcard. This python script uses the linux command sx to do the actual ymodem. You could also use the ymodem built into most screen programs.
 
-As a last resort if you do not have a jlink you can use the built in ROM UART3 bootloader and load the flashloader.bin file using the  tools/boot-uart.py program. This will flash the flashme.bin file on the sdcard.
+If you do not have a jlink you can use the built in ROM UART3 bootloader and load the flashloader.bin file using the  tools/boot-uart.py program. This will flash the flashme.bin file on the sdcard.
 To use this you must set the boot pins to  P2.9=1 P2.8=0 P1.2=0 P1.1=0, and use
 P2.3 and P2.4 for the UART.
 
-It is possible to also use the ROM based USB loader as well, but that has not yet been tested. But in theory you could prepend  the required header using 
--prefix -L -a flashloader.bin, then put the system into USB boot mode P2.9=0 P2.8=1 P1.2=0 P1.1=1, then reset then use dfu-util to load the modified flashloader.bin. Thios again would flash the flashme.bin file on sdcard.
+Another option is to use the ROM based USB loader, you need to prepend  the required header using ```dfu-prefix -L -a flashloader.bin```, then put the system into USB boot mode P2.9=0 P2.8=1 P1.2=0 P1.1=1 then reset then use dfu-util to load the modified flashloader.bin. This again would flash the flashme.bin file on sdcard.
 There are some files available on NXP website called lpcscrypt that can also flash over the USB direct into SPIFI.
 
 Flashing V2 Smoothie using J-Link (Windows)
