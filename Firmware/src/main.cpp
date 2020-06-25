@@ -605,7 +605,9 @@ static void command_handler()
 
                 OutputStream nullos;
                 dispatch_line(nullos, "dfu 1");
-                // we should not return from this
+                // we should not return from this, if we do it is a severe error
+                Board_LED_Set(0, true); Board_LED_Set(1, true); Board_LED_Set(2, false); Board_LED_Set(3, true);
+                // and stop
                 __asm("bkpt #0");
             }
         }

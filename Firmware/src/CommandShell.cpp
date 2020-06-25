@@ -1377,9 +1377,6 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 
     printf("dfu_cmd should never get here: reboot needed\n");
 
-    // we do not expect to get here but as all comms are off we may as well sit tight
-    __asm("bkpt #0");
-
     return true;
 }
 
