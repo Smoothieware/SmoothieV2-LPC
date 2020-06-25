@@ -245,6 +245,9 @@ LOPTIONS = ['-Xlinker --gc-sections', '-Xlinker -print-memory-usage', '-Xlinker'
 
 LDFLAGS = "  -Xlinker -Map=#{OBJDIR}/#{PROG}.map -T#{LSCRIPT} " + LOPTIONS.join(" ")
 
+# generate the header dependencies if they exist
+import(*DEPFILES)
+
 desc "List options"
 task :help do
   puts "options:"
@@ -273,13 +276,10 @@ end
 #   sh "./flashit.openocd #{OBJDIR}/#{PROG}.elf"
 # end
 
-# desc "Upload via dfu"
-# task :dfu do
-#   sh "/usr/bin/dfu-util -v -R -d 0483:df11 -a 0 --dfuse-address 0x08000000 -D #{OBJDIR}/#{PROG}.bin"
-# end
-
-# generate the header dependencies if they exist
-import(*DEPFILES)
+desc "Upload via dfu"
+task :dfu do
+  sh "dfu-util -d 1fc9:0083 -D #{OBJDIR}/#{PROG}.bin"
+end
 
 desc 'clean build'
 task :clean do
