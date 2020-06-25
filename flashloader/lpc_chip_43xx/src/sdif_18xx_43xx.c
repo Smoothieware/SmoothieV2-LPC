@@ -31,6 +31,7 @@
 
 #include "chip.h"
 #include "string.h"
+#include <assert.h>
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -53,7 +54,7 @@ void Chip_SDIF_Init(LPC_SDMMC_T *pSDMMC)
 {
     /* Enable SDIO module clock */
 	Chip_Clock_EnableOpts(CLK_MX_SDIO, true, true, 1);
-	
+
     /* Software reset */
 	pSDMMC->BMOD = MCI_BMOD_SWR;
 
@@ -130,7 +131,7 @@ void Chip_SDIF_SetClock(LPC_SDMMC_T *pSDMMC, uint32_t clk_rate, uint32_t speed)
 	/* compute SD/MMC clock dividers */
 	uint32_t div;
 
-	div = ((clk_rate / speed) + 2) >> 1;
+	div = ((clk_rate / speed) + 1) >> 1;
 
 	if ((div == pSDMMC->CLKDIV) && pSDMMC->CLKENA) {
 		return;	/* Closest speed is already set */
@@ -177,6 +178,9 @@ void Chip_SDIF_DmaSetup(LPC_SDMMC_T *pSDMMC, sdif_device *psdif_dev, uint32_t ad
 	int i = 0;
 	uint32_t ctrl, maxs;
 
+	/* DMA chain is only sized to read a maximum of 64k */
+	assert(size <= 64 * 1024);
+
 	/* Reset DMA */
 	pSDMMC->CTRL |= MCI_CTRL_DMA_RESET | MCI_CTRL_FIFO_RESET;
 	while (pSDMMC->CTRL & MCI_CTRL_DMA_RESET) {}
@@ -220,4 +224,10 @@ void Chip_SDIF_DmaSetup(LPC_SDMMC_T *pSDMMC, sdif_device *psdif_dev, uint32_t ad
 	/* Set DMA derscriptor base address */
 	pSDMMC->DBADDR = (uint32_t) &psdif_dev->mci_dma_dd[0];
 }
+
+
+
+
+
+
 

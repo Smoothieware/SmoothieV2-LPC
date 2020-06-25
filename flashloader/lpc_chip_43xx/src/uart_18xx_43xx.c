@@ -95,7 +95,6 @@ STATIC void Chip_UART_ABIntHandler(LPC_USART_T *pUART)
 /* Initializes the pUART peripheral */
 void Chip_UART_Init(LPC_USART_T *pUART)
 {
-    volatile uint32_t tmp;
 
 	/* Enable UART clocking. UART base clock(s) must already be enabled */
 	Chip_Clock_EnableOpts(UART_PClock[Chip_UART_GetIndex(pUART)], true, true, 1);
@@ -124,7 +123,8 @@ void Chip_UART_Init(LPC_USART_T *pUART)
 		/* Set Modem Control to default state */
 		pUART->MCR = 0;
 		/*Dummy Reading to Clear Status */
-		tmp = pUART->MSR;
+		volatile uint32_t tmp = pUART->MSR;
+		tmp;
 	}
 
 	/* Default 8N1, with DLAB disabled */
@@ -211,7 +211,7 @@ int Chip_UART_ReadBlocking(LPC_USART_T *pUART, void *data, int numBytes)
 	int pass, readBytes = 0;
 	uint8_t *p8 = (uint8_t *) data;
 
-	while (readBytes < numBytes) {
+	while (numBytes > 0) {
 		pass = Chip_UART_Read(pUART, p8, numBytes);
 		numBytes -= pass;
 		readBytes += pass;
@@ -240,7 +240,7 @@ uint32_t Chip_UART_SetBaud(LPC_USART_T *pUART, uint32_t baudrate)
 
 	/* Fractional FDR alreadt setup for 1 in UART init */
 
-	return clkin / div;
+	return (clkin / div) >> 4;
 }
 
 /* UART receive-only interrupt handler for ring buffers */
@@ -421,4 +421,10 @@ void Chip_UART_ABCmd(LPC_USART_T *pUART, uint32_t mode, bool autorestart, Functi
 		pUART->ACR = 0;
 	}
 }
+
+
+
+
+
+
 

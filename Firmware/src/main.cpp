@@ -386,8 +386,8 @@ static volatile bool abort_comms= false;
 void set_abort_comms()
 {
     abort_comms= true;
-    Network *network= static_cast<Network *>(Module::lookup("network"));
-    if(network != nullptr) network->set_abort();
+    // Network *network= static_cast<Network *>(Module::lookup("network"));
+    // if(network != nullptr) network->set_abort();
 }
 
 extern "C" size_t write_cdc(const char *buf, size_t len);

@@ -270,6 +270,10 @@ typedef struct {
 #define SD_SEND_RELATIVE_ADDR     3		/* ac                      R6  */
 #define SD_CMD8                   8		/* bcr  [31:0]  OCR        R3  */
 
+/* class 10 */
+#define SD_SWITCH_FUNC            6		/* adtc [31]    mode       R1   */
+                                  		/*      [3:0]   access mode     */
+
 /* Application commands */
 #define SD_APP_SET_BUS_WIDTH      6		/* ac   [1:0]   bus width  R1   */
 #define SD_APP_OP_COND           41		/* bcr  [31:0]  OCR        R1 (R4)  */

@@ -334,7 +334,7 @@ bool DFU_Tasks(void (*shutdown)(void))
 			                        pdMS_TO_TICKS(100));
 
 
-			if(++delay_cnt > 100 && !g_dfu.fDownloadDone) {
+			if(++delay_cnt > 300 && !g_dfu.fDownloadDone) {
 				printf("DFU_Tasks: timed out waiting for buffers\n");
 				vMessageBufferDelete(xMessageBuffer);
 				if(fp != NULL) fclose(fp);

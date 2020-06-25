@@ -202,6 +202,7 @@ extern "C" {
 #include "sdmmc_18xx_43xx.h"
 #include "sdio_18xx_43xx.h"
 #include "sgpio_18xx_43xx.h"
+#include "spifi_18xx_43xx.h"
 #include "spi_18xx_43xx.h"
 #include "ssp_18xx_43xx.h"
 #include "timer_18xx_43xx.h"
@@ -220,3 +221,9 @@ extern "C" {
 #endif
 
 #endif /* __CHIP_LPC43XX_H_ */
+
+
+
+
+
+

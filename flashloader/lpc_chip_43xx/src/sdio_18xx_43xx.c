@@ -205,9 +205,9 @@ int SDIO_Card_WriteData(LPC_SDMMC_T *pSDMMC, uint32_t func,
 		return SDIO_ERR_INVARG;
 
 	if (flags & SDIO_MODE_BLOCK) {
-		uint32_t bs = SDIO_Card_GetBlockSize(pSDMMC, func);
-		if (!bs) return SDIO_ERR_INVARG;
-		size *= bs;
+		uint32_t bsa = SDIO_Card_GetBlockSize(pSDMMC, func);
+		if (!bsa) return SDIO_ERR_INVARG;
+		size *= bsa;
 	}
 
 	/* Set Block Size */
@@ -516,3 +516,9 @@ void SDIO_Handler(LPC_SDMMC_T *pSDMMC)
 	/* Clear the interrupts */
 	pSDMMC->RINTSTS = iclr;
 }
+
+
+
+
+
+

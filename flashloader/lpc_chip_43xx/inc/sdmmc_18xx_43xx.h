@@ -81,6 +81,7 @@ extern "C" {
 #define CMD_STOP            CMD(MMC_STOP_TRANSMISSION, 1) | CMD_BIT_BUSY
 #define CMD_WRITE_SINGLE    CMD(MMC_WRITE_BLOCK, 1) | CMD_BIT_DATA | CMD_BIT_WRITE
 #define CMD_WRITE_MULTIPLE  CMD(MMC_WRITE_MULTIPLE_BLOCK, 1) | CMD_BIT_DATA | CMD_BIT_WRITE | CMD_BIT_AUTO_STOP
+#define CMD_SD_SWITCH_FUNC  CMD(SD_SWITCH_FUNC, 1) | CMD_BIT_DATA
 
 /* Card specific setup data */
 typedef struct _mci_card_struct {

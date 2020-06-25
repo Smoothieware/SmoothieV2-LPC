@@ -344,9 +344,10 @@ static void shell_thread(void *arg)
         }
     }
 
-    xTimerDelete(timer_handle, 0);
-    lwip_close(listenfd);
     for (auto p_shell : shells) close_shell(p_shell);
+
+    lwip_close(listenfd);
+    xTimerDelete(timer_handle, 0);
 
     lwip_socket_thread_cleanup();
 }

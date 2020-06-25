@@ -686,3 +686,9 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint8_t __CLZ(uint32_t value)
 /*@}*/ /* end of group CMSIS_Core_InstructionInterface */
 
 #endif /* __CORE_CMINSTR_H */
+
+
+
+
+
+
