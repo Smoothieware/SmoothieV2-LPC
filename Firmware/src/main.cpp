@@ -602,7 +602,7 @@ static void command_handler()
             // special case if we see we got a DFU detach we call the dfu command
             if(DFU_requested_detach()) {
                 print_to_all_consoles("DFU firmware download has been requested, going down for update\n");
-                vTaskDelay(pdMS_TO_TICKS(200));
+
                 OutputStream nullos;
                 dispatch_line(nullos, "dfu 1");
                 // we should not return from this
