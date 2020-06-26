@@ -65,7 +65,7 @@ If you do not have a jlink you can use the built in ROM UART3 bootloader and loa
 To use this you must set the boot pins to  P2.9=1 P2.8=0 P1.2=0 P1.1=0, and use
 P2.3 and P2.4 for the UART.
 
-Another option is to use the ROM based USB loader, you need to prepend  the required header using ```dfu-prefix -L -a flashloader.bin```, then put the system into USB boot mode P2.9=0 P2.8=1 P1.2=0 P1.1=1 then reset then use dfu-util to load the modified flashloader.bin. This again would flash the flashme.bin file on sdcard.
+Another option is to use the ROM based USB loader, you need to prepend the required header using ```dfu-prefix -L -a flashloader.bin```, then put the system into USB boot mode P2.9=0 P2.8=1 P1.2=0 P1.1=1 then reset then use dfu-util to load the modified flashloader.bin. This again would flash the flashme.bin file on sdcard.
 There are some files available on NXP website called lpcscrypt that can also flash over the USB direct into SPIFI.
 
 Flashing V2 Smoothie using J-Link (Windows)
