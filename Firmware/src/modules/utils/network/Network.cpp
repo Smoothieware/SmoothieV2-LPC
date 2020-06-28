@@ -57,7 +57,7 @@ bool Network::create(ConfigReader& cr)
 
 Network::Network() : Module("network")
 {
-    lpc_netif= (struct netif*)malloc(sizeof(struct netif));
+    lpc_netif = (struct netif*)malloc(sizeof(struct netif));
 }
 
 Network::~Network()
@@ -81,14 +81,14 @@ bool Network::configure(ConfigReader& cr)
     if(!ip_address_str.empty() && ip_address_str != "auto") {
         std::string ip_mask_str = cr.get_string(m, ip_mask_key, "255.255.255.0");
         std::string ip_gateway_str = cr.get_string(m, ip_gateway_key, "192.168.1.254");
-        ip_address= strdup(ip_address_str.c_str());
-        ip_mask= strdup(ip_mask_str.c_str());
-        ip_gateway= strdup(ip_gateway_str.c_str());
+        ip_address = strdup(ip_address_str.c_str());
+        ip_mask = strdup(ip_mask_str.c_str());
+        ip_gateway = strdup(ip_gateway_str.c_str());
     }
 
     std::string dns_server_str = cr.get_string(m, dns_server_key, "auto");
     if(!dns_server_str.empty() && dns_server_str != "auto") {
-        dns_server= strdup(dns_server_str.c_str());
+        dns_server = strdup(dns_server_str.c_str());
     }
 
     enable_shell = cr.get_bool(m, shell_enable_key, false);
@@ -233,14 +233,14 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
             os.printf("NET_MASK   : %s\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
             os.printf("GATEWAY_IP : %s\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
             os.printf("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n",
-                    lpc_netif->hwaddr[0], lpc_netif->hwaddr[1], lpc_netif->hwaddr[2],
-                    lpc_netif->hwaddr[3], lpc_netif->hwaddr[4], lpc_netif->hwaddr[5]);
+                      lpc_netif->hwaddr[0], lpc_netif->hwaddr[1], lpc_netif->hwaddr[2],
+                      lpc_netif->hwaddr[3], lpc_netif->hwaddr[4], lpc_netif->hwaddr[5]);
 
         } else {
             os.printf("no ip set\n");
         }
 
-        const ip_addr_t *dnsaddr= dns_getserver(0);
+        const ip_addr_t *dnsaddr = dns_getserver(0);
         os.printf("DNS Server: %s\n", ipaddr_ntoa_r((const ip_addr_t *)dnsaddr, tmp_buff, 16));
 
     } else {
@@ -264,7 +264,7 @@ bool wget(const char *url, const char *fn, OutputStream& os);
 bool Network::wget_cmd( std::string& params, OutputStream& os )
 {
     HELP("wget url [outfn] - fetch a url and save to outfn or print the contents");
-    std::string url= stringutils::shift_parameter(params);
+    std::string url = stringutils::shift_parameter(params);
     if(url.empty()) {
         os.printf("url required\n");
         return true;
@@ -272,7 +272,7 @@ bool Network::wget_cmd( std::string& params, OutputStream& os )
 
     std::string outfn;
     if(!params.empty()) {
-        outfn= stringutils::shift_parameter(params);
+        outfn = stringutils::shift_parameter(params);
     }
 
     if(!wget(url.c_str(), outfn.empty() ? nullptr : outfn.c_str(), os)) {
@@ -282,18 +282,55 @@ bool Network::wget_cmd( std::string& params, OutputStream& os )
     return true;
 }
 
+#include "md5.h"
 bool Network::update_cmd( std::string& params, OutputStream& os )
 {
     HELP("update the firmware from web");
-    std::string url= "http://smoothieware.org/_media/bin/smoothiev2.bin";
+    std::string url = "http://smoothieware.org/_media/bin/smoothiev2.bin";
     if(!wget(url.c_str(), "/sd/flashme.bin", os)) {
         os.printf("failed to get update firmware\n");
-        // TODO maybe check md5
-        // std::string url2= "http://smoothieware.org/_media/bin/smoothiev2.md5";
-
-    }else{
-        // TODO flash it
+        return true;
     }
+
+    // check md5
+    FILE *lp = fopen("/sd/flashme.bin", "r");
+    if (lp == NULL) {
+        os.printf("firmware file was not found for verification\n");
+        return true;
+    }
+
+    // calculatr md5 of file
+    MD5 md5;
+    uint8_t buf[64];
+    do {
+        size_t n = fread(buf, 1, sizeof buf, lp);
+        if(n > 0) md5.update(buf, n);
+    } while(!feof(lp));
+    fclose(lp);
+
+    // now fetch the md5 of the file from the server and verify it
+    std::ostringstream oss;
+    OutputStream tos(&oss);
+    std::string url2= "http://smoothieware.org/_media/bin/smoothiev2.md5";
+    // fetch the md5 into the ostringstream
+    if(!wget(url.c_str(), nullptr, tos)) {
+        os.printf("failed to get firmware md5\n");
+        return true;
+    }
+
+    if(oss.str() == md5.finalize().hexdigest()) {
+        // md5 is correct
+        os.printf("The system will now update and reset\n");
+
+        // flash it
+        THEDISPATCHER->dispatch("flash", os);
+
+        // does not return from this
+
+    }else {
+        os.printf("firmware md5 failed verification:\n");
+    }
+
     return true;
 }
 
@@ -366,7 +403,7 @@ void Network::network_thread()
         ip_addr_t dnsaddr;
         if(ipaddr_aton(dns_server, &dnsaddr) == 0) {
             printf("Network: invalid dns server address: %s\n", dns_server);
-        }else{
+        } else {
             dns_setserver(0, &dnsaddr);
         }
         free(dns_server);
@@ -453,8 +490,8 @@ void Network::network_thread()
                 printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
                 printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
                 printf("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n",
-                    lpc_netif->hwaddr[0], lpc_netif->hwaddr[1], lpc_netif->hwaddr[2],
-                    lpc_netif->hwaddr[3], lpc_netif->hwaddr[4], lpc_netif->hwaddr[5]);
+                       lpc_netif->hwaddr[0], lpc_netif->hwaddr[1], lpc_netif->hwaddr[2],
+                       lpc_netif->hwaddr[3], lpc_netif->hwaddr[4], lpc_netif->hwaddr[5]);
 
                 prt_ip = 1;
             }
@@ -489,7 +526,7 @@ void Network::network_thread()
 
 void Network::vSetupIFTask(void *arg)
 {
-    Network *network= static_cast<Network*>(arg);
+    Network *network = static_cast<Network*>(arg);
     network->network_thread();
     vTaskDelete( NULL );
     delete network;

@@ -501,7 +501,7 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
 bool CommandShell::md5sum_cmd(std::string& params, OutputStream& os)
 {
     HELP("calculate the md5sum of given filename");
-    std::string filename          = stringutils::shift_parameter( params );
+    std::string filename= stringutils::shift_parameter( params );
 
     if(filename.empty()) {
         os.puts("file name required\n");
