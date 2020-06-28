@@ -23,6 +23,7 @@ class Network : public Module {
 
         bool handle_net_cmd( std::string& params, OutputStream& os );
         bool wget_cmd( std::string& params, OutputStream& os );
+        bool update_cmd( std::string& params, OutputStream& os );
 
         struct netif *lpc_netif;
         std::string hostname;

@@ -39,6 +39,10 @@
 
 #include "OutputStream.h"
 
+#define DEBUG_PRINTF printf
+//#define DEBUG_PRINTF(...)
+#define ERROR_PRINTF printf
+
 static bool splitURL(const char *furl, std::string& host, std::string& rurl)
 {
 
@@ -67,7 +71,7 @@ static int connectsocket(const char* host, int port)
     int s= -1;
     int err=lwip_getaddrinfo(host, NULL, NULL, &result);
     if(err != 0) {
-        printf("failed to getaddrinfo: %d - did you set a dns server?\n", err);
+        ERROR_PRINTF("failed to getaddrinfo: %d - did you set a dns server?\n", err);
         goto error;
     }
 
@@ -86,18 +90,18 @@ static int connectsocket(const char* host, int port)
     lwip_freeaddrinfo(result);
 
     if (addr.sin_addr.s_addr == INADDR_ANY){
-        printf("s_addr is bad\n");
+        ERROR_PRINTF("s_addr is bad\n");
         goto error;
     }
 
     s = lwip_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (s == -1){
-        printf("failed to open socket: %d\n", errno);
+        ERROR_PRINTF("failed to open socket: %d\n", errno);
         goto error;
     }
 
     if (lwip_connect(s, (const sockaddr*)&addr, sizeof(addr))){
-        printf("failed to connect: %d\n", errno);
+        ERROR_PRINTF("failed to connect: %d\n", errno);
         goto error;
     }
 
@@ -113,8 +117,9 @@ error:
 
 // Response data/funcs
 struct HttpResponse {
-    std::vector<char> body;
-    int code;
+    int code, error;
+    FILE *fp;
+    OutputStream& os;
 };
 
 static void* response_realloc(void* opaque, void* ptr, int size)
@@ -124,17 +129,26 @@ static void* response_realloc(void* opaque, void* ptr, int size)
 
 static void response_body(void* opaque, const char* data, int size)
 {
-    printf("Body: size %d\n", size);
+    DEBUG_PRINTF("Body: size %d\n", size);
 
     HttpResponse* response = (HttpResponse*)opaque;
-    response->body.insert(response->body.end(), data, data + size);
+    if(response->fp == NULL) {
+        response->os.write(data, size);
+
+    }else if(response->error == 0) {
+        int n= fwrite(data, 1, size, response->fp);
+        if(n != size) {
+            DEBUG_PRINTF("file write error: %d", errno);
+            response->error= 1;
+        }
+    }
 }
 
 static void response_header(void* opaque, const char* ckey, int nkey, const char* cvalue, int nvalue)
 {
     std::string k(ckey, nkey);
     std::string v(cvalue, nvalue);
-    printf("%s: %s\n", k.c_str(), v.c_str());
+    DEBUG_PRINTF("%s: %s\n", k.c_str(), v.c_str());
 }
 
 static void response_code(void* opaque, int code)
@@ -155,7 +169,7 @@ bool wget(const char *url, const char *fn, OutputStream& os)
     std::string host, req;
 
     if(!splitURL(url, host, req)) {
-        printf("bad url: %s\n", url);
+        ERROR_PRINTF("bad url: %s\n", url);
         return false;
     }
 
@@ -165,23 +179,32 @@ bool wget(const char *url, const char *fn, OutputStream& os)
     request.append(host);
     request.append("\r\n\r\n\r\n");
 
-    printf("request: %s to host: %s\n", request.c_str(), host.c_str());
+    DEBUG_PRINTF("request: %s to host: %s\n", request.c_str(), host.c_str());
 
     int conn = connectsocket(host.c_str(), 80);
     if (conn < 0) {
-        printf("Failed to connect socket\n");
+        ERROR_PRINTF("Failed to connect socket: %d\n", errno);
         return false;
     }
 
     size_t len = lwip_send(conn, request.c_str(), request.size(), 0);
     if (len != request.size()) {
-        printf("Failed to send request\n");
+        ERROR_PRINTF("Failed to send request: %d\n", errno);
         lwip_close(conn);
         return false;
     }
 
-    HttpResponse response;
-    response.code = 0;
+    HttpResponse response{0, 0, NULL, os};
+
+    if(fn != nullptr) {
+        FILE *fp = fopen(fn, "w");
+        if(fp == NULL) {
+            ERROR_PRINTF("failed to open file: %s\n", fn);
+            lwip_close(conn);
+            return false;
+        }
+        response.fp= fp;
+    }
 
     http_roundtripper rt;
     http_init(&rt, responseFuncs, &response);
@@ -192,9 +215,10 @@ bool wget(const char *url, const char *fn, OutputStream& os)
         const char* data = buffer;
         int ndata = lwip_recv(conn, buffer, sizeof(buffer), 0);
         if (ndata <= 0) {
-            printf("Error receiving data\n");
+            ERROR_PRINTF("Error receiving data: %d\n", errno);
             http_free(&rt);
             lwip_close(conn);
+            if(response.fp != NULL) fclose(response.fp);
             return false;
         }
 
@@ -207,35 +231,25 @@ bool wget(const char *url, const char *fn, OutputStream& os)
     }
 
     if (http_iserror(&rt)) {
-        printf("Error parsing data\n");
+        ERROR_PRINTF("Error parsing HTTP data\n");
         http_free(&rt);
         lwip_close(conn);
+        if(response.fp != NULL) fclose(response.fp);
+        return false;
+    }
+
+    if (response.error != 0) {
+        ERROR_PRINTF("Error writing data to file\n");
+        http_free(&rt);
+        lwip_close(conn);
+        if(response.fp != NULL) fclose(response.fp);
         return false;
     }
 
     http_free(&rt);
     lwip_close(conn);
+    if(response.fp != NULL) fclose(response.fp);
 
-    printf("Response: %d\n", response.code);
-
-    if(fn != nullptr) {
-        if (!response.body.empty()) {
-            FILE *fp = fopen(fn, "w");
-            if(fp == NULL) {
-                printf("failed to open file: %s\n", fn);
-                return false;
-            }
-            for(char c : response.body) {
-                fputc(c, fp);
-            }
-            fclose(fp);
-        }
-    }else{
-        for(char c : response.body) {
-            os.printf("%c", c);
-        }
-    }
-
-    return true;
+    return response.code == 200;
 }
 

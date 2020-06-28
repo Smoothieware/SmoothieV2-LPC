@@ -101,6 +101,7 @@ bool Network::configure(ConfigReader& cr)
 
     THEDISPATCHER->add_handler( "net", std::bind( &Network::handle_net_cmd, this, _1, _2) );
     THEDISPATCHER->add_handler( "wget", std::bind( &Network::wget_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "update", std::bind( &Network::update_cmd, this, _1, _2) );
 
     return true;
 }
@@ -278,6 +279,21 @@ bool Network::wget_cmd( std::string& params, OutputStream& os )
         os.printf("failed to get url\n");
     }
 
+    return true;
+}
+
+bool Network::update_cmd( std::string& params, OutputStream& os )
+{
+    HELP("update the firmware from web");
+    std::string url= "http://smoothieware.org/_media/bin/smoothiev2.bin";
+    if(!wget(url.c_str(), "/sd/flashme.bin", os)) {
+        os.printf("failed to get update firmware\n");
+        // TODO maybe check md5
+        // std::string url2= "http://smoothieware.org/_media/bin/smoothiev2.md5";
+
+    }else{
+        // TODO flash it
+    }
     return true;
 }
 
