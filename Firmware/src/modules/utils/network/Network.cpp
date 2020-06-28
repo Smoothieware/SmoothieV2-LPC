@@ -286,8 +286,17 @@ bool Network::wget_cmd( std::string& params, OutputStream& os )
 bool Network::update_cmd( std::string& params, OutputStream& os )
 {
     HELP("update the firmware from web");
-    std::string url = "http://smoothieware.org/_media/bin/smoothiev2.bin";
-    if(!wget(url.c_str(), "/sd/flashme.bin", os)) {
+    #ifdef BOARD_BAMBINO
+    std::string urlbin = "http://smoothieware.org/_media/bin/bb.bin";
+    std::string urlmd5 = "http://smoothieware.org/_media/bin/bb.md5";
+    #elif defined(BOARD_PRIMEALPHA)
+    std::string urlbin = "http://smoothieware.org/_media/bin/pa.bin";
+    std::string urlmd5 = "http://smoothieware.org/_media/bin/pa.md5";
+    #else
+    #error "board not supported by update_cmd"
+    #endif
+
+    if(!wget(urlbin.c_str(), "/sd/flashme.bin", os)) {
         os.printf("failed to get update firmware\n");
         return true;
     }
@@ -299,7 +308,7 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
         return true;
     }
 
-    // calculatr md5 of file
+    // calculate md5 of file
     MD5 md5;
     uint8_t buf[64];
     do {
@@ -307,18 +316,21 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
         if(n > 0) md5.update(buf, n);
     } while(!feof(lp));
     fclose(lp);
+    std::string md= md5.finalize().hexdigest();
 
     // now fetch the md5 of the file from the server and verify it
     std::ostringstream oss;
     OutputStream tos(&oss);
-    std::string url2= "http://smoothieware.org/_media/bin/smoothiev2.md5";
     // fetch the md5 into the ostringstream
-    if(!wget(url.c_str(), nullptr, tos)) {
+    if(!wget(urlmd5.c_str(), nullptr, tos)) {
         os.printf("failed to get firmware md5\n");
         return true;
     }
 
-    if(oss.str() == md5.finalize().hexdigest()) {
+    printf("fetched md5: %s\n", oss.str().c_str());
+    printf("calculated md5: %s\n", md.c_str());
+
+    if(oss.str() == md) {
         // md5 is correct
         os.printf("The system will now update and reset\n");
 
