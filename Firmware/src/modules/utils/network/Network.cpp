@@ -11,6 +11,7 @@
 //#include "lwip/timers.h"
 #include "netif/etharp.h"
 #include "lwip/dhcp.h"
+#include "lwip/dns.h"
 
 #include "board.h"
 #include "arch/lpc18xx_43xx_emac.h"
@@ -22,6 +23,7 @@
 #include "ConfigReader.h"
 #include "Dispatcher.h"
 #include "OutputStream.h"
+#include "StringUtils.h"
 
 #include "ftpd.h"
 
@@ -33,6 +35,7 @@
 #define ip_mask_key "ip_mask"
 #define ip_gateway_key "ip_gateway"
 #define hostname_key "hostname"
+#define dns_server_key "dns_server"
 
 REGISTER_MODULE(Network, Network::create)
 
@@ -83,6 +86,11 @@ bool Network::configure(ConfigReader& cr)
         ip_gateway= strdup(ip_gateway_str.c_str());
     }
 
+    std::string dns_server_str = cr.get_string(m, dns_server_key, "auto");
+    if(!dns_server_str.empty() && dns_server_str != "auto") {
+        dns_server= strdup(dns_server_str.c_str());
+    }
+
     enable_shell = cr.get_bool(m, shell_enable_key, false);
     enable_ftpd = cr.get_bool(m, ftp_enable_key, false);
     enable_httpd = cr.get_bool(m, webserver_enable_key, false);
@@ -92,6 +100,7 @@ bool Network::configure(ConfigReader& cr)
     using std::placeholders::_2;
 
     THEDISPATCHER->add_handler( "net", std::bind( &Network::handle_net_cmd, this, _1, _2) );
+    THEDISPATCHER->add_handler( "wget", std::bind( &Network::wget_cmd, this, _1, _2) );
 
     return true;
 }
@@ -214,14 +223,14 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
 {
     HELP("net - show network status, -n also shows netstat");
 
+    static char tmp_buff[16];
     if(lpc_netif->flags & NETIF_FLAG_LINK_UP) {
         os.printf("hostname: %s\n", netif_get_hostname(lpc_netif));
         os.printf("Link UP\n");
         if (lpc_netif->ip_addr.addr) {
-            static char tmp_buff[16];
-            os.printf("IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->ip_addr, tmp_buff, 16));
-            os.printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
-            os.printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
+            os.printf("IP_ADDR    : %s\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->ip_addr, tmp_buff, 16));
+            os.printf("NET_MASK   : %s\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
+            os.printf("GATEWAY_IP : %s\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
             os.printf("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n",
                     lpc_netif->hwaddr[0], lpc_netif->hwaddr[1], lpc_netif->hwaddr[2],
                     lpc_netif->hwaddr[3], lpc_netif->hwaddr[4], lpc_netif->hwaddr[5]);
@@ -229,6 +238,10 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
         } else {
             os.printf("no ip set\n");
         }
+
+        const ip_addr_t *dnsaddr= dns_getserver(0);
+        os.printf("DNS Server: %s\n", ipaddr_ntoa_r((const ip_addr_t *)dnsaddr, tmp_buff, 16));
+
     } else {
         os.printf("Link DOWN\n");
     }
@@ -240,6 +253,30 @@ bool Network::handle_net_cmd( std::string& params, OutputStream& os )
     }
 
     os.set_no_response();
+
+    return true;
+}
+
+// extern
+bool wget(const char *url, const char *fn, OutputStream& os);
+
+bool Network::wget_cmd( std::string& params, OutputStream& os )
+{
+    HELP("wget url [outfn] - fetch a url and save to outfn or print the contents");
+    std::string url= stringutils::shift_parameter(params);
+    if(url.empty()) {
+        os.printf("url required\n");
+        return true;
+    }
+
+    std::string outfn;
+    if(!params.empty()) {
+        outfn= stringutils::shift_parameter(params);
+    }
+
+    if(!wget(url.c_str(), outfn.empty() ? nullptr : outfn.c_str(), os)) {
+        os.printf("failed to get url\n");
+    }
 
     return true;
 }
@@ -306,6 +343,17 @@ void Network::network_thread()
         // IP4_ADDR(&ipaddr, 10, 1, 10, 234);
         // IP4_ADDR(&netmask, 255, 255, 255, 0);
         // IP4_ADDR(&gw, 10, 1, 10, 1);
+    }
+
+    if(dns_server != nullptr) {
+        // setup up manual dns server address
+        ip_addr_t dnsaddr;
+        if(ipaddr_aton(dns_server, &dnsaddr) == 0) {
+            printf("Network: invalid dns server address: %s\n", dns_server);
+        }else{
+            dns_setserver(0, &dnsaddr);
+        }
+        free(dns_server);
     }
 
     /* Add netif interface for lpc17xx_8x */
@@ -399,6 +447,7 @@ void Network::network_thread()
         /* Delay for link detection (250mS) */
         vTaskDelay(pdMS_TO_TICKS(250));
     }
+
     if(ip_address == nullptr) netifapi_dhcp_stop(lpc_netif);
 
     if(enable_shell) {

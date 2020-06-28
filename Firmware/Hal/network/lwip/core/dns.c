@@ -94,6 +94,7 @@
 #include "lwip/memp.h"
 #include "lwip/dns.h"
 #include "lwip/prot/dns.h"
+#include "lwip/dns.h"
 
 #include <string.h>
 

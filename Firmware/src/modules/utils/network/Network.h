@@ -22,11 +22,14 @@ class Network : public Module {
         bool start(void);
 
         bool handle_net_cmd( std::string& params, OutputStream& os );
+        bool wget_cmd( std::string& params, OutputStream& os );
+
         struct netif *lpc_netif;
         std::string hostname;
         char *ip_address{nullptr};
         char *ip_mask{nullptr};
         char *ip_gateway{nullptr};
+        char *dns_server{nullptr};
 
         bool abort_network{false};
         bool enable_shell{false};

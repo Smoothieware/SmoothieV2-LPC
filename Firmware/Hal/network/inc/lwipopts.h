@@ -81,6 +81,10 @@
 #define LWIP_UDP                        1
 #define LWIP_NETIF_API                  1
 
+#define LWIP_DNS                        1
+#define LWIP_DHCP_MAX_DNS_SERVERS       2
+#define DNS_MAX_SERVERS                 3
+
 /* Hostname can be used */
 #define LWIP_NETIF_HOSTNAME             1
 
