@@ -39,8 +39,8 @@
 
 #include "OutputStream.h"
 
-#define DEBUG_PRINTF printf
-//#define DEBUG_PRINTF(...)
+//#define DEBUG_PRINTF printf
+#define DEBUG_PRINTF(...)
 #define ERROR_PRINTF printf
 
 static bool splitURL(const char *furl, std::string& host, std::string& rurl)

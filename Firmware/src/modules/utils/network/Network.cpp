@@ -327,7 +327,7 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
         return true;
     }
 
-    printf("fetched md5: %s\n", oss.str().c_str());
+    printf("fetched md5   : %s\n", oss.str().c_str());
     printf("calculated md5: %s\n", md.c_str());
 
     if(oss.str() == md) {
