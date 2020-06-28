@@ -296,6 +296,8 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
     #error "board not supported by update_cmd"
     #endif
 
+    os.printf("Updating the firmware from the web, if successful the system will reboot, this can take about 20 seconds\n");
+
     if(!wget(urlbin.c_str(), "/sd/flashme.bin", os)) {
         os.printf("failed to get update firmware\n");
         return true;
