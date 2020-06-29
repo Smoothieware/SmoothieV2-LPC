@@ -113,7 +113,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] = {
 	/* DFU RunTime/DFU Mode Functional Descriptor */
 	DFU_FUNC_DESC_SIZE,					/* bLength */
 	USB_DFU_DESCRIPTOR_TYPE,			/* bDescriptorType */
-	USB_DFU_CAN_DOWNLOAD | USB_DFU_CAN_UPLOAD | USB_DFU_MANIFEST_TOL,	/* bmAttributes */
+	USB_DFU_CAN_DOWNLOAD | USB_DFU_MANIFEST_TOL,	/* bmAttributes */
 	WBVAL(0x1000),						/* wDetachTimeout */
 	WBVAL(USB_DFU_XFER_SIZE),			/* wTransferSize */
 	WBVAL(0x100),						/* bcdDFUVersion */

@@ -63,7 +63,7 @@ static ALIGNED(4) uint8_t DFU_ConfigDescriptor[] = {
 	/* DFU RunTime/DFU Mode Functional Descriptor */
 	DFU_FUNC_DESC_SIZE,					/* bLength */
 	USB_DFU_DESCRIPTOR_TYPE,			/* bDescriptorType */
-	USB_DFU_CAN_DOWNLOAD | USB_DFU_CAN_UPLOAD | USB_DFU_MANIFEST_TOL,	/* bmAttributes */
+	USB_DFU_CAN_DOWNLOAD | USB_DFU_MANIFEST_TOL,	/* bmAttributes */
 	WBVAL(0x1000),						/* wDetachTimeout */
 	WBVAL(USB_DFU_XFER_SIZE),			/* wTransferSize */
 	WBVAL(0x100),						/* bcdDFUVersion */
@@ -84,6 +84,7 @@ typedef struct {
 		volatile bool fReset: 1;       /*!< Flag indicating we got a reset */
 		volatile bool fDownloading: 1; /*!< Flag indicating we are in the downloading state */
 		volatile bool fWriteError: 1;  /*!< Flag indicating we got a write error */
+		volatile bool fUpload: 1;      /*!< Flag indicating it was a read/upload */
 	} DFU_Ctrl_T;
 
 	extern USBD_HANDLE_T g_hUsb;
@@ -146,20 +147,26 @@ static void dfu_done(void)
 }
 
 // DFU read callback is called during DFU_UPLOAD state.
-// We return the SPIFI image it maybe a little bigger than the actual image
+// We return the SPIFI image.
 extern uint32_t _image_start;
 extern uint32_t _image_end;
 static uint32_t dfu_rd(uint32_t block_num, uint8_t * *pBuff, uint32_t length)
 {
 	iprintf("dfu_rd: %lu, %lu, %p\n", length, block_num, *pBuff);
+	g_dfu.fUpload= true;
+	return DFU_STATUS_errUNKNOWN;
+#if 0
 	uint32_t src_addr = _image_start;
 	uint32_t src_end = _image_end;
 
 	src_addr += (block_num * DFU_XFER_BLOCK_SZ);
 	if(src_addr >= src_end) return 0;
 	*pBuff = (uint8_t *) src_addr;
-
+	if((src_addr + length) > src_end) {
+		return length - (src_end-src_addr);
+	}
 	return length;
+#endif
 }
 
 // DFU write callback is called during DFU_DOWNLOAD state.
@@ -263,6 +270,7 @@ ErrorCode_t DFU_init(USBD_HANDLE_T hUsb,
 	g_dfu.fReset = false;
 	g_dfu.fWriteError = false;
 	g_dfu.fDownloading = false;
+	g_dfu.fUpload = false;
 
 
 	/* Init DFU paramas */
@@ -320,6 +328,11 @@ bool DFU_Tasks(void (*shutdown)(void))
 	FILE *fp = NULL;
 	uint32_t delay_cnt = 0;
 	while(1) {
+		if(g_dfu.fUpload) {
+			printf("DFU Upload not supported\n");
+			return false;
+		}
+
 		if(g_dfu.fDownloading) {
 			// we are in the process of downloading so we need to write
 			// the data to the file as quickly as possible

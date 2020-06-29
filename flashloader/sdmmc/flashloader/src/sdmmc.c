@@ -403,8 +403,8 @@ int main()
 	// 	debugstr("Rename Failed.\r\n");
 	// }
 
-	debugstr("Flash completed. Rebooting in 5 seconds\r\n");
-	sdmmc_waitms(5000);
+	debugstr("Flash completed. Rebooting in 1 second\r\n");
+	sdmmc_waitms(1000);
 
 	*(volatile int*)0x40053100 = 1; // reset core
 	for (;; ) {}

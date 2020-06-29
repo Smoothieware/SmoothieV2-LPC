@@ -325,7 +325,7 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
     OutputStream tos(&oss);
     // fetch the md5 into the ostringstream
     if(!wget(urlmd5.c_str(), nullptr, tos)) {
-        os.printf("failed to get firmware md5\n");
+        os.printf("failed to get firmware checksum\n");
         return true;
     }
 
@@ -342,7 +342,7 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
         // does not return from this
 
     }else {
-        os.printf("firmware md5 failed verification:\n");
+        os.printf("downloaded firmware failed verification:\n");
     }
 
     return true;
