@@ -276,8 +276,9 @@ bool Network::wget_cmd( std::string& params, OutputStream& os )
     }
 
     if(!wget(url.c_str(), outfn.empty() ? nullptr : outfn.c_str(), os)) {
-        os.printf("failed to get url\n");
+        os.printf("\nfailed to get url");
     }
+    os.printf("\n");
 
     return true;
 }
