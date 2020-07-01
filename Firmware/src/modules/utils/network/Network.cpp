@@ -284,6 +284,9 @@ bool Network::wget_cmd( std::string& params, OutputStream& os )
 }
 
 #include "md5.h"
+extern uint32_t _image_start;
+extern uint32_t _image_end;
+
 bool Network::update_cmd( std::string& params, OutputStream& os )
 {
     HELP("update the firmware from web");
@@ -297,10 +300,39 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
     #error "board not supported by update_cmd"
     #endif
 
-    os.printf("Updating the firmware from the web, if successful the system will reboot, this can take about 20 seconds\n");
+    // fetch the md5 of the file from the server
+    std::ostringstream oss;
+    OutputStream tos(&oss);
+    // fetch the md5 into the ostringstream
+    if(!wget(urlmd5.c_str(), nullptr, tos)) {
+        os.printf("failed to get firmware checksum\n");
+        return true;
+    }
 
+    {
+        char *src_addr = (char *)&_image_start;
+        char *src_end = (char *)&_image_end;
+        uint32_t src_len = src_end - src_addr;
+        MD5 md5;
+        md5.update(src_addr, src_len);
+        std::string md= md5.finalize().hexdigest();
+        os.printf("current md5:  %s\n", md);
+        os.printf("fetched md5:  %s\n", oss.str().c_str());
+        if(oss.str() == md) {
+            os.printf("You already have the latest firmware\n");
+            return true;
+        }
+    }
+
+    if(!params.empty()) {
+        // just checking if there is a newer version
+        os.printf("There is an updated version of the firmware available\n");
+        return true;
+    }
+
+    // fetch firmware from server
     if(!wget(urlbin.c_str(), "/sd/flashme.bin", os)) {
-        os.printf("failed to get update firmware\n");
+        os.printf("failed to get updated firmware\n");
         return true;
     }
 
@@ -321,21 +353,12 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
     fclose(lp);
     std::string md= md5.finalize().hexdigest();
 
-    // now fetch the md5 of the file from the server and verify it
-    std::ostringstream oss;
-    OutputStream tos(&oss);
-    // fetch the md5 into the ostringstream
-    if(!wget(urlmd5.c_str(), nullptr, tos)) {
-        os.printf("failed to get firmware checksum\n");
-        return true;
-    }
+    os.printf("new file md5: %s\n", md.c_str());
 
-    printf("fetched md5   : %s\n", oss.str().c_str());
-    printf("calculated md5: %s\n", md.c_str());
-
+    // flash it
     if(oss.str() == md) {
         // md5 is correct
-        os.printf("The system will now update and reset\n");
+        os.printf("Updating the firmware from the web\n if successful the system will reboot\n this can take about 20 seconds\n");
 
         // flash it
         THEDISPATCHER->dispatch("flash", os);

@@ -156,8 +156,8 @@ static uint32_t dfu_rd(uint32_t block_num, uint8_t * *pBuff, uint32_t length)
 	g_dfu.fUpload= true;
 	return DFU_STATUS_errUNKNOWN;
 #if 0
-	uint32_t src_addr = _image_start;
-	uint32_t src_end = _image_end;
+    char *src_addr = (char *)&_image_start;
+    char *src_end = (char *)&_image_end;
 
 	src_addr += (block_num * DFU_XFER_BLOCK_SZ);
 	if(src_addr >= src_end) return 0;
