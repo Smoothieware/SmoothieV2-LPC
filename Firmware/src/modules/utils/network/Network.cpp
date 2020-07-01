@@ -316,7 +316,7 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
         MD5 md5;
         md5.update(src_addr, src_len);
         std::string md= md5.finalize().hexdigest();
-        os.printf("current md5:  %s\n", md);
+        os.printf("current md5:  %s\n", md.c_str());
         os.printf("fetched md5:  %s\n", oss.str().c_str());
         if(oss.str() == md) {
             os.printf("You already have the latest firmware\n");
