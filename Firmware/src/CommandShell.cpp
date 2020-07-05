@@ -740,7 +740,7 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
         // std::vector<float> v= parse_number_list(p.c_str());
         // if(p.empty() || v.size() < 1) {
         //     os.printf("error:usage: get [fk|ik] [-m] x[,y,z]\n");
-        //     return;
+        //     return true;
         // }
 
         // float x= v[0];
@@ -1382,54 +1382,77 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 {
-    HELP("instant jog: $J X0.01 [F0.5] - axis can be one of XYZABC, optional speed is scale of max_rate");
+    HELP("instant jog: $J X0.01 [S0.5] - axis can be XYZABC, optional speed (Snnn) is scale of max_rate");
     os.set_no_response(true);
-    // $J X0.1 F0.5
-    int n_motors = Robot::getInstance()->get_number_registered_motors();
+
+    AutoPushPop app;
+
+    // $J X0.1 [Y0.2] [S0.5]
+    int n_motors= Robot::getInstance()->get_number_registered_motors();
 
     // get axis to move and amount (X0.1)
-    // for now always 1 axis
-    size_t npos = params.find_first_of("XYZABC");
-    if(npos == std::string::npos) {
-        os.printf("usage: $J X0.01 [F0.5]\n");
-        return true;
-    }
+    // may specify multiple axis
 
-    std::string s = params.substr(npos);
-    if(s.empty() || s.size() < 2) {
-        os.printf("usage: $J X0.01 [F0.5]\n");
-        return true;
-    }
-    char ax = toupper(s[0]);
-    uint8_t a = ax >= 'X' ? ax - 'X' : ax - 'A' + 3;
-    if(a >= n_motors) {
-        os.printf("error:bad axis\n");
-        return true;
-    }
-
-    float d = strtof(s.substr(1).c_str(), NULL);
-
+    float rate_mm_s= -1;
+    float scale= 1.0F;
     float delta[n_motors];
     for (int i = 0; i < n_motors; ++i) {
-        delta[i] = 0;
-    }
-    delta[a] = d;
-
-    // get speed scale
-    float scale = 1.0F;
-    npos = params.find_first_of("F");
-    if(npos != std::string::npos && npos + 1 < params.size()) {
-        scale = strtof(params.substr(npos + 1).c_str(), NULL);
+        delta[i]= 0;
     }
 
-    Robot::getInstance()->push_state();
-    float rate_mm_s = Robot::getInstance()->actuators[a]->get_max_rate() * scale;
-    Robot::getInstance()->delta_move(delta, rate_mm_s, n_motors);
+    if(params.empty()) {
+        os.printf("usage: $J X0.01 [S0.5] - axis can be XYZABC, optional speed is scale of max_rate\n");
+        return true;
+    }
+
+    while(!params.empty()) {
+        std::string p= stringutils::shift_parameter(params);
+
+        char ax= toupper(p[0]);
+        if(ax == 'S') {
+            // get speed scale
+            scale= strtof(p.substr(1).c_str(), NULL);
+            continue;
+        }
+
+        if(!((ax >= 'X' && ax <= 'Z') || (ax >= 'A' && ax <= 'C'))) {
+            os.printf("error:bad axis %c\n", ax);
+            return true;
+        }
+
+        uint8_t a= ax >= 'X' ? ax - 'X' : ax - 'A' + 3;
+        if(a >= n_motors) {
+            os.printf("error:axis out of range %c\n", ax);
+            return true;
+        }
+
+        delta[a]= strtof(p.substr(1).c_str(), NULL);
+    }
+
+    // select slowest axis rate to use
+    bool ok= false;
+    for (int i = 0; i < n_motors; ++i) {
+        if(delta[i] != 0) {
+            ok= true;
+            if(rate_mm_s < 0) {
+                rate_mm_s= Robot::getInstance()->actuators[i]->get_max_rate();
+            }else{
+                rate_mm_s = std::min(rate_mm_s, Robot::getInstance()->actuators[i]->get_max_rate());
+            }
+            //os.printf("%d %f S%f\n", i, delta[i], rate_mm_s);
+        }
+    }
+    if(!ok) {
+        os.printf("error:no delta jog specified\n");
+        return true;
+    }
+
+    //os.printf("F%f\n", rate_mm_s*scale);
+
+    Robot::getInstance()->delta_move(delta, rate_mm_s*scale, n_motors);
 
     // turn off queue delay and run it now
     Conveyor::getInstance()->force_queue();
-    Robot::getInstance()->pop_state();
-    //os.printf("Jog: %c%f F%f\n", ax, d, scale);
 
     return true;
 }
