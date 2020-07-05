@@ -77,7 +77,7 @@ bool TemperatureControl::load_controls(ConfigReader& cr)
 {
     ConfigReader::sub_section_map_t ssmap;
     if(!cr.get_sub_sections("temperature control", ssmap)) {
-        printf("configure-temperature control: no section found\n");
+        printf("INFO: configure-temperature control: no section found\n");
         return false;
     }
 
@@ -98,16 +98,16 @@ bool TemperatureControl::load_controls(ConfigReader& cr)
                 }
                 ++cnt;
             } else {
-                printf("configure-temperature control: failed to configure temperature control %s\n", name.c_str());
+                printf("INFO: configure-temperature control: failed to configure temperature control %s\n", name.c_str());
                 delete tc;
             }
         }
     }
 
     if(cnt > 0) {
-        printf("configure-temperature control: NOTE: %d TemperatureControl(s) configured and enabled\n", cnt);
+        printf("INFO: configure-temperature control: NOTE: %d TemperatureControl(s) configured and enabled\n", cnt);
     } else {
-        printf("configure-temperature control: NOTE: no TemperatureControl(s) configured\n");
+        printf("INFO: configure-temperature control: NOTE: no TemperatureControl(s) configured\n");
     }
 
 #ifdef BOARD_PRIMEALPHA
@@ -188,7 +188,7 @@ bool TemperatureControl::configure(ConfigReader& cr, ConfigReader::section_map_t
 
     // allow sensor to read the config
     if(!sensor->configure(cr, m)) {
-        printf("configure-temperature: %s sensor %s failed to configure\n", get_instance_name(), sensor_type.c_str());
+        printf("INFO: configure-temperature: %s sensor %s failed to configure\n", get_instance_name(), sensor_type.c_str());
         return false;
     }
 
@@ -211,13 +211,13 @@ bool TemperatureControl::configure(ConfigReader& cr, ConfigReader::section_map_t
         float freq= cr.get_float(m, pwm_frequency_key, 2000);
         if(freq >= FastTicker::get_min_frequency()) { // if >= 1KHz use FastTicker
             if(FastTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin)) < 0) {
-                printf("configure-temperature: ERROR Fast Ticker was not set (Too slow?)\n");
+                printf("INFO: configure-temperature: ERROR Fast Ticker was not set (Too slow?)\n");
                 return false;
             }
 
         }else{
             if(SlowTicker::getInstance()->attach((uint32_t)freq, std::bind(&SigmaDeltaPwm::on_tick, this->heater_pin)) < 0) {
-                printf("configure-temperature: ERROR Slow Ticker was not set (Too fast?)\n");
+                printf("INFO: configure-temperature: ERROR Slow Ticker was not set (Too fast?)\n");
                 return false;
             }
         }

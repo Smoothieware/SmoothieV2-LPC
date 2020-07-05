@@ -127,7 +127,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
     // iterate over all in endstops section
     ConfigReader::sub_section_map_t ssmap;
     if(!cr.get_sub_sections("endstops", ssmap)) {
-        printf("configure-endstop: no section found\n");
+        printf("INFO: configure-endstop: no section found\n");
         return false;
     }
 
@@ -143,7 +143,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
         pin_info->pin.from_string(cr.get_string(mm, pin_key, "nc" ))->as_input();
         if(!pin_info->pin.connected()){
             // no pin defined try next
-            printf("configure-endstop: no pin defined for %s\n", name.c_str());
+            printf("INFO: configure-endstop: no pin defined for %s\n", name.c_str());
             delete pin_info;
             continue;
         }
@@ -151,7 +151,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
         std::string axis= cr.get_string(mm, axis_key, "");
         if(axis.empty()){
             // axis is required
-            printf("configure-endstop: no axis defined for %s\n", name.c_str());
+            printf("INFO: configure-endstop: no axis defined for %s\n", name.c_str());
             delete pin_info;
             continue;
         }
@@ -165,7 +165,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
             case 'B': a= B_AXIS; break;
             case 'C': a= C_AXIS; break;
             default: // not a recognized axis
-                printf("configure-endstop: not a known axis %c, defined for %s\n", axis[0], name.c_str());
+                printf("INFO: configure-endstop: not a known axis %c, defined for %s\n", axis[0], name.c_str());
                 delete pin_info;
                 continue;
         }
@@ -185,7 +185,7 @@ bool Endstops::load_endstops(ConfigReader& cr)
         // check we are not going above the number of configured actuators/axis
         if(a >= Robot::getInstance()->get_number_registered_motors()) {
             // too many axis we only have configured n_motors
-            printf("configure-endstop: Too many endstops defined for the number of axis\n");
+            printf("INFO: configure-endstop: Too many endstops defined for the number of axis\n");
             continue;
         }
 

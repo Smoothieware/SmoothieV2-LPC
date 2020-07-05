@@ -65,7 +65,7 @@ bool CurrentControl::configure(ConfigReader& cr)
 {
     ConfigReader::sub_section_map_t ssmap;
     if(!cr.get_sub_sections("current control", ssmap)) {
-        printf("configure-current-control: no current control section found\n");
+        printf("INFO: configure-current-control: no current control section found\n");
         return false;
     }
 
@@ -77,7 +77,7 @@ bool CurrentControl::configure(ConfigReader& cr)
         // Get current settings
         float c= cr.get_float(m, current_key, -1);
         if(c <= 0) {
-            printf("configure-current-control: %s - invalid current\n", name.c_str());
+            printf("INFO: configure-current-control: %s - invalid current\n", name.c_str());
             continue;
         }
 
@@ -89,7 +89,7 @@ bool CurrentControl::configure(ConfigReader& cr)
         Pwm *pwm= new Pwm(pin.c_str());
         if(!pwm->is_valid()) {
             delete pwm;
-            printf("configure-current-control: %s - pin %s in not a valid PWM pin\n", name.c_str(), pin.c_str());
+            printf("INFO: configure-current-control: %s - pin %s in not a valid PWM pin\n", name.c_str(), pin.c_str());
             continue;
         }
 
@@ -103,9 +103,9 @@ bool CurrentControl::configure(ConfigReader& cr)
         bool ok= false;
 #endif
         if(ok) {
-            printf("configure-current-control: %s set to %1.5f amps\n", name.c_str(), c);
+            printf("INFO: configure-current-control: %s set to %1.5f amps\n", name.c_str(), c);
         }else{
-            printf("configure-current-control: Failed to set current for %s\n", name.c_str());
+            printf("INFO: configure-current-control: Failed to set current for %s\n", name.c_str());
         }
     }
 

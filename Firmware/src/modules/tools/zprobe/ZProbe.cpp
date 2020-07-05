@@ -63,7 +63,7 @@ bool ZProbe::configure(ConfigReader& cr)
 {
     ConfigReader::section_map_t m;
     if(!cr.get_section("zprobe", m)) {
-        printf("config-zprobe: no zprobe section found\n");
+        printf("INFO: config-zprobe: no zprobe section found\n");
         return false;
     }
 
@@ -78,7 +78,7 @@ bool ZProbe::configure(ConfigReader& cr)
         return false;
 
     }else{
-        printf("config-zprobe: Probe pin: %s\n", this->pin.to_string().c_str());
+        printf("INFO: config-zprobe: Probe pin: %s\n", this->pin.to_string().c_str());
     }
 
     this->debounce_ms = cr.get_float(m, debounce_ms_key, 0);
@@ -104,7 +104,7 @@ bool ZProbe::configure(ConfigReader& cr)
 
         if(leveling_strategy != nullptr) {
             if(leveling_strategy->configure(cr)) {
-                printf("config-zprobe: loaded %s leveling strategy\n", leveling.c_str());
+                printf("INFO: config-zprobe: loaded %s leveling strategy\n", leveling.c_str());
             } else {
                 printf("ERROR: config-zprobe: failed to load %s leveling strategy\n", leveling.c_str());
             }
@@ -125,7 +125,7 @@ bool ZProbe::configure(ConfigReader& cr)
 
         if(calibration_strategy != nullptr) {
             if(calibration_strategy->configure(cr)) {
-                printf("config-zprobe: loaded %s calibration strategy\n", calibration.c_str());
+                printf("INFO: config-zprobe: loaded %s calibration strategy\n", calibration.c_str());
             } else {
                 printf("ERROR: config-zprobe: failed to load %s calibration strategy\n", calibration.c_str());
             }
