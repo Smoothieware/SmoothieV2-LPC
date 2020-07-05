@@ -397,13 +397,13 @@ void Network::network_thread()
 
     {
         // Wait until the TCP/IP thread is finished before continuing or wierd things may happen
-        printf("Network: Waiting for TCPIP thread to initialize...\n");
+        printf("DEBUG: Network: Waiting for TCPIP thread to initialize...\n");
         sys_sem_t init_sem;
         sys_sem_new(&init_sem, 0);
         tcpip_init(tcpip_init_done_signal, (void *) &init_sem);
         sys_sem_wait(&init_sem);
         sys_sem_free(&init_sem);
-        printf("Network: TCPIP thread has started...\n");
+        printf("DEBUG: Network: TCPIP thread has started...\n");
     }
 
     // needed for LWIP_NETCONN_SEM_PER_THREAD which is needed for LWIP_NETCONN_FULLDUPLEX
@@ -414,18 +414,18 @@ void Network::network_thread()
         IP4_ADDR(&gw, 0, 0, 0, 0);
         IP4_ADDR(&ipaddr, 0, 0, 0, 0);
         IP4_ADDR(&netmask, 0, 0, 0, 0);
-        printf("network: using DHCP\n");
+        printf("INFO: Network: using DHCP\n");
 
     } else {
         /* Static IP assignment */
         if(ipaddr_aton(ip_address, &ipaddr) == 0) {
-            printf("Network: invalid ip address: %s\n", ip_address);
+            printf("INFO: Network: invalid ip address: %s\n", ip_address);
         }
         if(ipaddr_aton(ip_mask, &netmask) == 0) {
-            printf("Network: invalid ip netmask: %s\n", ip_mask);
+            printf("INFO: Network: invalid ip netmask: %s\n", ip_mask);
         }
         if(ipaddr_aton(ip_gateway, &gw) == 0) {
-            printf("Network: invalid ip gateway: %s\n", ip_gateway);
+            printf("INFO: Network: invalid ip gateway: %s\n", ip_gateway);
         }
         free(ip_address);
         free(ip_mask);
@@ -440,7 +440,7 @@ void Network::network_thread()
         // setup up manual dns server address
         ip_addr_t dnsaddr;
         if(ipaddr_aton(dns_server, &dnsaddr) == 0) {
-            printf("Network: invalid dns server address: %s\n", dns_server);
+            printf("INFO: Network: invalid dns server address: %s\n", dns_server);
         } else {
             dns_setserver(0, &dnsaddr);
         }
@@ -449,7 +449,7 @@ void Network::network_thread()
 
     /* Add netif interface for lpc17xx_8x */
     if (netifapi_netif_add(lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init, tcpip_input) != ERR_OK) {
-        printf("Network: Net interface failed to initialize\n");
+        printf("INFO: Network: Net interface failed to initialize\n");
     }
     netif_set_hostname(lpc_netif, hostname.c_str());
     netifapi_netif_set_default(lpc_netif);
@@ -495,28 +495,28 @@ void Network::network_thread()
                 if (physts & PHY_LINK_SPEED100) {
                     Chip_ENET_SetSpeed(LPC_ETHERNET, 1);
                     //NETIF_INIT_SNMP(lpc_netif, snmp_ifType_ethernet_csmacd, 100000000);
-                    printf("Network::start() - 100Mbit/s ");
+                    printf("INFO: Network::start() - 100Mbit/s ");
                 } else {
                     Chip_ENET_SetSpeed(LPC_ETHERNET, 0);
                     //NETIF_INIT_SNMP(lpc_netif, snmp_ifType_ethernet_csmacd, 10000000);
-                    printf("Network::start() - 10Mbit/s ");
+                    printf("INFO: Network::start() - 10Mbit/s ");
                 }
                 if (physts & PHY_LINK_FULLDUPLX) {
                     Chip_ENET_SetDuplex(LPC_ETHERNET, true);
-                    printf("Full Duplex\n");
+                    printf("INFO: Full Duplex\n");
                 } else {
                     Chip_ENET_SetDuplex(LPC_ETHERNET, false);
-                    printf("Half Duplex\n");
+                    printf("INFO: Half Duplex\n");
                 }
 
                 tcpip_callback_with_block((tcpip_callback_fn) netif_set_link_up,
                                           (void *) lpc_netif, 1);
-                printf("Network::start() - Link connect status: UP\r\n");
+                printf("INFO: Network::start() - Link connect status: UP\r\n");
 
             } else {
                 tcpip_callback_with_block((tcpip_callback_fn) netif_set_link_down,
                                           (void *) lpc_netif, 1);
-                printf("Network::start() - Link connect status: DOWN\r\n");
+                printf("INFO: Network::start() - Link connect status: DOWN\r\n");
             }
         }
 
@@ -524,10 +524,10 @@ void Network::network_thread()
         if (!prt_ip) {
             if (lpc_netif->ip_addr.addr) {
                 char tmp_buff[16];
-                printf("IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->ip_addr, tmp_buff, 16));
-                printf("NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
-                printf("GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
-                printf("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                printf("INFO: IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->ip_addr, tmp_buff, 16));
+                printf("INFO: NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
+                printf("INFO: GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
+                printf("INFO: MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n",
                        lpc_netif->hwaddr[0], lpc_netif->hwaddr[1], lpc_netif->hwaddr[2],
                        lpc_netif->hwaddr[3], lpc_netif->hwaddr[4], lpc_netif->hwaddr[5]);
 
@@ -559,7 +559,7 @@ void Network::network_thread()
 
     netconn_thread_cleanup();
 
-    printf("Network: exiting\n");
+    printf("DEBUG: Network: exiting\n");
 }
 
 void Network::vSetupIFTask(void *arg)
@@ -572,7 +572,7 @@ void Network::vSetupIFTask(void *arg)
 
 bool Network::start()
 {
-    printf("Network: starting\n");
+    printf("DEBUG: Network: starting\n");
     xTaskCreate(vSetupIFTask, "SetupIFx", 256, this, (tskIDLE_PRIORITY + 1UL), (xTaskHandle *) NULL);
     return true;
 }
