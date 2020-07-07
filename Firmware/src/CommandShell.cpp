@@ -500,29 +500,27 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
 #include "md5.h"
 bool CommandShell::md5sum_cmd(std::string& params, OutputStream& os)
 {
-    HELP("calculate the md5sum of given filename");
+    HELP("calculate the md5sum of given filename(s)");
     std::string filename= stringutils::shift_parameter( params );
 
-    if(filename.empty()) {
-        os.puts("file name required\n");
-        return true;
-    }
+    while(!filename.empty()) {
+        // Open file
+        FILE *lp = fopen(filename.c_str(), "r");
+        if (lp != NULL) {
+            MD5 md5;
+            uint8_t buf[256];
+            do {
+                size_t n = fread(buf, 1, sizeof buf, lp);
+                if(n > 0) md5.update(buf, n);
+            } while(!feof(lp));
 
-    // Open file
-    FILE *lp = fopen(filename.c_str(), "r");
-    if (lp != NULL) {
-        MD5 md5;
-        uint8_t buf[64];
-        do {
-            size_t n = fread(buf, 1, sizeof buf, lp);
-            if(n > 0) md5.update(buf, n);
-        } while(!feof(lp));
+            os.printf("%s %s\n", md5.finalize().hexdigest().c_str(), params.c_str());
+            fclose(lp);
 
-        os.printf("%s %s\n", md5.finalize().hexdigest().c_str(), params.c_str());
-        fclose(lp);
-
-    } else {
-        os.printf("File not found: %s\n", params.c_str());
+        } else {
+            os.printf("File not found: %s\n", params.c_str());
+        }
+        filename= stringutils::shift_parameter( params );
     }
 
     os.set_no_response();
