@@ -518,7 +518,7 @@ bool CommandShell::md5sum_cmd(std::string& params, OutputStream& os)
             fclose(lp);
 
         } else {
-            os.printf("File not found: %s\n", params.c_str());
+            os.printf("File not found: %s\n", filename.c_str());
         }
         filename= stringutils::shift_parameter( params );
     }
