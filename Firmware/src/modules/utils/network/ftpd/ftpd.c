@@ -636,6 +636,8 @@ static err_t ftpd_datarecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t
 				break;
 		}
 
+		/* Inform TCP that we have taken the data. */
+		tcp_recved(pcb, tot_len);
 
 		pbuf_free(p);
 	}
@@ -1043,7 +1045,7 @@ static void cmd_abrt(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate 
 static void cmd_type(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate *fsm)
 {
 	dbg_printf("Got TYPE -%s-\n", arg);
-
+	
 	if(strcmp(arg, "I") == 0) {
 		fsm->type= 'I';
 		send_msg(pcb, fsm, msg200);
@@ -1053,7 +1055,7 @@ static void cmd_type(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate 
 		send_msg(pcb, fsm, msg200);
 		return;
 	}
-
+	
 	send_msg(pcb, fsm, msg502);
 }
 
@@ -1320,7 +1322,7 @@ static err_t ftpd_msgsent(void *arg, struct tcp_pcb *pcb, u16_t len)
 		ftpd_msgclose(pcb, fsm);
 		return ERR_OK;
 	}
-
+	
 	if (pcb->state <= ESTABLISHED) send_msgdata(pcb, fsm);
 	return ERR_OK;
 }
