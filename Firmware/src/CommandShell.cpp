@@ -514,7 +514,7 @@ bool CommandShell::md5sum_cmd(std::string& params, OutputStream& os)
                 if(n > 0) md5.update(buf, n);
             } while(!feof(lp));
 
-            os.printf("%s %s\n", md5.finalize().hexdigest().c_str(), params.c_str());
+            os.printf("%s %s\n", md5.finalize().hexdigest().c_str(), filename.c_str());
             fclose(lp);
 
         } else {
