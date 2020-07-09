@@ -193,8 +193,9 @@ static const char *month_table[12] = {
 	"Dec"
 };
 
-// count of number of conenctions, we only allow one
+// count of number of connections, we only allow one
 static int conn_cnt= 0;
+static struct tcp_pcb *thepcb;
 
 /*
 ------------------------------------------------------------
@@ -1045,7 +1046,7 @@ static void cmd_abrt(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate 
 static void cmd_type(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate *fsm)
 {
 	dbg_printf("Got TYPE -%s-\n", arg);
-	
+
 	if(strcmp(arg, "I") == 0) {
 		fsm->type= 'I';
 		send_msg(pcb, fsm, msg200);
@@ -1055,7 +1056,7 @@ static void cmd_type(const char *arg, struct tcp_pcb *pcb, struct ftpd_msgstate 
 		send_msg(pcb, fsm, msg200);
 		return;
 	}
-	
+
 	send_msg(pcb, fsm, msg502);
 }
 
@@ -1322,7 +1323,7 @@ static err_t ftpd_msgsent(void *arg, struct tcp_pcb *pcb, u16_t len)
 		ftpd_msgclose(pcb, fsm);
 		return ERR_OK;
 	}
-	
+
 	if (pcb->state <= ESTABLISHED) send_msgdata(pcb, fsm);
 	return ERR_OK;
 }
@@ -1419,10 +1420,14 @@ static err_t ftpd_msgaccept(void *arg, struct tcp_pcb *pcb, err_t err)
 	struct ftpd_msgstate *fsm;
 
 	// refuse connection if there is already a connection
-	if(conn_cnt >= 1) {
-		// tcp_write(pcb, msg520, sizeof(msg520), 0);
-		// tcp_output(pcb);
-		return ERR_MEM;
+	// TODO or if we are busy printing
+	if(conn_cnt >= 1 /* || is_printing()*/) {
+		int n= sizeof(msg421)+2;
+		char buf[n];
+		memcpy(buf, msg421, sizeof(msg421));
+		memcpy(&buf[sizeof(msg421)], "\r\n", 2);
+		tcp_write(pcb, buf, n, 0);
+		return ERR_CLSD;
 	}
 	++conn_cnt;
 
@@ -1481,6 +1486,7 @@ void _ftpd_init(void* dummy)
 	tcp_bind(pcb, IP_ADDR_ANY, 21);
 	pcb = tcp_listen(pcb);
 	tcp_accept(pcb, ftpd_msgaccept);
+	thepcb= pcb;
 }
 
 void ftpd_init(void)
@@ -1491,5 +1497,9 @@ void ftpd_init(void)
 
 void ftpd_close(void)
 {
-	// TODO
+	// TODO also shutdown any connections
+	if(thepcb != NULL) {
+		tcp_abort(thepcb);
+		thepcb= NULL;
+	}
 }

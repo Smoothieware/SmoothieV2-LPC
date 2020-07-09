@@ -524,14 +524,16 @@ void Network::network_thread()
         if (!prt_ip) {
             if (lpc_netif->ip_addr.addr) {
                 char tmp_buff[16];
-                printf("INFO: IP_ADDR    : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->ip_addr, tmp_buff, 16));
-                printf("INFO: NET_MASK   : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
-                printf("INFO: GATEWAY_IP : %s\r\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
+                printf("INFO: IP_ADDR    : %s\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->ip_addr, tmp_buff, 16));
+                printf("INFO: NET_MASK   : %s\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->netmask, tmp_buff, 16));
+                printf("INFO: GATEWAY_IP : %s\n", ipaddr_ntoa_r((const ip_addr_t *) &lpc_netif->gw, tmp_buff, 16));
                 printf("INFO: MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n",
                        lpc_netif->hwaddr[0], lpc_netif->hwaddr[1], lpc_netif->hwaddr[2],
                        lpc_netif->hwaddr[3], lpc_netif->hwaddr[4], lpc_netif->hwaddr[5]);
 
-                prt_ip = 1;
+                const ip_addr_t *dnsaddr = dns_getserver(0);
+                printf("INFO: DNS Server: %s\n", ipaddr_ntoa_r((const ip_addr_t *)dnsaddr, tmp_buff, 16));
+prt_ip = 1;
             }
         }
 
