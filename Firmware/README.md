@@ -40,8 +40,9 @@ on the Prime Alpha there are 4 leds..
 1. led3 - smoothie led, flashes slowly when idle, does not flash when busy
 2. led4 - smoothie led, on when executing moves, flashes when in HALT
 
-The debug UART port is on PF.10 (TX) and PF.11 (RX) on the PrimeAlpha
-The debug UART port is on P6.4 (TX) and P6.5 (RX) on the Bambino Socket 2 pin 4,5
+The debug UART port is on PF.10 (TX) and PF.11 (RX) on the PrimeAlpha.
+The debug UART port is on P6.4 (TX) and P6.5 (RX) on the Bambino Socket 2 pin 4,5.
+baud rate 115200.
 
 Debugging and Flashing
 ----------------------
