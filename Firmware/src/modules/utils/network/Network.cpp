@@ -533,8 +533,8 @@ void Network::network_thread()
 
                 const ip_addr_t *dnsaddr = dns_getserver(0);
                 printf("INFO: DNS Server: %s\n", ipaddr_ntoa_r((const ip_addr_t *)dnsaddr, tmp_buff, 16));
-prt_ip = 1;
             }
+            prt_ip = 1;
         }
 
         /* Delay for link detection (250mS) */
