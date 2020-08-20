@@ -31,6 +31,7 @@
 
 #define  default_seek_rate_key          "default_seek_rate"
 #define  default_feed_rate_key          "default_feed_rate"
+#define  compliant_seek_rate_key        "compliant_seek_rate"
 #define  default_acceleration_key       "default_acceleration"
 #define  mm_per_line_segment_key        "mm_per_line_segment"
 #define  delta_segments_per_second_key  "delta_segments_per_second"
@@ -175,6 +176,7 @@ bool Robot::configure(ConfigReader& cr)
 
     this->feed_rate = cr.get_float(m, default_feed_rate_key, 4000.0F); // mm/min
     this->seek_rate = default_seek_rate = cr.get_float(m, default_seek_rate_key, 4000.0F); // mm/min
+    this->compliant_seek_rate = cr.get_bool(m, compliant_seek_rate_key, false);
     this->mm_per_line_segment = cr.get_float(m, mm_per_line_segment_key, 0.0F);
     this->delta_segments_per_second = cr.get_float(m, delta_segments_per_second_key, is_delta?100:0);
     this->mm_per_arc_segment = cr.get_float(m, mm_per_arc_segment_key, 0.0f);
@@ -1459,10 +1461,16 @@ void Robot::process_move(GCode& gcode, enum MOTION_MODE_T motion_mode)
 #endif
 
     if( gcode.has_arg('F') ) {
-        if( motion_mode == SEEK )
-            this->seek_rate = this->to_millimeters( gcode.get_arg('F') );
-        else
+        if( motion_mode == SEEK ){
+            if(!compliant_seek_rate){
+                this->seek_rate = this->to_millimeters( gcode.get_arg('F') );
+            }else{
+                gcode.set_error("G0 ignores feed rate");
+            }
+
+        }else{
             this->feed_rate = this->to_millimeters( gcode.get_arg('F') );
+        }
     }
 
     // S is modal When specified on a G0/1/2/3 command

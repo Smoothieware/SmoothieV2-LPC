@@ -97,6 +97,7 @@ public:
         uint8_t plane_axis_2: 2;
         bool check_driver_errors: 1;
         bool halt_on_driver_alarm: 1;
+        bool compliant_seek_rate:1;
     };
 
 private:
