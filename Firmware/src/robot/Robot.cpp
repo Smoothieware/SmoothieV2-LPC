@@ -532,7 +532,9 @@ void Robot::pop_state()
         auto s = state_stack.top();
         state_stack.pop();
         this->feed_rate = std::get<0>(s);
-        this->seek_rate = std::get<1>(s);
+        if(!compliant_seek_rate) {
+            this->seek_rate = std::get<1>(s);
+        }
         this->absolute_mode = std::get<2>(s);
         this->e_absolute_mode = std::get<3>(s);
         this->inch_mode = std::get<4>(s);
@@ -832,7 +834,7 @@ void Robot::do_park()
     absolute_mode = true;
     next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
     OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', from_millimeters(park_position[X_AXIS]), 'Y', from_millimeters(park_position[Y_AXIS]), 'F', default_seek_rate, 0);
+    THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', from_millimeters(park_position[X_AXIS]), 'Y', from_millimeters(park_position[Y_AXIS]), 0);
 
     pop_state();
 }
