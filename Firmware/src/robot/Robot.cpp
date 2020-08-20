@@ -2057,10 +2057,14 @@ void Robot::setToolOffset(const float offset[3])
     this->tool_offset = wcs_t(offset[0], offset[1], offset[2]);
 }
 
-float Robot::get_feed_rate() const
+float Robot::get_feed_rate(int code) const
 {
-    // modal is currently in gcode processor which is a static in main.cpp
-    return GCodeProcessor::get_group1_modal_code() == 0 ? seek_rate : feed_rate;
+    if(code == -1) {
+        // modal is currently in gcode processor which is a static in main.cpp
+        return GCodeProcessor::get_group1_modal_code() == 0 ? seek_rate : feed_rate;
+    }else{
+        return code == 0 ? seek_rate : feed_rate;
+    }
 }
 
 // return a GRBL-like query string for ? command

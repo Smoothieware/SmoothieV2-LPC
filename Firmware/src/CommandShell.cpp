@@ -939,13 +939,13 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
             return true;
         }
         float d = strtof(dist.c_str(), NULL);
-        float f = speed.empty() ? Robot::getInstance()->get_feed_rate() : strtof(speed.c_str(), NULL);
+        float f = speed.empty() ? Robot::getInstance()->get_feed_rate(1) : strtof(speed.c_str(), NULL);
         uint32_t n = strtol(iters.c_str(), NULL, 10);
 
         bool toggle = false;
         Robot::getInstance()->absolute_mode = false;
         for (uint32_t i = 0; i < n; ++i) {
-            THEDISPATCHER->dispatch(nullos, 'G', 0, 'F', f, toupper(axis[0]), toggle ? -d : d, 0);
+            THEDISPATCHER->dispatch(nullos, 'G', 1, 'F', f, toupper(axis[0]), toggle ? -d : d, 0);
             if(Module::is_halted()) break;
             toggle = !toggle;
         }
@@ -962,10 +962,10 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
 
         float r = strtof(radius.c_str(), NULL);
         uint32_t n = strtol(iters.c_str(), NULL, 10);
-        float f = speed.empty() ? Robot::getInstance()->get_feed_rate() : strtof(speed.c_str(), NULL);
+        float f = speed.empty() ? Robot::getInstance()->get_feed_rate(1) : strtof(speed.c_str(), NULL);
 
         Robot::getInstance()->absolute_mode = false;
-        THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', -r, 'F', f, 0);
+        THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', -r, 'F', f, 0);
         Robot::getInstance()->absolute_mode = true;
 
         for (uint32_t i = 0; i < n; ++i) {
@@ -976,7 +976,7 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
         // leave it where it started
         if(!Module::is_halted()) {
             Robot::getInstance()->absolute_mode = false;
-            THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', r, 'F', f, 0);
+            THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', r, 'F', f, 0);
             Robot::getInstance()->absolute_mode = true;
         }
 
@@ -986,20 +986,20 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
         std::string iters = stringutils::shift_parameter( params );
         std::string speed = stringutils::shift_parameter( params );
         if(size.empty() || iters.empty()) {
-            os.printf("usage: square size iterations [fedrate]\n");
+            os.printf("usage: square size iterations [feedrate]\n");
             return true;
         }
         float d = strtof(size.c_str(), NULL);
-        float f = speed.empty() ? Robot::getInstance()->get_feed_rate() : strtof(speed.c_str(), NULL);
+        float f = speed.empty() ? Robot::getInstance()->get_feed_rate(1) : strtof(speed.c_str(), NULL);
         uint32_t n = strtol(iters.c_str(), NULL, 10);
 
         Robot::getInstance()->absolute_mode = false;
 
         for (uint32_t i = 0; i < n; ++i) {
-            THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', d, 'F', f, 0);
-            THEDISPATCHER->dispatch(nullos, 'G', 0, 'Y', d, 0);
-            THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', -d, 0);
-            THEDISPATCHER->dispatch(nullos, 'G', 0, 'Y', -d, 0);
+            THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', d, 'F', f, 0);
+            THEDISPATCHER->dispatch(nullos, 'G', 1, 'Y', d, 0);
+            THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', -d, 0);
+            THEDISPATCHER->dispatch(nullos, 'G', 1, 'Y', -d, 0);
             if(Module::is_halted()) break;
         }
 
