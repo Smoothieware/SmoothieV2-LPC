@@ -1467,7 +1467,8 @@ void Robot::process_move(GCode& gcode, enum MOTION_MODE_T motion_mode)
             if(!compliant_seek_rate){
                 this->seek_rate = this->to_millimeters( gcode.get_arg('F') );
             }else{
-                gcode.set_error("G0 ignores feed rate");
+                // it seems wrong but F anywhere in compliant code sets the feed rate
+                this->feed_rate = this->to_millimeters( gcode.get_arg('F') );
             }
 
         }else{
