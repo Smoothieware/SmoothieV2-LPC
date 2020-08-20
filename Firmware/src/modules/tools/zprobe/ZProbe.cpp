@@ -498,7 +498,7 @@ void ZProbe::move_xy(float x, float y, float feedrate, bool relative)
         Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
     }
     OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', x, 'Y', y, 'F', feedrate * 60.0F, 0);
+    THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', x, 'Y', y, 'F', feedrate * 60.0F, 0);
     Conveyor::getInstance()->wait_for_idle();
     Robot::getInstance()->pop_state();
 }
@@ -511,7 +511,7 @@ void ZProbe::move_x(float x, float feedrate, bool relative)
         Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
     }
     OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', x, 'F', feedrate * 60.0F, 0);
+    THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', x, 'F', feedrate * 60.0F, 0);
     Conveyor::getInstance()->wait_for_idle();
     Robot::getInstance()->pop_state();
 }
@@ -524,7 +524,7 @@ void ZProbe::move_y(float y, float feedrate, bool relative)
         Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
     }
     OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 0, 'Y', y, 'F', feedrate * 60.0F, 0);
+    THEDISPATCHER->dispatch(nullos, 'G', 1, 'Y', y, 'F', feedrate * 60.0F, 0);
     Conveyor::getInstance()->wait_for_idle();
     Robot::getInstance()->pop_state();
 }
@@ -537,7 +537,7 @@ void ZProbe::move_z(float z, float feedrate, bool relative)
         Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
     }
     OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 0, 'Z', z, 'F', feedrate * 60.0F, 0);
+    THEDISPATCHER->dispatch(nullos, 'G', 1, 'Z', z, 'F', feedrate * 60.0F, 0);
     Conveyor::getInstance()->wait_for_idle();
     Robot::getInstance()->pop_state();
 }

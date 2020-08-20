@@ -487,7 +487,7 @@ void Endstops::move_to_origin(axis_bitmap_t axis)
     Robot::getInstance()->absolute_mode = true;
     Robot::getInstance()->next_command_is_MCS= true; // must use machine coordinates in case G92 or WCS is in effect
     OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 0, 'X', 0.0F, 'Y', 0.0F, 'F', Robot::getInstance()->from_millimeters(rate), 0);
+    THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', 0.0F, 'Y', 0.0F, 'F', Robot::getInstance()->from_millimeters(rate), 0);
 
     Robot::getInstance()->pop_state();
 
