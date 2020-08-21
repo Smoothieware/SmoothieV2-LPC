@@ -444,18 +444,17 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
 
 
 // special way to probe in the X, Y or Z direction using planned moves, should work with any kinematics
-void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, uint8_t axis)
+void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, uint8_t axismask)
 {
     // enable the probe checking in the timer
     probing = true;
     probe_detected = false;
-    Robot::getInstance()->disable_segmentation = true; // we must disable segmentation as this won't work with it enabled (beware on deltas probing in X or Y)
 
     // get probe feedrate in mm/min and convert to mm/sec if specified
     float rate = (gcode.has_arg('F')) ? gcode.get_arg('F') / 60 : this->slow_feedrate;
 
     // do a regular move which will stop as soon as the probe is triggered, or the distance is reached
-    switch(axis) {
+    switch(axismask) {
         case 1: move_x(gcode.get_arg('X'), rate, true); break;
         case 2: move_y(gcode.get_arg('Y'), rate, true); break;
         case 3: move_xy(gcode.get_arg('X'), gcode.get_arg('Y'), rate, true); break;
@@ -467,7 +466,6 @@ void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, uint8_t axis)
 
     // disable probe checking
     probing = false;
-    Robot::getInstance()->disable_segmentation = false;
 
     // if the probe stopped the move we need to correct the last_milestone as it did not reach where it thought
     // this also sets last_milestone to the machine coordinates it stopped at
@@ -489,57 +487,45 @@ void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, uint8_t axis)
 }
 
 // issue a coordinated move in xy, and return when done
-// NOTE must use G53 to force move in machine coordinates and ignore any WCS offsets
 void ZProbe::move_xy(float x, float y, float feedrate, bool relative)
 {
-    Robot::getInstance()->push_state();
-    Robot::getInstance()->absolute_mode = !relative;
+    float d[3] = {x, y, 0};
     if(!relative) {
-        Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+        d[0] -= Robot::getInstance()->get_axis_position(X_AXIS);
+        d[1] -= Robot::getInstance()->get_axis_position(Y_AXIS);
     }
-    OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', x, 'Y', y, 'F', feedrate * 60.0F, 0);
+    Robot::getInstance()->delta_move(d, feedrate, 3);
     Conveyor::getInstance()->wait_for_idle();
-    Robot::getInstance()->pop_state();
 }
 
 void ZProbe::move_x(float x, float feedrate, bool relative)
 {
-    Robot::getInstance()->push_state();
-    Robot::getInstance()->absolute_mode = !relative;
+    float d[3] = {x, 0, 0};
     if(!relative) {
-        Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+        d[0] -= Robot::getInstance()->get_axis_position(X_AXIS);
     }
-    OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 1, 'X', x, 'F', feedrate * 60.0F, 0);
+    Robot::getInstance()->delta_move(d, feedrate, 3);
     Conveyor::getInstance()->wait_for_idle();
-    Robot::getInstance()->pop_state();
 }
 
 void ZProbe::move_y(float y, float feedrate, bool relative)
 {
-    Robot::getInstance()->push_state();
-    Robot::getInstance()->absolute_mode = !relative;
+    float d[3] = {0, y, 0};
     if(!relative) {
-        Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+        d[1] -= Robot::getInstance()->get_axis_position(Y_AXIS);
     }
-    OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 1, 'Y', y, 'F', feedrate * 60.0F, 0);
+    Robot::getInstance()->delta_move(d, feedrate, 3);
     Conveyor::getInstance()->wait_for_idle();
-    Robot::getInstance()->pop_state();
 }
 
 void ZProbe::move_z(float z, float feedrate, bool relative)
 {
-    Robot::getInstance()->push_state();
-    Robot::getInstance()->absolute_mode = !relative;
+    float d[3] = {0, 0, z};
     if(!relative) {
-        Robot::getInstance()->next_command_is_MCS = true; // must use machine coordinates in case G92 or WCS is in effect
+        d[2] -= Robot::getInstance()->get_axis_position(Z_AXIS);
     }
-    OutputStream nullos;
-    THEDISPATCHER->dispatch(nullos, 'G', 1, 'Z', z, 'F', feedrate * 60.0F, 0);
+    Robot::getInstance()->delta_move(d, feedrate, 3);
     Conveyor::getInstance()->wait_for_idle();
-    Robot::getInstance()->pop_state();
 }
 
 // issue home command
