@@ -1486,7 +1486,7 @@ void Robot::process_move(GCode& gcode, enum MOTION_MODE_T motion_mode)
         case NONE: break;
 
         case SEEK:
-            moved = this->append_line(gcode, target, this->seek_rate / (compliant_seek_rate?1:seconds_per_minute), delta_e );
+            moved = this->append_line(gcode, target, this->seek_rate / (compliant_seek_rate?60:seconds_per_minute), delta_e );
             break;
 
         case LINEAR:
