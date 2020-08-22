@@ -1055,6 +1055,132 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
     return true;
 }
 
+bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
+{
+    HELP("instant jog: $J X0.01 [S0.5] - axis can be XYZABC, optional speed (Snnn) is scale of max_rate");
+    os.set_no_response(true);
+
+    AutoPushPop app;
+
+    // $J X0.1 [Y0.2] [S0.5]
+    int n_motors= Robot::getInstance()->get_number_registered_motors();
+
+    // get axis to move and amount (X0.1)
+    // may specify multiple axis
+
+    float rate_mm_s= -1;
+    float scale= 1.0F;
+    float delta[n_motors];
+    for (int i = 0; i < n_motors; ++i) {
+        delta[i]= 0;
+    }
+
+    if(params.empty()) {
+        os.printf("usage: $J X0.01 [S0.5] [-C] - axis can be XYZABC, optional speed is scale of max_rate. -C turns on continuous jog mode\n");
+        return true;
+    }
+
+    bool cont_mode= false;
+    while(!params.empty()) {
+        std::string p= stringutils::shift_parameter(params);
+        if(p.size() == 2 && p[0] == '-') {
+            // process option
+            switch(toupper(p[1])) {
+                case 'C':
+                    cont_mode= true;
+                    break;
+                default:
+                    os.printf("error:illegal option %c\n", p[1]);
+                    return true;
+            }
+            continue;
+        }
+
+        char ax= toupper(p[0]);
+        if(ax == 'S') {
+            // get speed scale
+            scale= strtof(p.substr(1).c_str(), NULL);
+            continue;
+        }
+
+        if(!((ax >= 'X' && ax <= 'Z') || (ax >= 'A' && ax <= 'C'))) {
+            os.printf("error:bad axis %c\n", ax);
+            return true;
+        }
+
+        uint8_t a= ax >= 'X' ? ax - 'X' : ax - 'A' + 3;
+        if(a >= n_motors) {
+            os.printf("error:axis out of range %c\n", ax);
+            return true;
+        }
+
+        delta[a]= strtof(p.substr(1).c_str(), NULL);
+    }
+
+    // select slowest axis rate to use
+    int cnt= 0;
+    int axis= 0;
+    for (int i = 0; i < n_motors; ++i) {
+        if(delta[i] != 0) {
+            ++cnt;
+            if(rate_mm_s < 0) {
+                rate_mm_s= Robot::getInstance()->actuators[i]->get_max_rate();
+            }else{
+                rate_mm_s = std::min(rate_mm_s, Robot::getInstance()->actuators[i]->get_max_rate());
+            }
+            axis= i;
+            //printf("%d %f S%f\n", i, delta[i], rate_mm_s);
+        }
+    }
+
+    if(cnt == 0) {
+        os.printf("error:no delta jog specified\n");
+        return true;
+    }else if(cont_mode && cnt > 1) {
+        os.printf("error:continuous mode can only have one axis\n");
+        return true;
+    }
+
+    float fr= rate_mm_s*scale;
+
+    if(cont_mode) {
+        // continuous jog mode, will move until told to stop
+        // calculate minimum distance to travel to accomodate acceleration and feedrate
+        float acc= Robot::getInstance()->get_default_acceleration();
+        float t= fr/acc; // time to reach frame rate
+        float d= 0.5F * acc * powf(t, 2); // distance required to accelerate
+        d *= 2; // include distance to decelerate
+        d= roundf(d+0.5F); // round up to nearest mm
+        // we need to move at least this distance to reach full speed
+        if(delta[axis] < 0) delta[axis]= -d;
+        else delta[axis]= d;
+        //printf("time: %f, delta: %f, fr: %f\n", t, d, fr);
+
+        // we have to wait for the queue to be totally empty
+        Conveyor::getInstance()->wait_for_idle();
+
+        // Set continuous mode
+        Conveyor::getInstance()->set_continuous_mode(true);
+    }
+
+    Robot::getInstance()->delta_move(delta, fr, n_motors);
+
+    // turn off queue delay and run it now
+    Conveyor::getInstance()->force_queue();
+
+    if(cont_mode) {
+        // we have to wait for the continuous move to be stopped
+        Conveyor::getInstance()->wait_for_idle();
+        // unset continuous mode is superfluous as it had to be unset to get here
+        // Conveyor::getInstance()->set_continuous_mode(false);
+
+        // reset the position based on current actuator position
+        Robot::getInstance()->reset_position_from_current_actuator_position();
+    }
+
+    return true;
+}
+
 bool CommandShell::version_cmd(std::string& params, OutputStream& os)
 {
     HELP("version - print version");
@@ -1374,83 +1500,6 @@ bool CommandShell::dfu_cmd(std::string& params, OutputStream& os)
     }
 
     printf("dfu_cmd should never get here: reboot needed\n");
-
-    return true;
-}
-
-bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
-{
-    HELP("instant jog: $J X0.01 [S0.5] - axis can be XYZABC, optional speed (Snnn) is scale of max_rate");
-    os.set_no_response(true);
-
-    AutoPushPop app;
-
-    // $J X0.1 [Y0.2] [S0.5]
-    int n_motors= Robot::getInstance()->get_number_registered_motors();
-
-    // get axis to move and amount (X0.1)
-    // may specify multiple axis
-
-    float rate_mm_s= -1;
-    float scale= 1.0F;
-    float delta[n_motors];
-    for (int i = 0; i < n_motors; ++i) {
-        delta[i]= 0;
-    }
-
-    if(params.empty()) {
-        os.printf("usage: $J X0.01 [S0.5] - axis can be XYZABC, optional speed is scale of max_rate\n");
-        return true;
-    }
-
-    while(!params.empty()) {
-        std::string p= stringutils::shift_parameter(params);
-
-        char ax= toupper(p[0]);
-        if(ax == 'S') {
-            // get speed scale
-            scale= strtof(p.substr(1).c_str(), NULL);
-            continue;
-        }
-
-        if(!((ax >= 'X' && ax <= 'Z') || (ax >= 'A' && ax <= 'C'))) {
-            os.printf("error:bad axis %c\n", ax);
-            return true;
-        }
-
-        uint8_t a= ax >= 'X' ? ax - 'X' : ax - 'A' + 3;
-        if(a >= n_motors) {
-            os.printf("error:axis out of range %c\n", ax);
-            return true;
-        }
-
-        delta[a]= strtof(p.substr(1).c_str(), NULL);
-    }
-
-    // select slowest axis rate to use
-    bool ok= false;
-    for (int i = 0; i < n_motors; ++i) {
-        if(delta[i] != 0) {
-            ok= true;
-            if(rate_mm_s < 0) {
-                rate_mm_s= Robot::getInstance()->actuators[i]->get_max_rate();
-            }else{
-                rate_mm_s = std::min(rate_mm_s, Robot::getInstance()->actuators[i]->get_max_rate());
-            }
-            //os.printf("%d %f S%f\n", i, delta[i], rate_mm_s);
-        }
-    }
-    if(!ok) {
-        os.printf("error:no delta jog specified\n");
-        return true;
-    }
-
-    //os.printf("F%f\n", rate_mm_s*scale);
-
-    Robot::getInstance()->delta_move(delta, rate_mm_s*scale, n_motors);
-
-    // turn off queue delay and run it now
-    Conveyor::getInstance()->force_queue();
 
     return true;
 }

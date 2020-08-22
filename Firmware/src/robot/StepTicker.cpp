@@ -173,6 +173,12 @@ _ramfunc_  void StepTicker::step_tick (void)
         return;
     }
 
+    bool continuous= Conveyor::getInstance()->get_continuous_mode();
+    if(continuing && !continuous) {
+        // we were in continuous mode and at the continuing point so clear it
+        continuing= false;
+    }
+
     bool still_moving = false;
     // foreach motor, if it is active see if time to issue a step to that motor
     for (uint8_t m = 0; m < num_motors; m++) {
@@ -185,9 +191,14 @@ _ramfunc_  void StepTicker::step_tick (void)
                 current_block->tick_info[m].acceleration_change = 0;
                 if(current_block->decelerate_after < current_block->total_move_ticks) {
                     current_block->tick_info[m].next_accel_event = current_block->decelerate_after;
-                    if(current_tick != current_block->decelerate_after) { // We are plateauing
-                        // steps/sec / tick frequency to get steps per tick
+                    if(current_tick != current_block->decelerate_after) {
+                        // We are plateauing
                         current_block->tick_info[m].steps_per_tick = current_block->tick_info[m].plateau_rate;
+                        // if we are in continuous mode then we now continue until told to stop
+                        if(continuous) {
+                            continuing= true;
+                            ++current_tick;
+                        }
                     }
                 }
             }
@@ -207,7 +218,9 @@ _ramfunc_  void StepTicker::step_tick (void)
 
         if(current_block->tick_info[m].counter >= STEPTICKER_FPSCALE) { // >= 1.0 step time
             current_block->tick_info[m].counter -= STEPTICKER_FPSCALE; // -= 1.0F;
-            ++current_block->tick_info[m].step_count;
+            if(!continuing){
+                ++current_block->tick_info[m].step_count;
+            }
 
             // step the motor
             bool ismoving = motor[m]->step(); // returns false if the moving flag was set to false externally (probes, endstops etc)
@@ -225,8 +238,10 @@ _ramfunc_  void StepTicker::step_tick (void)
         if(motor[m]->is_moving()) still_moving = true;
     }
 
-    // do this after so we start at tick 0
-    current_tick++; // count number of ticks
+    if(!continuing) {
+        // do this after so we start at tick 0
+        current_tick++; // count number of ticks
+    }
 
     // We may have set a pin on in this tick, now we set the timer to set it off
     // right now it takes about 1-2us to get here which will add to the pulse width from when it was on

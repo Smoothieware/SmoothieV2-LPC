@@ -214,7 +214,7 @@ bool Planner::append_block(ActuatorCoordinates& actuator_pos, uint8_t n_motors, 
     // The block can now be used
     block->ready();
 
-    //block->debug();
+    // block->debug();
 
     while(!queue->queue_head()) {
         // queue is full
@@ -381,7 +381,7 @@ void Planner::calculate_trapezoid(Block *block, float entryspeed, float exitspee
 
     // Figure out how long the move takes total ( in seconds )
     float total_move_time = time_to_accelerate + time_to_decelerate + plateau_time;
-    //puts "total move time: #{total_move_time}s time to accelerate: #{time_to_accelerate}, time to decelerate: #{time_to_decelerate}"
+    // printf("total move time: %f s time to accelerate: %f, time to decelerate: %f\n", total_move_time, time_to_accelerate, time_to_decelerate);
 
     // We now have the full timing for acceleration, plateau and deceleration,
     // yay \o/ Now this is very important these are in seconds, and we need to
@@ -545,15 +545,15 @@ void Planner::prepare(Block *block, float acceleration_in_steps, float decelerat
         block->tick_info[m].plateau_rate= (int64_t)round(((block->maximum_rate * aratio) / STEP_TICKER_FREQUENCY) * STEPTICKER_FPSCALE);
 
         #if 0
-        THEKERNEL->streams->printf("spt: %08lX %08lX, ac: %08lX %08lX, dc: %08lX %08lX, pr: %08lX %08lX\n",
-            (uint32_t)(this->tick_info[m].steps_per_tick>>32), // 2.62 fixed point
-            (uint32_t)(this->tick_info[m].steps_per_tick&0xFFFFFFFF), // 2.62 fixed point
-            (uint32_t)(this->tick_info[m].acceleration_change>>32), // 2.62 fixed point signed
-            (uint32_t)(this->tick_info[m].acceleration_change&0xFFFFFFFF), // 2.62 fixed point signed
-            (uint32_t)(this->tick_info[m].deceleration_change>>32), // 2.62 fixed point
-            (uint32_t)(this->tick_info[m].deceleration_change&0xFFFFFFFF), // 2.62 fixed point
-            (uint32_t)(this->tick_info[m].plateau_rate>>32), // 2.62 fixed point
-            (uint32_t)(this->tick_info[m].plateau_rate&0xFFFFFFFF) // 2.62 fixed point
+        printf("spt: %08lX %08lX, ac: %08lX %08lX, dc: %08lX %08lX, pr: %08lX %08lX\n",
+            (uint32_t)(block->tick_info[m].steps_per_tick>>32), // 2.62 fixed point
+            (uint32_t)(block->tick_info[m].steps_per_tick&0xFFFFFFFF), // 2.62 fixed point
+            (uint32_t)(block->tick_info[m].acceleration_change>>32), // 2.62 fixed point signed
+            (uint32_t)(block->tick_info[m].acceleration_change&0xFFFFFFFF), // 2.62 fixed point signed
+            (uint32_t)(block->tick_info[m].deceleration_change>>32), // 2.62 fixed point
+            (uint32_t)(block->tick_info[m].deceleration_change&0xFFFFFFFF), // 2.62 fixed point
+            (uint32_t)(block->tick_info[m].plateau_rate>>32), // 2.62 fixed point
+            (uint32_t)(block->tick_info[m].plateau_rate&0xFFFFFFFF) // 2.62 fixed point
         );
         #endif
     }

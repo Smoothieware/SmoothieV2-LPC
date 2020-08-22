@@ -34,6 +34,8 @@ public:
     void block_finished();
     void flush_queue(void);
     void force_queue() { check_queue(true); }
+    void set_continuous_mode(bool flg) { continuous= flg; }
+    bool get_continuous_mode() const { return continuous; }
 
     float get_current_feedrate() const { return current_feedrate; }
 
@@ -51,6 +53,7 @@ private:
         volatile bool allow_fetch:1;
         bool flush:1;
         bool halted:1;
+        bool continuous:1;
     };
 
 };

@@ -62,6 +62,7 @@ void Conveyor::on_halt(bool flg)
 
     if(flg) {
         flush= true;
+        continuous= false;
     }
 }
 

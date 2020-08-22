@@ -333,6 +333,10 @@ bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
             discard = false;
             cnt = 0;
 
+        } else if(line[cnt] == 25) { // ^Y
+            // stop continuous jog mode
+            Conveyor::getInstance()->set_continuous_mode(false);
+
         } else if(line[cnt] == '?') {
             if(!queries.full()) {
                 queries.push_back({os, nullptr});
