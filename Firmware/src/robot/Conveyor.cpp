@@ -36,6 +36,7 @@ Conveyor::Conveyor() : Module("conveyor")
     allow_fetch = false;
     flush= false;
     halted= false;
+    continuous= false;
 }
 
 bool Conveyor::configure(ConfigReader& cr)
