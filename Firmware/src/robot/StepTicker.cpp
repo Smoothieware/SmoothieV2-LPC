@@ -173,12 +173,6 @@ _ramfunc_  void StepTicker::step_tick (void)
         return;
     }
 
-    bool continuous= Conveyor::getInstance()->get_continuous_mode();
-    if(continuing && !continuous) {
-        // we were in continuous mode and at the continuing point so clear it
-        continuing= false;
-    }
-
     bool still_moving = false;
     // foreach motor, if it is active see if time to issue a step to that motor
     for (uint8_t m = 0; m < num_motors; m++) {
@@ -194,8 +188,8 @@ _ramfunc_  void StepTicker::step_tick (void)
                     if(current_tick != current_block->decelerate_after) {
                         // We are plateauing
                         current_block->tick_info[m].steps_per_tick = current_block->tick_info[m].plateau_rate;
-                        // if we are in continuous mode then we now continue until told to stop
-                        if(continuous) {
+                        if(Conveyor::getInstance()->get_continuous_mode()) {
+                            // if we are in continuous mode then we now continue until told to stop
                             continuing= true;
                             ++current_tick;
                         }
@@ -218,7 +212,12 @@ _ramfunc_  void StepTicker::step_tick (void)
 
         if(current_block->tick_info[m].counter >= STEPTICKER_FPSCALE) { // >= 1.0 step time
             current_block->tick_info[m].counter -= STEPTICKER_FPSCALE; // -= 1.0F;
-            if(!continuing){
+            if(continuing){
+                if(!Conveyor::getInstance()->get_continuous_mode()) {
+                    // we were in continuous mode and at the continuing point so clear it
+                    continuing= false;
+                }
+            }else{
                 ++current_block->tick_info[m].step_count;
             }
 
@@ -238,15 +237,17 @@ _ramfunc_  void StepTicker::step_tick (void)
         if(motor[m]->is_moving()) still_moving = true;
     }
 
+    // If we are in continuous mode and are continuing the plateau, we do not increment the
+    // current_tick so it keeps running at the same point on the trapezoid
     if(!continuing) {
         // do this after so we start at tick 0
-        current_tick++; // count number of ticks
+        ++current_tick; // count number of ticks
     }
 
     // We may have set a pin on in this tick, now we set the timer to set it off
     // right now it takes about 1-2us to get here which will add to the pulse width from when it was on
     // the pulse width will be 1us (or whatever it is set to) from this point on, so at least 2-3 us
-    if( unstep != 0) {
+    if(unstep != 0) {
         start_unstep_ticker();
     }
 
