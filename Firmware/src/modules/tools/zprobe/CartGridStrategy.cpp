@@ -9,13 +9,13 @@
     -------------
     The strategy must be enabled in the config as well as zprobe.
 
-      leveling-strategy.rectangular-grid.enable         true
+      enable         true
 
     The size of the grid can be set with...
-      leveling-strategy.rectangular-grid.size        7
+      size        7
     or
-      leveling-strategy.rectangular-grid.grid_x_size        7
-      leveling-strategy.rectangular-grid.grid_y_size        7
+      grid_x_size        7
+      grid_y_size        7
     this is the X and Y size of the grid, it must be an odd number, the default is 7 which is 49 probe points
 
     If both "size" and "grid_x_size" and "grid_x_size defined "grid_x_size" and "grid_x_size" will be used.
@@ -26,30 +26,34 @@
 
     The width and length of the rectangle that is probed is set with...
 
-      leveling-strategy.rectangular-grid.x_size       100
-      leveling-strategy.rectangular-grid.y_size       90
+      x_size       100
+      y_size       90
 
    Optionally probe offsets from the nozzle or tool head can be defined with...
 
-      leveling-strategy.rectangular-grid.probe_offsets  0,0,0  # probe offsetrs x,y,z
+      probe_offsets  0,0,0  # probe offsetrs x,y,z
 
       they may also be set with M565 X0 Y0 Z0
 
     If the saved grid is to be loaded on boot then this must be set in the config...
 
-      leveling-strategy.rectangular-grid.save        true
+      save        true
 
       Then when M500 is issued it will save M375 which will cause the grid to be loaded on boot. The default is to not autoload the grid on boot
 
     Optionally an initial_height can be set that tell the intial probe where to stop the fast decent before it probes, this should be around 5-10mm above the bed
-      leveling-strategy.rectangular-grid.initial_height  10
+      initial_height  10
 
-    If two corners rectangular mode activated using "leveling-strategy.rectangular-grid.only_by_two_corners true" then G29/31/32 will not work without providing XYAB parameters
-        XY - start point, AB rectangle size from starting point
-        "Two corners"" not absolutely correct name for this mode, because it use only one corner and rectangle size.
+    If two corners rectangular mode activated using "only_by_two_corners true" or R1 then G32 will not work without providing XYAB parameters
+        The start point is the current positi9on plus an offset specified by XY
+        AB sets the rectangle size to probe
 
     Display mode of current grid can be changed to human redable mode (table with coordinates) by using
-       leveling-strategy.rectangular-grid.human_readable  true
+       human_readable  true
+
+    For probes like the bltouch you can define a before probe and after probe GCode sequence (to deploy and stow the probe)
+        before_probe_gcode M280
+        after_probe_gcode M281
 
     Usage
     -----
@@ -57,6 +61,7 @@
 
     G32 probes the grid and turns the compensation on, this will remain in effect until reset or M561/M370
         optional parameters {{Xn}} {{Yn}} sets the size for this rectangular probe, which gets saved with M375
+
 
     M370 clears the grid and turns off compensation
     M374 Save grid to /sd/cartesian.grid
