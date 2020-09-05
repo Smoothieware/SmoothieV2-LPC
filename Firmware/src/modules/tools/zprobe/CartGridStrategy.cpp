@@ -41,10 +41,10 @@
 
       Then when M500 is issued it will save M375 which will cause the grid to be loaded on boot. The default is to not autoload the grid on boot
 
-    Optionally an initial_height can be set that tell the intial probe where to stop the fast decent before it probes, this should be around 5-10mm above the bed
+    An initial_height must be set that tells the intial probe where to start the probe from
       initial_height  10
 
-    If two corners rectangular mode activated using "only_by_two_corners true" or R1 then G32 will not work without providing XYAB parameters
+    If two corners rectangular mode activated using "only_by_two_corners true" or G32 R1 then G32 will not work without providing XYAB parameters
         The start point is the current positi9on plus an offset specified by XY
         AB sets the rectangle size to probe
 
