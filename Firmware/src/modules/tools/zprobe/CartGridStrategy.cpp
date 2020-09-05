@@ -103,8 +103,14 @@
 #define human_readable_key "human_readable"
 #define height_limit_key "height_limit"
 #define dampening_start_key "dampening_start"
+#define before_probe_gcode_key "before_probe_gcode"
+#define after_probe_gcode_key "after_probe_gcode"
 
 #define GRIDFILE "/sd/cartesian.grid"
+
+#define X_PROBE_OFFSET_FROM_EXTRUDER std::get<0>(probe_offsets)
+#define Y_PROBE_OFFSET_FROM_EXTRUDER std::get<1>(probe_offsets)
+#define Z_PROBE_OFFSET_FROM_EXTRUDER std::get<2>(probe_offsets)
 
 CartGridStrategy::CartGridStrategy(ZProbe *zprb) : ZProbeStrategy(zprb)
 {
@@ -162,6 +168,9 @@ bool CartGridStrategy::configure(ConfigReader& cr)
             this->probe_offsets = std::make_tuple(v[0], v[1], v[2]);
         }
     }
+
+    this->before_probe = cr.get_string(m, before_probe_gcode_key, "");
+    this->after_probe = cr.get_string(m, after_probe_gcode_key, "");
 
     // allocate
     grid = (float *)malloc(configured_grid_x_size * configured_grid_y_size * sizeof(float));
@@ -327,15 +336,37 @@ bool CartGridStrategy::load_grid(OutputStream& os)
     return true;
 }
 
-bool CartGridStrategy::probe_grid(int n, int m, float _x_start, float _y_start, float _x_size, float _y_size, OutputStream& os)
+bool CartGridStrategy::scan_bed(GCode& gc, OutputStream& os)
 {
+    float _x_start, _y_start, _x_size, _y_size;
+    int n = gc.has_arg('I') ? gc.get_arg('I') : configured_grid_x_size;
+    int m = gc.has_arg('J') ? gc.get_arg('J') : configured_grid_y_size;
+
     if((n < 5)||(m < 5)) {
-        os.printf("Need at least a 5x5 grid to probe\n");
-        return true;
+        os.printf("Need at least a 5x5 grid to scan\n");
+        return false;
     }
 
+    if(gc.has_arg('X') && gc.has_arg('Y')) {
+        _x_size = gc.get_arg('X'); // override default probe width
+        _y_size = gc.get_arg('Y'); // override default probe length
+    } else {
+        os.printf("X and Y parameters needed to specify x size and y size\n");
+        return false;
+    }
 
-    if(!findBed()) return false;
+    // NOTE as we are positioning the probe we need to reverse offset for the probe offset
+    _x_start = Robot::getInstance()->get_axis_position(X_AXIS) + X_PROBE_OFFSET_FROM_EXTRUDER;
+    _y_start = Robot::getInstance()->get_axis_position(Y_AXIS) + Y_PROBE_OFFSET_FROM_EXTRUDER;
+
+    if(!findBed(_x_start, _y_start)) return false;
+
+    // do first reference probe at start
+    float mm;
+    if(!zprobe->doProbeAt(mm, _x_start - X_PROBE_OFFSET_FROM_EXTRUDER, _y_start - Y_PROBE_OFFSET_FROM_EXTRUDER)) return false;
+    float z_reference = zprobe->getProbeHeight() - mm;
+    os.printf("first probe at X%1.3f, Y%1.3f is %1.3f mm\n", _x_start, _y_start, z_reference);
+    float max_delta= fabs(z_reference);
 
     float x_step = _x_size / n;
     float y_step = _y_size / m;
@@ -344,16 +375,16 @@ bool CartGridStrategy::probe_grid(int n, int m, float _x_start, float _y_start, 
         float y = _y_start + y_step * c;
         for (int r = 0; r < n; ++r) {
             float x = _x_start + x_step * r;
-            float z = 0.0F;
-            float mm;
-            if(!zprobe->doProbeAt(mm, x, y)) return false;
-            z = zprobe->getProbeHeight() - mm;
+            if(!zprobe->doProbeAt(mm, x - X_PROBE_OFFSET_FROM_EXTRUDER, y - Y_PROBE_OFFSET_FROM_EXTRUDER)) return false;
+            float z = zprobe->getProbeHeight() - mm - z_reference;
             char buf[16];
-            size_t s= snprintf(buf, sizeof(buf), "%1.4f ", z);
-            scanline.append(buf, s);
+            size_t l= snprintf(buf, sizeof(buf), "%1.3f ", z);
+            scanline.append(buf, l);
+            if(fabs(z) > max_delta) max_delta= fabs(z);
         }
         os.printf("%s\n", scanline.c_str());
     }
+    os.printf("Maximum delta: %1.3f\n", max_delta);
     return true;
 }
 
@@ -363,28 +394,19 @@ bool CartGridStrategy::handle_gcode(GCode& gcode, OutputStream& os)
         // first wait for an empty queue i.e. no moves left
         Conveyor::getInstance()->wait_for_idle();
 
-        int n = gcode.has_arg('I') ? gcode.get_arg('I') : configured_grid_x_size;
-        int m = gcode.has_arg('J') ? gcode.get_arg('J') : configured_grid_y_size;
-
-        float _x_size = this->x_size, _y_size = this->y_size;
-        float _x_start = this->x_start, _y_start = this->y_start;
-
-        if(only_by_two_corners){
-            if(gcode.has_arg('X') && gcode.has_arg('Y') && gcode.has_arg('A') && gcode.has_arg('B')){
-                _x_start = gcode.get_arg('X'); // override default probe start point
-                _y_start = gcode.get_arg('Y'); // override default probe start point
-                _x_size = gcode.get_arg('A'); // override default probe width
-                _y_size = gcode.get_arg('B'); // override default probe length
-            } else {
-                os.printf("In only_by_two_corners mode all XYAB parameters needed\n");
-                return true;
-            }
-        } else {
-            if(gcode.has_arg('X')) _x_size = gcode.get_arg('X'); // override default probe width
-            if(gcode.has_arg('Y')) _y_size = gcode.get_arg('Y'); // override default probe length
+        if(!before_probe.empty()) {
+            OutputStream nullos; // null output stream
+            dispatch_line(nullos, before_probe.c_str());
         }
 
-        probe_grid(n, m, _x_start, _y_start, _x_size, _y_size, os);
+        if(!scan_bed(gcode, os)) {
+            os.printf("scan failed to complete\n");
+        }
+
+        if(!after_probe.empty()) {
+            OutputStream nullos; // null output stream
+            dispatch_line(nullos, after_probe.c_str());
+        }
 
         return true;
 
@@ -392,11 +414,35 @@ bool CartGridStrategy::handle_gcode(GCode& gcode, OutputStream& os)
         // first wait for an empty queue i.e. no moves left
         Conveyor::getInstance()->wait_for_idle();
 
+        // home if needed
+        if (do_home && !only_by_two_corners && !(gcode.has_arg('R') && gcode.get_int_arg('R') == 1)){
+            zprobe->home();
+        }
+
+        if(!before_probe.empty()) {
+            OutputStream nullos; // null output stream
+            dispatch_line(nullos, before_probe.c_str());
+            Conveyor::getInstance()->wait_for_idle();
+        }
+
+        Robot::getInstance()->disable_segmentation= true;
         if(!doProbe(gcode, os)) {
             os.printf("Probe failed to complete, check the initial probe height and/or initial_height settings\n");
         } else {
-            os.printf("Probe completed\n");
+            os.printf("Probe completed.");
+            if(!only_by_two_corners) {
+                os.printf(" Enter M374 to save this grid\n");
+            }else{
+                os.printf("\n");
+            }
         }
+        Robot::getInstance()->disable_segmentation= false;
+
+        if(!after_probe.empty()) {
+            OutputStream nullos; // null output stream
+            dispatch_line(nullos, after_probe.c_str());
+        }
+
         return true;
     }
 
@@ -452,10 +498,6 @@ bool CartGridStrategy::handle_mcode(GCode& gcode, OutputStream& os)
     return false;
 }
 
-#define X_PROBE_OFFSET_FROM_EXTRUDER std::get<0>(probe_offsets)
-#define Y_PROBE_OFFSET_FROM_EXTRUDER std::get<1>(probe_offsets)
-#define Z_PROBE_OFFSET_FROM_EXTRUDER std::get<2>(probe_offsets)
-
 void CartGridStrategy::setAdjustFunction(bool on)
 {
     if(on) {
@@ -469,12 +511,10 @@ void CartGridStrategy::setAdjustFunction(bool on)
     }
 }
 
-bool CartGridStrategy::findBed()
+bool CartGridStrategy::findBed(float x, float y)
 {
-    if (do_home) zprobe->home();
-    float z = initial_height;
-    zprobe->move_z(z, zprobe->getFastFeedrate()); // move Z only to initial_height
-    zprobe->move_xy(x_start - X_PROBE_OFFSET_FROM_EXTRUDER, y_start - Y_PROBE_OFFSET_FROM_EXTRUDER, zprobe->getFastFeedrate()); // move at initial_height to x_start, y_start
+    zprobe->move_z(initial_height, zprobe->getFastFeedrate()); // move Z only to initial_height
+    zprobe->move_xy(x - X_PROBE_OFFSET_FROM_EXTRUDER, y - Y_PROBE_OFFSET_FROM_EXTRUDER, zprobe->getFastFeedrate()); // move at initial_height to x_start, y_start
 
     // find bed at 0,0 run at slow rate so as to not hit bed hard
     float mm;
@@ -489,14 +529,35 @@ bool CartGridStrategy::findBed()
 
 bool CartGridStrategy::doProbe(GCode& gcode, OutputStream& os)
 {
+    bool use_wcs= false;
     os.printf("Rectangular Grid Probe...\n");
+
+    // if R1 then force only_by_two_corners using current position for start point
+    // R0 turns off two corners mode
+    if(gcode.has_arg('R')) {
+        if(gcode.get_int_arg('R') == 1) {
+            only_by_two_corners= true;
+            use_wcs= true;
+            os.printf("NOTE: only by two corners mode using current position for start, offset by XY\n");
+        }else{
+            only_by_two_corners= false;
+        }
+    }
 
     if(only_by_two_corners){
         if(gcode.has_arg('X') && gcode.has_arg('Y') && gcode.has_arg('A') && gcode.has_arg('B')){
-            this->x_start = gcode.get_arg('X'); // override default probe start point, will get saved
-            this->y_start = gcode.get_arg('Y'); // override default probe start point, will get saved
-            this->x_size = gcode.get_arg('A'); // override default probe width, will get saved
-            this->y_size = gcode.get_arg('B'); // override default probe length, will get saved
+            if(use_wcs) {
+                float xo = gcode.get_arg('X'); // offset current start position
+                float yo = gcode.get_arg('Y');
+                // NOTE as we are positioning the probe we need to reverse offset for the probe offset
+                this->x_start = Robot::getInstance()->get_axis_position(X_AXIS) + xo + X_PROBE_OFFSET_FROM_EXTRUDER;
+                this->y_start = Robot::getInstance()->get_axis_position(Y_AXIS) + yo + Y_PROBE_OFFSET_FROM_EXTRUDER;
+            }else{
+                this->x_start = gcode.get_arg('X'); // override default probe start point
+                this->y_start = gcode.get_arg('Y'); // override default probe start point
+            }
+            this->x_size = gcode.get_arg('A'); // override default probe width
+            this->y_size = gcode.get_arg('B'); // override default probe length
         } else {
             os.printf("In only_by_two_corners mode all XYAB parameters needed\n");
             return false;
@@ -504,6 +565,13 @@ bool CartGridStrategy::doProbe(GCode& gcode, OutputStream& os)
     } else {
         if(gcode.has_arg('X')) this->x_size = gcode.get_arg('X'); // override default probe width, will get saved
         if(gcode.has_arg('Y')) this->y_size = gcode.get_arg('Y'); // override default probe length, will get saved
+        this->x_start= 0;
+        this->y_start= 0;
+    }
+
+    if(x_size == 0 || y_size == 0) {
+        os.printf("ERROR: Probe Size cannot be 0\n");
+        return false;
     }
 
     setAdjustFunction(false);
@@ -520,18 +588,21 @@ bool CartGridStrategy::doProbe(GCode& gcode, OutputStream& os)
     }
 
     // find bed, and leave probe probe_height above bed
-    if(!findBed()) {
+    if(!findBed(x_start, y_start)) {
         os.printf("Finding bed failed, check the initial height setting\n");
         return false;
     }
 
-    os.printf("Probe start ht is %f mm, rectangular bed width %fmm, height %fmm, grid size is %dx%d\n", zprobe->getProbeHeight(), x_size, y_size, current_grid_x_size, current_grid_y_size);
+    os.printf("Probe start ht: %0.3f mm, start MCS x,y: %0.3f,%0.3f, rectangular bed width,height in mm: %0.3f,%0.3f, grid size: %dx%d\n", zprobe->getProbeHeight(), x_start, y_start, x_size, y_size, current_grid_x_size, current_grid_y_size);
 
-    // do first probe for 0,0
+    // do first probe at start point
     float mm;
     if(!zprobe->doProbeAt(mm, this->x_start - X_PROBE_OFFSET_FROM_EXTRUDER, this->y_start - Y_PROBE_OFFSET_FROM_EXTRUDER)) return false;
     float z_reference = zprobe->getProbeHeight() - mm; // this should be zero
-    os.printf("probe at 0,0 is %f mm\n", z_reference);
+    os.printf("probe at 0,0 is %1.3f mm\n", z_reference);
+
+    // keep track of worst case delta
+    float max_delta= fabs(z_reference);
 
     // probe all the points of the grid
     for (int yCount = 0; yCount < this->current_grid_y_size; yCount++) {
@@ -550,15 +621,19 @@ bool CartGridStrategy::doProbe(GCode& gcode, OutputStream& os)
         for (int xCount = xStart; xCount != xStop; xCount += xInc) {
             float xProbe = this->x_start + (this->x_size / (this->current_grid_x_size - 1)) * xCount;
 
-            if(!zprobe->doProbeAt(mm, xProbe - X_PROBE_OFFSET_FROM_EXTRUDER, yProbe - Y_PROBE_OFFSET_FROM_EXTRUDER)) return false;
+            if(!zprobe->doProbeAt(mm, xProbe - X_PROBE_OFFSET_FROM_EXTRUDER, yProbe - Y_PROBE_OFFSET_FROM_EXTRUDER)){
+                return false;
+            }
+
             float measured_z = zprobe->getProbeHeight() - mm - z_reference; // this is the delta z from bed at 0,0
-            os.printf("DEBUG: X%1.4f, Y%1.4f, Z%1.4f\n", xProbe, yProbe, measured_z);
+            os.printf("DEBUG: X%1.3f, Y%1.3f, Z%1.3f\n", xProbe, yProbe, measured_z);
             grid[xCount + (this->current_grid_x_size * yCount)] = measured_z;
+            if(fabs(measured_z) > max_delta) max_delta= fabs(measured_z);
         }
     }
 
     print_bed_level(os);
-
+    os.printf("Maximum delta: %1.3f\n", max_delta);
     setAdjustFunction(true);
 
     return true;
