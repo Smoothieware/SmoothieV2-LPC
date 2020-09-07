@@ -170,6 +170,7 @@ _ramfunc_  void StepTicker::step_tick (void)
         running = false;
         current_tick = 0;
         current_block = nullptr;
+        continuing= false;
         return;
     }
 
