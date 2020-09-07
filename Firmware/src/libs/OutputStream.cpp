@@ -11,6 +11,7 @@
 OutputStream::OutputStream(wrfnc f) : deleteos(true)
 {
 	clear_flags();
+	stop_request= false;
 	// create an output stream using the given write fnc
 	fdbuf = new FdBuf(this, f);
 	os = new std::ostream(fdbuf);
