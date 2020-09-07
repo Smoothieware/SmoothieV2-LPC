@@ -41,6 +41,8 @@ public:
 	bool is_done() const { return done; }
     void set_uploading(bool flg) { uploading= flg; }
     bool is_uploading() const { return uploading; }
+    void set_stop_request(bool flg) { stop_request= flg; }
+    bool get_stop_request() const { return stop_request; }
 
 private:
 	// Hack to allow us to create a ostream writing to a supplied write function
@@ -66,5 +68,6 @@ private:
 		bool deleteos: 1;
 		bool no_response: 1;
 		bool done:1;
+		bool stop_request:1;
 	};
 };

@@ -334,8 +334,17 @@ bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
             cnt = 0;
 
         } else if(line[cnt] == 25) { // ^Y
-            // stop continuous jog mode
-            Conveyor::getInstance()->set_continuous_mode(false);
+            // there is a race condition where the host may send the ^Y so fast after
+            // the $J -c that it is executed first, which would leave the system in cont mode
+            // We set the stop_request flag if we are not in continuous jog mode and
+            // check that before setting cont mode.
+            if(Conveyor::getInstance()->get_continuous_mode()) {
+                // stop continuous jog mode
+                Conveyor::getInstance()->set_continuous_mode(false);
+            }else{
+                // set generic stop request, currently only used to see if we got ^Y before cont mode
+                os->set_stop_request(true);
+            }
 
         } else if(line[cnt] == '?') {
             if(!queries.full()) {

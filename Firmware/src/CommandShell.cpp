@@ -1144,6 +1144,17 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
     float fr= rate_mm_s*scale;
 
     if(cont_mode) {
+        // $J -c returns ok when done
+        os.set_no_response(false);
+
+        if(os.get_stop_request()) {
+            // there is a race condition where the host may send the ^Y so fast after
+            // the $J -c that it is executed first, which would leave the system in cont mode
+            // in that case stop_request would be set instead
+            os.set_stop_request(false);
+            return true;
+        }
+
         // continuous jog mode, will move until told to stop
         // calculate minimum distance to travel to accomodate acceleration and feedrate
         float acc= Robot::getInstance()->get_default_acceleration();
@@ -1176,7 +1187,6 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 
         // reset the position based on current actuator position
         Robot::getInstance()->reset_position_from_current_actuator_position();
-        os.printf("ok\n");
     }
 
     return true;
