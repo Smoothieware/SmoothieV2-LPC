@@ -1176,6 +1176,7 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 
         // reset the position based on current actuator position
         Robot::getInstance()->reset_position_from_current_actuator_position();
+        os.printf("ok\n");
     }
 
     return true;
