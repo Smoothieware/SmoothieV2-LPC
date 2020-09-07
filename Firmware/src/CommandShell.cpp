@@ -1057,7 +1057,7 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 {
-    HELP("instant jog: $J X0.01 [S0.5] - axis can be XYZABC, optional speed (Snnn) is scale of max_rate");
+    HELP("instant jog: $J X0.01 [S0.5] [-C] - axis can be XYZABC, optional speed (Snnn) is scale of max_rate. -C turns on continuous jog mode");
     os.set_no_response(true);
 
     AutoPushPop app;
