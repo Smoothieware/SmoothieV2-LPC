@@ -364,7 +364,7 @@ bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
         } else if(line[cnt] == '\n') {
             os->clear_flags(); // clear the done flag here to avoid race conditions
             line[cnt] = '\0'; // remove the \n and nul terminate
-            if(cnt == 2 && line[0] == '$' && (line[1] == 'I' || line[1] == 'S')) {
+            if(cnt >= 2 && line[0] == '$' && (line[1] == 'I' || line[1] == 'S')) {
                 // Handle $I and $S as instant queries
                 if(!queries.full()) {
                     queries.push_back({os, strdup(line)});
