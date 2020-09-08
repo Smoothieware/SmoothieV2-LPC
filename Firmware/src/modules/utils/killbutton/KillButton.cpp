@@ -106,7 +106,6 @@ void KillButton::button_tick()
     if(state == KILL_BUTTON_DOWN) {
         if(!killed) {
             Module::broadcast_halt(true);
-            print_to_all_consoles("ALARM: Kill button pressed - reset or M999 to continue\n");
             if(estop_still_pressed) {
                 print_to_all_consoles("WARNING: ESTOP is still latched, unlatch ESTOP to clear HALT\n");
                 estop_still_pressed= false;
