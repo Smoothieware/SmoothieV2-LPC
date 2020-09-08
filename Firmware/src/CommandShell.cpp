@@ -1143,6 +1143,7 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 
     float fr= rate_mm_s*scale;
 
+    auto savect= Robot::getInstance()->compensationTransform;
     if(cont_mode) {
         // $J -c returns ok when done
         os.set_no_response(false);
@@ -1170,6 +1171,9 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
         // we have to wait for the queue to be totally empty
         Conveyor::getInstance()->wait_for_idle();
 
+        // turn off any compensation transform so Z does not move as we jog
+        Robot::getInstance()->compensationTransform= nullptr;
+
         // Set continuous mode
         Conveyor::getInstance()->set_continuous_mode(true);
     }
@@ -1187,6 +1191,8 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 
         // reset the position based on current actuator position
         Robot::getInstance()->reset_position_from_current_actuator_position();
+        // restore compensationTransform
+        Robot::getInstance()->compensationTransform= savect;
     }
 
     return true;
