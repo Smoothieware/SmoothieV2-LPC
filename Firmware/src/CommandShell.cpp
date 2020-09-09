@@ -1172,7 +1172,7 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
         Conveyor::getInstance()->wait_for_idle();
 
         // turn off any compensation transform so Z does not move as we jog
-        Robot::getInstance()->compensationTransform= nullptr;
+        Robot::getInstance()->reset_compensated_machine_position();
 
         // Set continuous mode
         Conveyor::getInstance()->set_continuous_mode(true);

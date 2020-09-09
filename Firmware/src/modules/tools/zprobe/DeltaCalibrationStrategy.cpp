@@ -48,7 +48,7 @@ bool DeltaCalibrationStrategy::handle_gcode(GCode& gcode, OutputStream& os)
         Conveyor::getInstance()->wait_for_idle();
 
         // turn off any compensation transform as it will be invalidated anyway by this
-        Robot::getInstance()->compensationTransform = nullptr;
+        Robot::getInstance()->reset_compensated_machine_position();
 
         if(!gcode.has_arg('R')) {
             if(!calibrate_delta_endstops(gcode, os)) {

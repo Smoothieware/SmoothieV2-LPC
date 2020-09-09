@@ -1291,6 +1291,12 @@ bool Robot::handle_M500(GCode& gcode, OutputStream& os)
         os.printf("\n");
     }
 
+    if(gcode.get_subcode() == 3) {
+        // show temporary settings
+        os.printf(";Temporary settings S - delta segs/sec, U - mm/line segment:\nM665 ");
+        os.printf("S%1.5f U%1.5f\n", this->delta_segments_per_second, this->mm_per_line_segment);
+    }
+
     // save wcs_offsets and current_wcs
     // TODO this may need to be done whenever they change to be compliant
     if(save_wcs) {
@@ -1597,6 +1603,15 @@ void Robot::reset_position_from_current_actuator_position()
 #endif
 }
 
+// this needs to be done if compensation is turned off
+void Robot::reset_compensated_machine_position()
+{
+    if(compensationTransform) {
+        compensationTransform= nullptr;
+        memcpy(machine_position, compensated_machine_position, n_motors * sizeof(float));
+    }
+}
+
 // Convert target (in machine coordinates) to machine_position, then convert to actuator position and append this to the planner
 // target is in machine coordinates without the compensation transform, however we save a compensated_machine_position that includes
 // all transforms and is what we actually convert to actuator positions
@@ -1746,7 +1761,7 @@ bool Robot::append_milestone(const float target[], float rate_mm_s)
 
     // Append the block to the planner
     // NOTE that distance here should be either the distance travelled by the XYZ axis, or the E mm travel if a solo E move
-    // NOTE this call will bock until there is room in the block queue
+    // NOTE this call will block until there is room in the block queue
     if(Planner::getInstance()->append_block( actuator_pos, n_motors, rate_mm_s, distance, auxilliary_move ? nullptr : unit_vec, acceleration, s_value, is_g123)) {
         // this is the new compensated machine position
         memcpy(this->compensated_machine_position, transformed_target, n_motors * sizeof(float));

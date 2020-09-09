@@ -663,7 +663,7 @@ void Endstops::process_home_command(GCode& gcode, OutputStream& os)
 
     // turn off any compensation transform so Z does not move as XY home
     auto savect= Robot::getInstance()->compensationTransform;
-    Robot::getInstance()->compensationTransform= nullptr;
+    Robot::getInstance()->reset_compensated_machine_position();
 
     // deltas always home Z axis only, which moves all three actuators
     bool home_in_z_only = this->is_delta || this->is_rdelta;

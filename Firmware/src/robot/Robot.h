@@ -65,7 +65,7 @@ public:
     void enable_all_motors(bool flg);
     void get_query_string(std::string&) const;
     void do_park();
-
+    void reset_compensated_machine_position();
 
     BaseSolution* arm_solution;                           // Selected Arm solution ( millimeters to step calculation )
 

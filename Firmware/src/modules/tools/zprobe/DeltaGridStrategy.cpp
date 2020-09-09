@@ -419,7 +419,7 @@ void DeltaGridStrategy::setAdjustFunction(bool on)
         Robot::getInstance()->compensationTransform = std::bind(&DeltaGridStrategy::doCompensation, this, _1, _2); // [this](float *target, bool inverse) { doCompensation(target, inverse); };
     } else {
         // clear it
-        Robot::getInstance()->compensationTransform = nullptr;
+        Robot::getInstance()->reset_compensated_machine_position();
     }
 }
 

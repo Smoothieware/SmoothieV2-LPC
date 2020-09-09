@@ -376,7 +376,7 @@ void ThreePointStrategy::setAdjustFunction(bool on)
         Robot::getInstance()->compensationTransform = [this](float * target, bool inverse) { if(inverse) target[2] -= this->plane->getz(target[0], target[1]); else target[2] += this->plane->getz(target[0], target[1]); };
     } else {
         // clear it
-        Robot::getInstance()->compensationTransform = nullptr;
+        Robot::getInstance()->reset_compensated_machine_position();
     }
 }
 
