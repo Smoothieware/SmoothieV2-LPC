@@ -1603,12 +1603,15 @@ void Robot::reset_position_from_current_actuator_position()
 #endif
 }
 
-// this needs to be done if compensation is turned off
+// this needs to be done if compensation is turned off for continuous jog
 void Robot::reset_compensated_machine_position()
 {
     if(compensationTransform) {
         compensationTransform= nullptr;
-        memcpy(machine_position, compensated_machine_position, n_motors * sizeof(float));
+        // we want to leave it where we have set Z, not where it ended up AFTER compensation so
+        // this should correct the Z position to the machine_position
+        is_g123= false; // we don't want the laser to fire
+        append_milestone(machine_position, this->seek_rate / 60.0F);
     }
 }
 

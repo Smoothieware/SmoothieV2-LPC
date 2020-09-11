@@ -1168,11 +1168,11 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
         else delta[axis]= d;
         //printf("time: %f, delta: %f, fr: %f\n", t, d, fr);
 
-        // we have to wait for the queue to be totally empty
-        Conveyor::getInstance()->wait_for_idle();
-
         // turn off any compensation transform so Z does not move as we jog
         Robot::getInstance()->reset_compensated_machine_position();
+
+        // we have to wait for the queue to be totally empty
+        Conveyor::getInstance()->wait_for_idle();
 
         // Set continuous mode
         Conveyor::getInstance()->set_continuous_mode(true);
