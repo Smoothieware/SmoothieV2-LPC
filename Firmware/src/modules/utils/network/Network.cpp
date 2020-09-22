@@ -293,6 +293,9 @@ bool Network::update_cmd( std::string& params, OutputStream& os )
     #ifdef BOARD_BAMBINO
     std::string urlbin = "http://smoothieware.org/_media/bin/bb.bin";
     std::string urlmd5 = "http://smoothieware.org/_media/bin/bb.md5";
+    #elif defined(BOARD_PRIMEALPHA) && defined(BOARD_BETA)
+    std::string urlbin = "http://smoothieware.org/_media/bin/pb.bin";
+    std::string urlmd5 = "http://smoothieware.org/_media/bin/pb.md5";
     #elif defined(BOARD_PRIMEALPHA)
     std::string urlbin = "http://smoothieware.org/_media/bin/pa.bin";
     std::string urlmd5 = "http://smoothieware.org/_media/bin/pa.md5";

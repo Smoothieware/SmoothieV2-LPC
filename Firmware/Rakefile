@@ -12,23 +12,33 @@ PROG = 'smoothiev2'
 load 'rakefile.defaults' if File.exists?('rakefile.defaults')
 
 if ENV['target'].nil?
-  TARGET = 'Primealpha'
-elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Minialpha' && ENV['target'] != 'Primealpha')
-  puts "ERROR: Must specify target=[Bambino|Minialpha|Primealpha]"
+  TARGET = 'Prime'
+elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Mini' && ENV['target'] != 'Prime')
+  puts "ERROR: Must specify target=[Bambino|Mini|Prime]"
   exit 0
 else
   TARGET = ENV['target']
 end
 
+if ENV['type'].nil?
+  if TARGET == 'Prime'
+    TYPE = 'alpha'
+  else
+    TYPE = ''
+  end
+else
+  TYPE = ENV['type']
+end
+
 target_defines= []
-if TARGET == 'Minialpha'
+if TARGET == 'Mini'
   # need to select the UART to use
   target_defines << '-DUSE_UART0'
   # select the pinset either 2 or 6
   target_defines << '-DUART0_PINSET=2'
   target_defines << "-DNOETHERNET"
   ENV['nonetwork'] = '1'
-elsif TARGET == 'Primealpha'
+elsif TARGET == 'Prime'
   # on G5
   target_defines << '-DUSE_UART0'
   target_defines << "-DUART0_PINSET=15"
@@ -38,7 +48,12 @@ elsif TARGET == 'Bambino'
   target_defines << '-DUART0_PINSET=6'
 end
 
-puts "Target is #{TARGET}"
+if TYPE == 'beta'
+  target_defines << "-DBOARD_BETA"
+end
+
+target = "#{TARGET}#{TYPE}"
+puts "Target is #{target}"
 
 DEBUG = ENV['debug'] == '1'
 DEBUGLIB = ENV['debuglib'] == '1'
@@ -167,7 +182,7 @@ HAL_SRCS = hal_src + rtos_src
 
 $using_cpp= SRCS.find { |i| File.extname(i) == ".cpp" }.nil? ? false : true
 
-OBJDIR = "#{PROG}_#{TARGET}"
+OBJDIR = "#{PROG}_#{target}"
 OBJ = src.collect { |fn| File.join(OBJDIR, File.dirname(fn), File.basename(fn).ext('o')) }
 HAL_OBJ = HAL_SRCS.collect { |fn| File.join(OBJDIR, File.dirname(fn), File.basename(fn).ext('o')) }
 OBJS = HAL_OBJ + OBJ
@@ -198,14 +213,14 @@ if DEBUG
 end
 
 # Target specified #defines
-defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" "
+defines << "-DBUILD_TARGET=\\\"#{target}\\\" "
 if TARGET == 'Bambino'
   defines << '-DBOARD_BAMBINO'
   defines << '-DSTRING_CONFIG_H=\"string-config-bambino.h\"'
-elsif TARGET == 'Minialpha'
+elsif TARGET == 'Mini'
   defines << '-DBOARD_MINIALPHA'
   defines << '-DSTRING_CONFIG_H=\"string-config-minialpha.h\"'
-elsif TARGET == 'Primealpha'
+elsif TARGET == 'Prime'
   defines << '-DBOARD_PRIMEALPHA'
   defines << '-DSTRING_CONFIG_H=\"string-config-primealpha.h\"'
   defines << '-DFLASH16BIT' unless SPIFI
@@ -256,7 +271,8 @@ task :help do
   puts " test=test1[,test2,test3] - specifies which test(s) to build"
   puts " exclude=test1[,test2...] - excludes the named test(s) from the build"
   puts " flash=1 - compile for parallel flash, default is SPIFI"
-  puts " target=[Bambino|Minialpha|Primealpha] - sets target board. default is #{TARGET}"
+  puts " target=[Bambino|Mini|Prime] - sets target board. default is #{TARGET}"
+  puts " type=[alpha|beta] - sets target board type. default is none"
   puts " debug=1 - turns on debug compilation"
   puts " debuglib=1 - turns on debugging only for the hal libs"
   puts " ARMTOOLS=path - overides where the ARM tool chain is loaded from. default is #{TOOLSDIR}"
@@ -320,13 +336,13 @@ task :version do
 end
 
 # make sure the flashloader has been built
-file "../flashloader/flashloader_#{TARGET}/flashloader.bin" do |t|
+file "../flashloader/flashloader_#{target}/flashloader.bin" do |t|
   puts "Running rake on flashloader"
   sh 'cd ../flashloader; rake'
 end
 
 # copy the flashloader bin to our OBJDIR
-file "#{OBJDIR}/flashloader.bin" => ["../flashloader/flashloader_#{TARGET}/flashloader.bin"] do |t|
+file "#{OBJDIR}/flashloader.bin" => ["../flashloader/flashloader_#{target}/flashloader.bin"] do |t|
   puts "Copying #{t.source} to #{t.name}"
   FileUtils.cp(t.source, t.name)
 end
@@ -336,7 +352,7 @@ file "#{OBJDIR}/flashloader.o" => ["#{OBJDIR}/flashloader.bin"] do |t|
   puts "converting flash loader #{t.source} -> #{t.name}"
   sh "#{OBJCOPY} -I binary -O elf32-littlearm -B arm --readonly-text --rename-section .data=.rodata.dfuloader #{t.source} #{t.name}"
   ["start", "end", "size"].each do |n|
-    sh "#{OBJCOPY} --redefine-sym _binary_smoothiev2_#{TARGET}_flashloader_bin_#{n}=_binary_flashloader_bin_#{n} #{t.name}"
+    sh "#{OBJCOPY} --redefine-sym _binary_smoothiev2_#{target}_flashloader_bin_#{n}=_binary_flashloader_bin_#{n} #{t.name}"
   end
 end
 

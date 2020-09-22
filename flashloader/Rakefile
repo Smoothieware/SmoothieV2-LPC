@@ -8,22 +8,32 @@ SPIFI = ENV['flash'].nil? ? true : false
 
 PROG = 'flashloader'
 if ENV['target'].nil?
-  TARGET = 'Primealpha'
-elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Minialpha' && ENV['target'] != 'Primealpha')
-  puts "ERROR: Must specify target=[Bambino|Minialpha|Primealpha]"
+  TARGET = 'Prime'
+elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Mini' && ENV['target'] != 'Prime')
+  puts "ERROR: Must specify target=[Bambino|Mini|Prime]"
   exit 0
 else
   TARGET = ENV['target']
 end
 
+if ENV['type'].nil?
+  if TARGET == 'Prime'
+    TYPE = 'alpha'
+  else
+    TYPE = ''
+  end
+else
+  TYPE = ENV['type']
+end
+
 target_defines= []
-if TARGET == 'Minialpha'
+if TARGET == 'Mini'
   # need to select the UART to use
   target_defines << '-DUSE_UART0'
   # select the pinset either 2 or 6
   target_defines << '-DUART0_PINSET=2'
   target_defines << "-DNOETHERNET"
-elsif TARGET == 'Primealpha'
+elsif TARGET == 'Prime'
   # on G5
   target_defines << '-DUSE_UART0'
   target_defines << "-DUART0_PINSET=15"
@@ -32,7 +42,8 @@ elsif TARGET == 'Bambino'
   target_defines << '-DUART0_PINSET=6'
 end
 
-puts "Target is #{TARGET}"
+target = "#{TARGET}#{TYPE}"
+puts "Flashloader Target is #{target}"
 
 DEBUG = ENV['debug'] == '1'
 DEBUGLIB = ENV['debuglib'] == '1'
@@ -117,7 +128,7 @@ SRCS = src
 
 $using_cpp= SRCS.find { |i| File.extname(i) == ".cpp" }.nil? ? false : true
 
-OBJDIR = "#{PROG}_#{TARGET}"
+OBJDIR = "#{PROG}_#{target}"
 OBJ = src.collect { |fn| File.join(OBJDIR, File.dirname(fn), File.basename(fn).ext('o')) }
 OBJS = OBJ
 
@@ -144,14 +155,14 @@ if DEBUG
 end
 
 # Target specified #defines
-defines << "-DBUILD_TARGET=\\\"#{TARGET}\\\" "
+defines << "-DBUILD_TARGET=\\\"#{target}\\\" "
 if TARGET == 'Bambino'
   defines << '-DBOARD_BAMBINO'
 
-elsif TARGET == 'Minialpha'
+elsif TARGET == 'Mini'
   defines << '-DBOARD_MINIALPHA'
 
-elsif TARGET == 'Primealpha'
+elsif TARGET == 'Prime'
   defines << '-DBOARD_PRIMEALPHA'
   defines << '-DFLASH16BIT' unless SPIFI
 else
@@ -180,7 +191,7 @@ desc "List options"
 task :help do
   puts "options:"
   puts " verbose=1 - turns on verbose output"
-  puts " target=[Bambino|Minialpha|Primealpha] - sets target board. default is #{TARGET}"
+  puts " target=[Bambino|Mini|Prime] - sets target board. default is #{TARGET}"
   puts " debug=1 - turns on debug compilation"
   puts " ARMTOOLS=path - overides where the ARM tool chain is loaded from. default is #{TOOLSDIR}"
   puts " ARMVERSION=version - overides the version of ARM tools to use. default is #{ARMVERSION}"
