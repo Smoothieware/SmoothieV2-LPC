@@ -21,7 +21,7 @@ else
 end
 
 if ENV['type'].nil?
-  if TARGET == 'Prime'
+  if TARGET == 'Prime' || TARGET == 'Mini'
     TYPE = 'alpha'
   else
     TYPE = ''
@@ -272,7 +272,7 @@ task :help do
   puts " exclude=test1[,test2...] - excludes the named test(s) from the build"
   puts " flash=1 - compile for parallel flash, default is SPIFI"
   puts " target=[Bambino|Mini|Prime] - sets target board. default is #{TARGET}"
-  puts " type=[alpha|beta] - sets target board type. default is none"
+  puts " type=[alpha|beta] - sets target board type. default is #{TYPE}"
   puts " debug=1 - turns on debug compilation"
   puts " debuglib=1 - turns on debugging only for the hal libs"
   puts " ARMTOOLS=path - overides where the ARM tool chain is loaded from. default is #{TOOLSDIR}"
