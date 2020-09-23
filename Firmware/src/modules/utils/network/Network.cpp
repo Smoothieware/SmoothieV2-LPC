@@ -452,8 +452,10 @@ void Network::network_thread()
 
     /* Add netif interface for lpc17xx_8x */
     if (netifapi_netif_add(lpc_netif, &ipaddr, &netmask, &gw, NULL, lpc_enetif_init, tcpip_input) != ERR_OK) {
-        printf("INFO: Network: Net interface failed to initialize\n");
+        printf("ERROR: Network: Net interface failed to initialize\n");
+        return;
     }
+
     netif_set_hostname(lpc_netif, hostname.c_str());
     netifapi_netif_set_default(lpc_netif);
     netifapi_netif_set_up(lpc_netif);
