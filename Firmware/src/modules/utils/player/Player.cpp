@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <tuple>
 
 #define on_boot_gcode_key "on_boot_gcode"
 #define on_boot_gcode_enable_key "on_boot_gcode_enable"
@@ -509,7 +510,15 @@ void Player::player_thread()
 bool Player::request(const char *key, void *value)
 {
     if(strcmp("is_playing", key) == 0) {
-        *(bool*)value = this->playing_file;
+        unsigned long elapsed_secs= 0;
+        unsigned char pcnt= 0;
+        bool playing= (this->playing_file || this->current_file_handler);
+        if(playing) {
+            elapsed_secs= ((xTaskGetTickCount() - start_ticks) * 1000 / configTICK_RATE_HZ) / 1000;
+            pcnt = roundf(((float)file_size - (file_size - played_cnt)) * 100.0F / file_size);
+        }
+        std::tuple<bool, unsigned long, unsigned char> r= std::make_tuple(playing, elapsed_secs, pcnt);
+        memcpy(value, &r, sizeof(r));
         return true;
 
     } else if(strcmp("is_suspended", key) == 0) {

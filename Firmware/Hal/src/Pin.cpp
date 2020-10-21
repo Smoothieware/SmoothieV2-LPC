@@ -315,7 +315,7 @@ Pin::Pin(const char *s, TYPE_T t)
 Pin::~Pin()
 {
     // TODO trouble is we copy pins so this would deallocate a used pin, see Robot actuator pins
-    // deallocate it in the bitset, but leaves th ephysical port as it was
+    // deallocate it in the bitset, but leaves the physical port as it was
     // if(valid) {
     //     uint16_t port = gpiocfg >> GPIO_PORT_SHIFT;
     //     uint16_t pin = gpiocfg & GPIO_PIN_MASK;

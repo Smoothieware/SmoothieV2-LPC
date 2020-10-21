@@ -26,6 +26,7 @@
 #include <math.h>
 #include <string>
 #include <algorithm>
+#include <tuple>
 
 #define hypotf(a, b) (sqrtf(((a)*(a)) + ((b)*(b))))
 
@@ -2206,6 +2207,19 @@ void Robot::get_query_string(std::string& str) const
                 if(n > sizeof(buf)) n= sizeof(buf);
                 str.append(buf, n);
             }
+        }
+    }
+
+    // See if playing from SD Card and get progress if so
+    m = Module::lookup("player");
+    if(m != nullptr) {
+        std::tuple<bool, unsigned long, unsigned char> r;
+        bool ok = m->request("is_playing", &r);
+        if(ok && std::get<0>(r)) {
+            char buf[32];
+            size_t n = snprintf(buf, sizeof(buf), "|SD:%lu,%u", std::get<1>(r), std::get<2>(r));
+            if(n > sizeof(buf)) n= sizeof(buf);
+            str.append(buf, n);
         }
     }
 
