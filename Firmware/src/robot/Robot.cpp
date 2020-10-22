@@ -1918,6 +1918,14 @@ bool Robot::append_arc(GCode&  gcode, const float target[], const float offset[]
     float rt_axis0 = target[this->plane_axis_0] - center_axis0;
     float rt_axis1 = target[this->plane_axis_1] - center_axis1;
 
+    // initialize linear travel for ABC
+    #if MAX_ROBOT_ACTUATORS > 3
+    float abc_travel[n_motors-3];
+    for (int i = A_AXIS; i < n_motors; i++) {
+        abc_travel[i-3]= target[i] - this->machine_position[i];
+    }
+    #endif
+
     // Patch from GRBL Firmware - Christoph Baumann 04072015
     // CCW angle between position and target from circle center. Only one atan2() trig computation required.
     float angular_travel = atan2f(r_axis0 * rt_axis1 - r_axis1 * rt_axis0, r_axis0 * rt_axis0 + r_axis1 * rt_axis1);
@@ -1950,6 +1958,12 @@ bool Robot::append_arc(GCode&  gcode, const float target[], const float offset[]
     //printf("Radius %f - Segment Length %f - Number of Segments %d\n",radius,arc_segment,segments);  // Testing Purposes ONLY
     float theta_per_segment = angular_travel / segments;
     float linear_per_segment = linear_travel / segments;
+    #if MAX_ROBOT_ACTUATORS > 3
+    float abc_per_segment[n_motors-3];
+    for (int i = 0; i < n_motors-3; i++) {
+        abc_per_segment[i]= abc_travel[i] / segments;
+    }
+    #endif
 
     /* Vector rotation by transformation matrix: r is the original vector, r_T is the rotated vector,
     and phi is the angle of rotation. Based on the solution approach by Jens Geisler.
@@ -1978,7 +1992,6 @@ bool Robot::append_arc(GCode&  gcode, const float target[], const float offset[]
     float cos_T = 1 - 0.5F * theta_per_segment * theta_per_segment; // Small angle approximation
     float sin_T = theta_per_segment;
 
-    // TODO we need to handle the ABC axis here by segmenting them
     float arc_target[n_motors];
     float sin_Ti;
     float cos_Ti;
@@ -2016,7 +2029,11 @@ bool Robot::append_arc(GCode&  gcode, const float target[], const float offset[]
         arc_target[this->plane_axis_0] = center_axis0 + r_axis0;
         arc_target[this->plane_axis_1] = center_axis1 + r_axis1;
         arc_target[this->plane_axis_2] += linear_per_segment;
-
+        #if MAX_ROBOT_ACTUATORS > 3
+        for (int a = A_AXIS; a < n_motors; a++) {
+            arc_target[a] += abc_per_segment[a-3];
+        }
+        #endif
         // Append this segment to the queue
         bool b = this->append_milestone(arc_target, rate_mm_s);
         moved = moved || b;
