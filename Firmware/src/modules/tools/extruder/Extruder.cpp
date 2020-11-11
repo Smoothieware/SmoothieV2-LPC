@@ -94,7 +94,7 @@ bool Extruder::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
     // pins and speeds and acceleration are set in Robot for delta, epsilon etc
 
     // multi extruder setup
-    this->tool_id             = cr.get_int(m, tool_id_key, 0); // set to T0 by default, must be set to > 0 for subsequent extruders
+    this->tool_id = cr.get_int(m, tool_id_key, 0); // set to T0 by default, must be set to > 0 for subsequent extruders
     this->tool_offset[X_AXIS] = cr.get_float(m, x_offset_key, 0);
     this->tool_offset[Y_AXIS] = cr.get_float(m, y_offset_key, 0);
     this->tool_offset[Z_AXIS] = cr.get_float(m, z_offset_key, 0);
@@ -407,6 +407,20 @@ bool Extruder::handle_mcode(GCode& gcode, OutputStream& os)
 
 bool Extruder::handle_gcode(GCode & gcode, OutputStream & os)
 {
+    if(gcode.get_code() == 10 && gcode.has_arg('L') && gcode.get_int_arg('L') == 1 && gcode.has_arg('P')) {
+        // Handle G10 L1 Pn Xnnn Ynnn Znnn (L is 1 based tool_id is zero based)
+        if(gcode.get_int_arg('P')-1 == this->tool_id) {
+            // Set the tool offset for this tool
+            if(gcode.has_arg('X')) tool_offset[X_AXIS]= gcode.get_arg('X');
+            if(gcode.has_arg('Y')) tool_offset[Y_AXIS]= gcode.get_arg('Y');
+            if(gcode.has_arg('Z')) tool_offset[Z_AXIS]= gcode.get_arg('Z');
+            return true;
+        }
+        // not us
+        return false;
+    }
+
+    // the rest only apply if we are selected
     if(!this->selected) return false;
 
     if( (gcode.get_code() == 10 || gcode.get_code() == 11) && !gcode.has_arg('L') ) {
@@ -472,7 +486,6 @@ bool Extruder::handle_gcode(GCode & gcode, OutputStream & os)
         this->g92e0_detected = true;
         return true;
     }
-
 
     // should return false if it reaches here
     return false;
