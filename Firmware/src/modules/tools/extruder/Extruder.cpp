@@ -414,6 +414,11 @@ bool Extruder::handle_gcode(GCode & gcode, OutputStream & os)
             if(gcode.has_arg('X')) tool_offset[X_AXIS]= gcode.get_arg('X');
             if(gcode.has_arg('Y')) tool_offset[Y_AXIS]= gcode.get_arg('Y');
             if(gcode.has_arg('Z')) tool_offset[Z_AXIS]= gcode.get_arg('Z');
+            if(this->selected) {
+                // send updated tool offset to robot as we are active
+                Robot::getInstance()->setToolOffset(this->tool_offset);
+            }
+
             return true;
         }
         // not us
