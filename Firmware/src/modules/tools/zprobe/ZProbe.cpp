@@ -57,6 +57,7 @@ ZProbe::ZProbe() : Module("zprobe")
 {
     probing = false;
     invert_override = false;
+    invert_probe = false;
 }
 
 bool ZProbe::configure(ConfigReader& cr)
@@ -172,7 +173,7 @@ void ZProbe::read_probe()
     // we check all axis as it maybe a G38.2 X10 for instance, not just a probe in Z
     if(STEPPER[X_AXIS]->is_moving() || STEPPER[Y_AXIS]->is_moving() || STEPPER[Z_AXIS]->is_moving()) {
         // if it is moving then we check the probe, and debounce it
-        if(this->pin.get()) {
+        if(this->pin.get() != invert_probe) {
             if(debounce < debounce_ms) {
                 debounce++;
 
@@ -184,7 +185,7 @@ void ZProbe::read_probe()
             }
 
         } else {
-            // The endstop was not hit yet
+            // The probe was not hit yet
             debounce = 0;
         }
     }
@@ -196,7 +197,7 @@ void ZProbe::read_probe()
 // returns boolean value indicating if probe was triggered
 bool ZProbe::run_probe(float& mm, float feedrate, float max_dist, bool reverse)
 {
-    if(this->pin.get()) {
+    if(this->pin.get() != invert_probe) {
         // probe already triggered so abort
         return false;
     }
@@ -343,14 +344,21 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
             return false;
         }
 
-    } else if(gcode.get_code() == 38 ) { // G38.2 Straight Probe with error, G38.3 straight probe without error
+    } else if(gcode.get_code() == 38 ) {
+        // G38.2 Straight Probe with error, G38.3 straight probe without error .4 & .5 invert probe sense
         // linuxcnc/grbl style probe http://www.linuxcnc.org/docs/2.5/html/gcode/gcode.html#sec:G38-probe
-        if(gcode.get_subcode() != 2 && gcode.get_subcode() != 3) {
-            os.printf("error:Only G38.2 and G38.3 are supported\n");
+        if(gcode.get_subcode() < 2 || gcode.get_subcode() > 5) {
+            os.printf("error:Only G38.2 to G38.5 are supported\n");
             return false;
         }
 
-        if(this->pin.get()) {
+        if(gcode.get_subcode() == 4 || gcode.get_subcode() == 5) {
+            invert_probe = true;
+        } else {
+            invert_probe = false;
+        }
+
+        if(this->pin.get() != invert_probe) {
             os.printf("error:ZProbe triggered before move, aborting command.\n");
             return true;
         }
@@ -377,7 +385,9 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
             return true;
         }
 
+
         probe_XYZ(gcode, os, pa);
+        invert_probe= false;
 
         return true;
     }
@@ -479,8 +489,8 @@ void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, uint8_t axismask)
     os.printf("[PRB:%1.3f,%1.3f,%1.3f:%d]\n", pos[X_AXIS], pos[Y_AXIS], pos[Z_AXIS], probeok);
     Robot::getInstance()->set_last_probe_position(std::make_tuple(pos[X_AXIS], pos[Y_AXIS], pos[Z_AXIS], probeok));
 
-    if(probeok == 0 && gcode.get_subcode() == 2) {
-        // issue error if probe was not triggered and subcode == 2
+    if(probeok == 0 && (gcode.get_subcode() == 2 || gcode.get_subcode() == 4)) {
+        // issue error if probe was not triggered and subcode == 2 or 4
         os.printf("ALARM: Probe fail\n");
         broadcast_halt(true);
     }

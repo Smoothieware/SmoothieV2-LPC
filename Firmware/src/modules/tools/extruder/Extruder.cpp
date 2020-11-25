@@ -408,7 +408,7 @@ bool Extruder::handle_mcode(GCode& gcode, OutputStream& os)
 bool Extruder::handle_gcode(GCode & gcode, OutputStream & os)
 {
     if(gcode.get_code() == 10 && gcode.has_arg('L') && gcode.get_int_arg('L') == 1 && gcode.has_arg('P')) {
-        // Handle G10 L1 Pn Xnnn Ynnn Znnn (L is 1 based tool_id is zero based)
+        // Handle G10 L1 Pn Xnnn Ynnn Znnn (NOTE L is 1 based, tool_id is zero based)
         if(gcode.get_int_arg('P')-1 == this->tool_id) {
             // Set the tool offset for this tool
             if(gcode.has_arg('X')) tool_offset[X_AXIS]= gcode.get_arg('X');
