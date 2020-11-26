@@ -272,14 +272,22 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
 {
     if(gcode.get_code() >= 29 && gcode.get_code() <= 32) {
 
+        invert_probe = false;
+
+        if(!this->pin.connected()) {
+            os.printf("ZProbe pin not configured.\n");
+            return true;
+        }
+
+        // first wait for all moves to finish
+        Conveyor::getInstance()->wait_for_idle();
+
         if(this->pin.get()) {
             os.printf("ZProbe triggered before move, aborting command.\n");
             return true;
         }
 
         if( gcode.get_code() == 30 ) { // simple Z probe
-            // first wait for all moves to finish
-            Conveyor::getInstance()->wait_for_idle();
 
             bool set_z = gcode.has_arg('Z'); // && !is_rdelta);
             bool probe_result;
@@ -358,13 +366,13 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
             invert_probe = false;
         }
 
+        // first wait for all moves to finish
+        Conveyor::getInstance()->wait_for_idle();
+
         if(this->pin.get() != invert_probe) {
             os.printf("error:ZProbe triggered before move, aborting command.\n");
             return true;
         }
-
-        // first wait for all moves to finish
-        Conveyor::getInstance()->wait_for_idle();
 
         uint8_t pa= 0;
         if(gcode.has_arg('X')) {
@@ -384,7 +392,6 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
             os.printf("error:Z cannot be probed at the same time as X or Y\n");
             return true;
         }
-
 
         probe_XYZ(gcode, os, pa);
         invert_probe= false;
