@@ -57,7 +57,6 @@ ZProbe::ZProbe() : Module("zprobe")
 {
     probing = false;
     invert_override = false;
-    invert_probe = false;
 }
 
 bool ZProbe::configure(ConfigReader& cr)
@@ -173,7 +172,7 @@ void ZProbe::read_probe()
     // we check all axis as it maybe a G38.2 X10 for instance, not just a probe in Z
     if(STEPPER[X_AXIS]->is_moving() || STEPPER[Y_AXIS]->is_moving() || STEPPER[Z_AXIS]->is_moving()) {
         // if it is moving then we check the probe, and debounce it
-        if(this->pin.get() != invert_probe) {
+        if(this->pin.get()) {
             if(debounce < debounce_ms) {
                 debounce++;
 
@@ -197,7 +196,7 @@ void ZProbe::read_probe()
 // returns boolean value indicating if probe was triggered
 bool ZProbe::run_probe(float& mm, float feedrate, float max_dist, bool reverse)
 {
-    if(this->pin.get() != invert_probe) {
+    if(this->pin.get()) {
         // probe already triggered so abort
         return false;
     }
@@ -271,9 +270,6 @@ bool ZProbe::doProbeAt(float &mm, float x, float y)
 bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
 {
     if(gcode.get_code() >= 29 && gcode.get_code() <= 32) {
-
-        invert_probe = false;
-
         if(!this->pin.connected()) {
             os.printf("ZProbe pin not configured.\n");
             return true;
@@ -361,17 +357,9 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
         }
 
         if(gcode.get_subcode() == 4 || gcode.get_subcode() == 5) {
-            invert_probe = true;
-        } else {
-            invert_probe = false;
-        }
-
-        // first wait for all moves to finish
-        Conveyor::getInstance()->wait_for_idle();
-
-        if(this->pin.get() != invert_probe) {
-            os.printf("error:ZProbe triggered before move, aborting command.\n");
-            return true;
+            // invert probe sense (maybe already invert override)
+            invert_override = !invert_override;
+            pin.set_inverting(pin.is_inverting() != invert_override); // XOR so inverted pin is not inverted and vice versa
         }
 
         uint8_t pa= 0;
@@ -394,7 +382,12 @@ bool ZProbe::handle_gcode(GCode& gcode, OutputStream& os)
         }
 
         probe_XYZ(gcode, os, pa);
-        invert_probe= false;
+
+        if(gcode.get_subcode() == 4 || gcode.get_subcode() == 5) {
+            // restore invert sense
+            pin.set_inverting(pin.is_inverting() != invert_override); // XOR so inverted pin is not inverted and vice versa
+            invert_override = !invert_override;
+        }
 
         return true;
     }
@@ -463,6 +456,14 @@ bool ZProbe::handle_mcode(GCode& gcode, OutputStream& os)
 // special way to probe in the X, Y or Z direction using planned moves, should work with any kinematics
 void ZProbe::probe_XYZ(GCode& gcode, OutputStream& os, uint8_t axismask)
 {
+    // first wait for all moves to finish
+    Conveyor::getInstance()->wait_for_idle();
+
+    if(this->pin.get()) {
+        os.printf("error:ZProbe triggered before move, aborting command.\n");
+        return;
+    }
+
     // enable the probe checking in the timer
     probing = true;
     probe_detected = false;
