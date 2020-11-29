@@ -2146,14 +2146,14 @@ void Robot::get_query_string(std::string& str) const
 
         str.append("|MPos:").append(buf, n);
 
-#if MAX_ROBOT_ACTUATORS > 3
+        #if MAX_ROBOT_ACTUATORS > 3
         // deal with the ABC axis (E will be A)
         for (int i = A_AXIS; i < get_number_registered_motors(); ++i) {
             // current actuator position
             n = snprintf(buf, sizeof(buf), ",%1.4f", actuators[i]->get_current_position());
             str.append(buf, n);
         }
-#endif
+        #endif
 
         // work space position
         Robot::wcs_t pos = mcs2wcs(mpos);
@@ -2185,23 +2185,25 @@ void Robot::get_query_string(std::string& str) const
 
     } else {
         // return the last milestone if idle
+        // uses machine position
         char buf[128];
-        // machine position
-        Robot::wcs_t mpos = get_axis_position();
-        size_t n = snprintf(buf, sizeof(buf), "%1.4f,%1.4f,%1.4f", from_millimeters(std::get<X_AXIS>(mpos)), from_millimeters(std::get<Y_AXIS>(mpos)), from_millimeters(std::get<Z_AXIS>(mpos)));
+        size_t n = snprintf(buf, sizeof(buf), "%1.4f,%1.4f,%1.4f", from_millimeters(machine_position[X_AXIS]), from_millimeters(machine_position[Y_AXIS]), from_millimeters(machine_position[Z_AXIS]));
+        if(n > sizeof(buf)) n= sizeof(buf);
 
         str.append("|MPos:").append(buf, n);
-#if MAX_ROBOT_ACTUATORS > 3
+
+        #if MAX_ROBOT_ACTUATORS > 3
         // deal with the ABC axis (E will be A)
-        for (int i = A_AXIS; i < get_number_registered_motors(); ++i) {
-            // current actuator position
-            n = snprintf(buf, sizeof(buf), ",%1.4f", actuators[i]->get_current_position());
+        for (int i = A_AXIS; i < n_motors; ++i) {
+            // machine position
+            n = snprintf(buf, sizeof(buf), ",%1.4f", machine_position[i]);
+            if(n > sizeof(buf)) n= sizeof(buf);
             str.append(buf, n);
         }
-#endif
+        #endif
 
         // work space position
-        Robot::wcs_t pos = mcs2wcs(mpos);
+        Robot::wcs_t pos = mcs2wcs(machine_position);
         n = snprintf(buf, sizeof(buf), "%1.4f,%1.4f,%1.4f", from_millimeters(std::get<X_AXIS>(pos)), from_millimeters(std::get<Y_AXIS>(pos)), from_millimeters(std::get<Z_AXIS>(pos)));
         str.append("|WPos:").append(buf, n);
 
