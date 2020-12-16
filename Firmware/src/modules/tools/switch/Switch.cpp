@@ -18,6 +18,7 @@
 
 #define startup_state_key       "startup_state"
 #define startup_value_key       "startup_value"
+#define default_on_value_key    "default_on_value"
 #define input_pin_key           "input_pin"
 #define input_pin_behavior_key  "input_pin_behavior"
 #define command_subcode_key     "subcode"
@@ -29,7 +30,10 @@
 #define output_on_command_key   "output_on_command"
 #define output_off_command_key  "output_off_command"
 #define failsafe_key            "failsafe_set_to"
+#define halt_setting_key        "halt_set_to"
 #define ignore_onhalt_key       "ignore_on_halt"
+
+#define ROUND2DP(x) (roundf(x * 1e2F) / 1e2F)
 
 // register this module for creation in main
 REGISTER_MODULE(Switch, Switch::load_switches)
@@ -78,6 +82,7 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
 
     this->switch_state = cr.get_bool(m, startup_state_key, false);
     this->failsafe = cr.get_int(m, failsafe_key, 0);
+    this->halt_setting = cr.get_bool(m, halt_setting_key, false);
     this->ignore_on_halt = cr.get_bool(m, ignore_onhalt_key, false);
 
     std::string ipb = cr.get_string(m, input_pin_behavior_key, "momentary");
@@ -160,10 +165,11 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
 
         // default is 0% duty cycle
         this->switch_value = cr.get_int(m, startup_value_key, 0);
+        this->default_on_value = cr.get_int(m, default_on_value_key, 0);
         if(this->switch_state) {
-            pwm_pin->set(this->switch_value / 100.0F);
+            pwm_pin->set(this->default_on_value/100.0F);
         } else {
-            pwm_pin->set(0);
+            pwm_pin->set(this->switch_value/100.0F);
         }
 
     } else if(this->output_type == DIGITAL) {
@@ -286,7 +292,7 @@ std::string Switch::get_info() const
     return s;
 }
 
-// set the pin to the fail safe value on halt
+// set the pin to the halt setting value on halt
 void Switch::on_halt(bool flg)
 {
     if(flg) {
@@ -294,12 +300,12 @@ void Switch::on_halt(bool flg)
 
         // set pin to failsafe value
         switch(this->output_type) {
-            case DIGITAL: this->digital_pin->set(this->failsafe); break;
-            case SIGMADELTA: this->sigmadelta_pin->set(this->failsafe); break;
-            case HWPWM: this->pwm_pin->set(0); break;
+            case DIGITAL: this->digital_pin->set(this->halt_setting); break;
+            case SIGMADELTA: this->sigmadelta_pin->set(this->halt_setting); break;
+            case HWPWM: this->pwm_pin->set(switch_value/100.0F); break;
             case NONE: break;
         }
-        this->switch_state = this->failsafe;
+        this->switch_state = this->halt_setting;
     }
 }
 
@@ -356,10 +362,10 @@ bool Switch::handle_gcode(GCode& gcode, OutputStream& os)
                 if(v > 100) v = 100;
                 else if(v < 0) v = 0;
                 this->pwm_pin->set(v / 100.0F);
-                this->switch_state = (v != 0);
+                this->switch_state = (ROUND2DP(v) != ROUND2DP(this->switch_value));
             } else {
-                this->pwm_pin->set(this->switch_value);
-                this->switch_state = (this->switch_value != 0);
+                this->pwm_pin->set(this->default_on_value/100.0F);
+                this->switch_state = true;
             }
 
         } else if (this->output_type == DIGITAL) {
@@ -445,7 +451,7 @@ void Switch::handle_switch_changed()
             this->sigmadelta_pin->pwm(this->switch_value); // this requires the value has been set otherwise it switches on to whatever it last was
 
         } else if (this->output_type == HWPWM) {
-            this->pwm_pin->set(this->switch_value / 100.0F);
+            this->pwm_pin->set(this->default_on_value / 100.0F);
 
         } else if (this->output_type == DIGITAL) {
             this->digital_pin->set(true);
@@ -461,7 +467,7 @@ void Switch::handle_switch_changed()
             this->sigmadelta_pin->set(false);
 
         } else if (this->output_type == HWPWM) {
-            this->pwm_pin->set(0);
+            this->pwm_pin->set(this->switch_value/100.0F);
 
         } else if (this->output_type == DIGITAL) {
             this->digital_pin->set(false);

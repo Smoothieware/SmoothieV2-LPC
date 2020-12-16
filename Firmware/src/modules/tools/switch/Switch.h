@@ -33,8 +33,9 @@ class Switch : public Module {
         bool match_input_on_gcode(const GCode& gcode) const;
         bool match_input_off_gcode(const GCode& gcode) const;
 
-        Pin       input_pin;
-        float     switch_value;
+        Pin   input_pin;
+        float switch_value;
+        float default_on_value;
         OUTPUT_TYPE output_type;
         union {
             Pin *digital_pin;
@@ -51,6 +52,7 @@ class Switch : public Module {
         char      input_off_command_letter;
         uint8_t   subcode;
         bool      ignore_on_halt;
+        bool      halt_setting;
         uint8_t   failsafe;
 
         // only accessed in ISR
