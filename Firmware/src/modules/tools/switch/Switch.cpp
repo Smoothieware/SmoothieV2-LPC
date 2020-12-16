@@ -33,7 +33,7 @@
 #define halt_setting_key        "halt_set_to"
 #define ignore_onhalt_key       "ignore_on_halt"
 
-#define ROUND2DP(x) (roundf(x * 1e2F) / 1e2F)
+#define ROUND2DP(x) ((int)roundf((x) * 100.0F))
 
 // register this module for creation in main
 REGISTER_MODULE(Switch, Switch::load_switches)
@@ -164,8 +164,8 @@ bool Switch::configure(ConfigReader& cr, ConfigReader::section_map_t& m)
         // this->pwm_pin->period_us(p);
 
         // default is 0% duty cycle
-        this->switch_value = cr.get_int(m, startup_value_key, 0);
-        this->default_on_value = cr.get_int(m, default_on_value_key, 0);
+        this->switch_value = cr.get_float(m, startup_value_key, 0);
+        this->default_on_value = cr.get_float(m, default_on_value_key, 0);
         if(this->switch_state) {
             pwm_pin->set(this->default_on_value/100.0F);
         } else {
@@ -245,9 +245,20 @@ std::string Switch::get_info() const
         s.append("OUTPUT:");
 
         switch(this->output_type) {
-            case DIGITAL: s.append(digital_pin->to_string()); s.append(",digital,"); break;
-            case SIGMADELTA: s.append(sigmadelta_pin->to_string()); s.append(",sigmadeltapwm,"); break;
-            case HWPWM: s.append(pwm_pin->to_string()); s.append(",hwpwm,"); break;
+            case DIGITAL:
+                    s.append(digital_pin->to_string());
+                    s.append(",digital,");
+                    break;
+            case SIGMADELTA:
+                    s.append(sigmadelta_pin->to_string());
+                    s.append(",sigmadeltapwm,");
+                    break;
+            case HWPWM:
+                    s.append(pwm_pin->to_string());
+                    s.append(":");
+                    s.append(std::to_string(pwm_pin->get()*100));
+                    s.append(",hwpwm,");
+                    break;
             case NONE: s.append("???,none,"); break;
         }
     }
