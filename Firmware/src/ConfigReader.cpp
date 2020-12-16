@@ -24,7 +24,7 @@ bool ConfigReader::extract_key_value(const char *line, std::string& key, std::st
 
     const char *p = strchr(line, '=');
     if(p == nullptr) return false;
-    key.assign(line, p - line - 1);
+    key.assign(line, size_t(p - line));
     key = stringutils::trim(key);
     value.assign(p+1);
     value = stringutils::trim(value);
@@ -54,7 +54,7 @@ bool ConfigReader::extract_sub_key_value(const char *line, std::string& key1, st
     return true;
 }
 
-// strips the commend from the line and returns the comment
+// strips the comment from the line and returns the comment
 std::string ConfigReader::strip_comments(std::string& s)
 {
     auto n= s.find_first_of("#");

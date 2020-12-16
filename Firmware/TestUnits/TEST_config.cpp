@@ -149,6 +149,34 @@ REGISTER_TEST(ConfigTest, read_bad_values)
     TEST_ASSERT_EQUAL_FLOAT(0.0F, cr.get_int(m, "bad_float", -1));
 }
 
+REGISTER_TEST(ConfigTest, test_spaces_around_kv)
+{
+    std::stringstream ss("[test]\none=1\ntwo =2\nthree= 3\nfour = 4\n");
+    ConfigReader cr(ss);
+
+    ConfigReader::section_map_t m;
+    bool b= cr.get_section("test", m);
+    TEST_ASSERT_TRUE(b);
+    TEST_ASSERT_EQUAL_INT(4, m.size());
+    TEST_ASSERT_EQUAL_INT(1, cr.get_int(m, "one", -1));
+    TEST_ASSERT_EQUAL_INT(2, cr.get_int(m, "two", -1));
+    TEST_ASSERT_EQUAL_INT(3, cr.get_int(m, "three", -1));
+    TEST_ASSERT_EQUAL_INT(4, cr.get_int(m, "four", -1));
+
+    std::stringstream ss2("[test2]\np.one=1\np.two =2\np.three= 3\np.four = 4\n");
+    ConfigReader cr2(ss2);
+    ConfigReader::sub_section_map_t ssmap;
+    TEST_ASSERT_TRUE(ssmap.empty());
+    TEST_ASSERT_TRUE(cr2.get_sub_sections("test2", ssmap));
+    TEST_ASSERT_EQUAL_INT(1, ssmap.size());
+    TEST_ASSERT_TRUE(ssmap.find("p") != ssmap.end());
+    TEST_ASSERT_EQUAL_INT(4, ssmap["p"].size());
+    auto& m2=  ssmap["p"];
+    TEST_ASSERT_EQUAL_INT(1, cr2.get_int(m2, "one", -1));
+    TEST_ASSERT_EQUAL_INT(2, cr2.get_int(m2, "two", -1));
+    TEST_ASSERT_EQUAL_INT(3, cr2.get_int(m2, "three", -1));
+    TEST_ASSERT_EQUAL_INT(4, cr2.get_int(m2, "four", -1));
+}
 
 REGISTER_TEST(ConfigTest, write_no_change)
 {
