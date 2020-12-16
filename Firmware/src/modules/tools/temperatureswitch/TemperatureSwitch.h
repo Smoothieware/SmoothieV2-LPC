@@ -13,8 +13,8 @@ class TemperatureSwitch : public Module
 public:
     TemperatureSwitch(const char *name);
     ~TemperatureSwitch();
+    static bool load(ConfigReader& cr);
     bool is_armed() const { return armed; }
-    bool configure(ConfigReader& cr);
     void in_command_ctx();
 
 private:

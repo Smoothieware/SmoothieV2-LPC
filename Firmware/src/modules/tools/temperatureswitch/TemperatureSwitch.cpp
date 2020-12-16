@@ -27,6 +27,9 @@ Author: Michael Hackney, mhackney@eclecticangler.com
 #define arm_command_key "arm_mcode"
 #define designator_key "designator"
 
+// register this module for creation in main
+REGISTER_MODULE(TemperatureSwitch, TemperatureSwitch::load)
+
 TemperatureSwitch::TemperatureSwitch(const char *name) : Module("temperature switch", name)
 {
     last_time = xTaskGetTickCount();
@@ -36,8 +39,9 @@ TemperatureSwitch::~TemperatureSwitch()
 {
 }
 
-bool TemperatureSwitch::configure(ConfigReader& cr)
+bool TemperatureSwitch::load(ConfigReader& cr)
 {
+    printf("DEBUG: configure temperature switches\n");
     ConfigReader::sub_section_map_t ssmap;
     if(!cr.get_sub_sections("temperature switch", ssmap)) {
         printf("configure-temperature-switch: no temperature switch section found\n");
@@ -61,7 +65,7 @@ bool TemperatureSwitch::configure(ConfigReader& cr)
 
     if(cnt == 0) return false;
 
-    printf("configure-temperature-switch: NOTE: %d temperature switch(es) configured and enabled\n", cnt);
+    printf("INFO: %d temperature switch(es) configured and enabled\n", cnt);
     return true;
 }
 
