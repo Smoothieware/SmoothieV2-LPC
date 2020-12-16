@@ -386,7 +386,7 @@ bool Switch::handle_gcode(GCode& gcode, OutputStream& os)
             this->sigmadelta_pin->set(false);
 
         } else if (this->output_type == HWPWM) {
-            this->pwm_pin->set(0);
+            this->pwm_pin->set(this->switch_value/100.0F);
 
         } else if (this->output_type == DIGITAL) {
             // logic pin turn off
