@@ -1,6 +1,5 @@
 #include "Pwm.h"
 
-#include <string>
 #include <cstring>
 #include <cctype>
 #include <tuple>
@@ -145,6 +144,7 @@ bool Pwm::setup(uint32_t freq)
 
 bool Pwm::from_string(const char *pin)
 {
+    pin_name.assign(pin);
 	int xind= map_pin_to_pwm(pin);
     if(xind > 0){
     	valid= true;

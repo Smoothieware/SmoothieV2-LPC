@@ -237,14 +237,12 @@ std::string Switch::get_info() const
 
     if(digital_pin != nullptr) {
         s.append("OUTPUT:");
-        s.append(digital_pin->to_string());
-        s.append(",");
 
         switch(this->output_type) {
-            case DIGITAL: s.append("digital,"); break;
-            case SIGMADELTA: s.append("sigmadeltapwm,"); break;
-            case HWPWM: s.append("hwpwm,"); break;
-            case NONE: s.append("none,"); break;
+            case DIGITAL: s.append(digital_pin->to_string()); s.append(",digital,"); break;
+            case SIGMADELTA: s.append(sigmadelta_pin->to_string()); s.append(",sigmadeltapwm,"); break;
+            case HWPWM: s.append(pwm_pin->to_string()); s.append(",hwpwm,"); break;
+            case NONE: s.append("???,none,"); break;
         }
     }
     if(input_pin.connected()) {

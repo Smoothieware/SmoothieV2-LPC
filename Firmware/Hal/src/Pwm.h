@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 
 class Pwm
 {
@@ -9,6 +10,7 @@ public:
 	~Pwm(){};
 	Pwm(const char* pin);
 	bool from_string(const char *pin);
+    std::string to_string() const { return pin_name; }
 	bool is_valid() const { return valid; }
 	// set duty cycle 0-1
 	void set(float v);
@@ -22,6 +24,7 @@ private:
 
 	static int pwm_index;
 	static uint32_t frequency;
+	std::string pin_name;
 	float value;
 	bool valid{false};
 	uint8_t index;
