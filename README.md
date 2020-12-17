@@ -41,6 +41,10 @@ To compile with debug symbols: (may not work as it is very slow)
 
 ```rake target=Primealpha testing=1 test=streams debug=1```
 
+To compile a unit test that tests a module, and to include that module
+
+```rake target=Bambino testing=1 test=temperatureswitch modules=tools/temperatureswitch```
+
 You need to install ruby (and rake) to build.
 
 ```> sudo apt-get install ruby```

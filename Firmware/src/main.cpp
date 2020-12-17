@@ -121,16 +121,6 @@ bool dispatch_line(OutputStream& os, const char *ln)
     // need a mutable copy
     std::string line(ln);
 
-    // $X could be handled in CommandShell
-    if(line == "$X") {
-        if(Module::is_halted()) {
-            Module::broadcast_halt(false);
-            os.puts("[Caution: Unlocked]\n");
-        }
-        os.puts("ok\n");
-        return true;
-    }
-
     // map some special M codes to commands as they violate the gcode spec and pass a string parameter
     // M23, M32, M117, M30 => m23, m32, m117, rm and handle as a command
     // also M28
@@ -334,16 +324,23 @@ bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
             cnt = 0;
 
         } else if(line[cnt] == 25) { // ^Y
-            // there is a race condition where the host may send the ^Y so fast after
-            // the $J -c that it is executed first, which would leave the system in cont mode
-            // We set the stop_request flag if we are not in continuous jog mode and
-            // check that before setting cont mode.
-            if(Conveyor::getInstance()->get_continuous_mode()) {
-                // stop continuous jog mode
-                Conveyor::getInstance()->set_continuous_mode(false);
+            if(Module::is_halted()) {
+                // will also do what $X does
+                Module::broadcast_halt(false);
+                os->puts("[Caution: Unlocked]\n");
+
             }else{
-                // set generic stop request, currently only used to see if we got ^Y before cont mode
-                os->set_stop_request(true);
+                // there is a race condition where the host may send the ^Y so fast after
+                // the $J -c that it is executed first, which would leave the system in cont mode
+                // We set the stop_request flag if we are not in continuous jog mode and
+                // check that before setting cont mode.
+                if(Conveyor::getInstance()->get_continuous_mode()) {
+                    // stop continuous jog mode
+                    Conveyor::getInstance()->set_continuous_mode(false);
+                }else{
+                    // set generic stop request, currently only used to see if we got ^Y before cont mode
+                    os->set_stop_request(true);
+                }
             }
 
         } else if(line[cnt] == '?') {
@@ -364,19 +361,31 @@ bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
         } else if(line[cnt] == '\n') {
             os->clear_flags(); // clear the done flag here to avoid race conditions
             line[cnt] = '\0'; // remove the \n and nul terminate
-            if(cnt >= 2 && line[0] == '$' && (line[1] == 'I' || line[1] == 'S')) {
-                // Handle $I and $S as instant queries
-                if(!queries.full()) {
+            if(cnt >= 2 && line[0] == '$' && (line[1] == 'I' || line[1] == 'S' || line[1] == 'X')) {
+                if(line[1] == 'X') {
+                    // handle $X here
+                    if(Module::is_halted()) {
+                        Module::broadcast_halt(false);
+                        os->puts("[Caution: Unlocked]\n");
+                    }
+                    os->puts("ok\n");
+
+                }else if(!queries.full()) {
+                    // Handle $I and $S as instant queries
                     queries.push_back({os, strdup(line)});
                 }
 
-            }else{
+            }else if(line[0] != '\0') {
                 if(!send_message_queue(line, os, wait)) {
                     // we were told not to wait and the queue was full
                     // the caller will now need to call send_message_queue()
                     cnt= 0;
                     return false;
                 }
+
+            }else {
+                // blank line
+                os->puts("ok\n");
             }
             cnt = 0;
 
