@@ -1152,6 +1152,9 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
             // there is a race condition where the host may send the ^Y so fast after
             // the $J -c that it is executed first, which would leave the system in cont mode
             // in that case stop_request would be set instead
+            // FIXME this is a bug, if we got stopped by a limit then the ^Y will set stop request
+            // and the next $J -c is ignored, and then it is released and the stop request is set again
+            // so basically cont jog is disabled.
             os.set_stop_request(false);
             return true;
         }
