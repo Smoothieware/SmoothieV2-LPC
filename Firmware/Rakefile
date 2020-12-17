@@ -142,6 +142,7 @@ if TESTING
     tests.each do |t|
       src += FileList["TestUnits/TEST_#{t}.cpp"]
     end
+    src += FileList["src/modules/tools/temperatureswitch/*.{c,cpp}"] # TODO we need to be able to specify modules
   end
   src += FileList['TestUnits/main.cpp']
 

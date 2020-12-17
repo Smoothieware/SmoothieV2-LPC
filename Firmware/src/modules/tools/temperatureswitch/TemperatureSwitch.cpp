@@ -32,11 +32,13 @@ REGISTER_MODULE(TemperatureSwitch, TemperatureSwitch::load)
 
 TemperatureSwitch::TemperatureSwitch(const char *name) : Module("temperature switch", name)
 {
+    printf("DEBUG: TemperatureSwitch ctor: %p\n", this);
     last_time = xTaskGetTickCount();
 }
 
 TemperatureSwitch::~TemperatureSwitch()
 {
+    printf("DEBUG: TemperatureSwitch dtor: %p\n", this);
 }
 
 bool TemperatureSwitch::load(ConfigReader& cr)
@@ -137,12 +139,13 @@ bool TemperatureSwitch::handle_arm(GCode& gcode, OutputStream& os)
 }
 
 // Called in command context quite regularly, but we only need to service on the cooldown and heatup poll intervals
-void TemperatureSwitch::in_command_ctx()
+void TemperatureSwitch::in_command_ctx(bool idle)
 {
     uint32_t now = xTaskGetTickCount();
     uint32_t msec= TICK2MS(now-last_time);
     if(msec >= 1000) {
-        second_counter++;
+        uint32_t secs= msec/1000;
+        second_counter+=secs;
         last_time= now;
 
     }else{

@@ -442,7 +442,7 @@ bool Switch::request(const char *key, void *value)
 
 // This is called periodically to allow commands to be issued in the command thread context
 // but only when want_command_ctx is set to true
-void Switch::in_command_ctx()
+void Switch::in_command_ctx(bool idle)
 {
     handle_switch_changed();
     want_command_ctx= false;

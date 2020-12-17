@@ -18,7 +18,7 @@ class Switch : public Module {
         static bool load_switches(ConfigReader& cr);
 
         void on_halt(bool);
-        void in_command_ctx();
+        virtual void in_command_ctx(bool);
         bool request(const char *key, void *value) ;
 
         enum OUTPUT_TYPE {NONE, SIGMADELTA, DIGITAL, HWPWM};

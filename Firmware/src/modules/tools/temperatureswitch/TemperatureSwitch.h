@@ -15,7 +15,7 @@ public:
     ~TemperatureSwitch();
     static bool load(ConfigReader& cr);
     bool is_armed() const { return armed; }
-    void in_command_ctx();
+    virtual void in_command_ctx(bool);
 
 private:
     enum TRIGGER_TYPE {LEVEL, RISING, FALLING};
