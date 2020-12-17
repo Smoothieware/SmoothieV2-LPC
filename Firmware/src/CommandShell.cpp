@@ -142,7 +142,7 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
     d = opendir(path.c_str());
     if (d != NULL) {
         while ((p = readdir(d)) != NULL) {
-            if(Module::is_halted()) break;
+            if(os.get_stop_request()) { os.set_stop_request(false); break; }
             os.printf("%s", p->d_name);
             struct stat buf;
             std::string sp = path + "/" + p->d_name;
@@ -181,7 +181,12 @@ bool CommandShell::ls_cmd(std::string& params, OutputStream& os)
     }
 
     for(;;) {
-        //if(Module::is_halted()) {f_closedir(&dir); return true; }
+        if(os.get_stop_request()) {
+            os.set_stop_request(false);
+            f_closedir(&dir);
+            os.printf("aborted\n");
+            return true;
+        }
         res = f_readdir(&dir, &finfo);
         if ((res != FR_OK) || !finfo.fname[0]) break;
         if(simple) {
@@ -322,8 +327,9 @@ bool CommandShell::cp_cmd(std::string& params, OutputStream& os)
                     break;
                 }
             }
-            if(Module::is_halted()) {
+            if(os.get_stop_request()) {
                 os.printf("copy aborted\n");
+                os.set_stop_request(false);
                 break;
             }
         }
@@ -478,6 +484,13 @@ bool CommandShell::cat_cmd(std::string& params, OutputStream& os)
         int newlines = 0;
         // Print each line of the file
         while (fgets (buffer, sizeof(buffer) - 1, lp) != nullptr) {
+            if(os.get_stop_request()) {
+                os.printf("cat aborted\n");
+                os.set_stop_request(false);
+                delay= false;
+                break;
+            }
+
             os.puts(buffer);
             if ( limit > 0 && ++newlines >= limit ) {
                 break;
@@ -1058,6 +1071,10 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
 bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 {
     HELP("instant jog: $J X0.01 [S0.5] [-C] - axis can be XYZABC, optional speed (Snnn) is scale of max_rate. -C turns on continuous jog mode");
+
+    if(Module::is_halted())
+        return true;
+
     os.set_no_response(true);
 
     AutoPushPop app;

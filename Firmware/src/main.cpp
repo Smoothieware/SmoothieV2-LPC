@@ -338,7 +338,8 @@ bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
                     // stop continuous jog mode
                     Conveyor::getInstance()->set_continuous_mode(false);
                 }else{
-                    // set generic stop request, currently only used to see if we got ^Y before cont mode
+                    // set generic stop request, currently used to see if we got ^Y before cont mode and to abort
+                    // some file commands
                     os->set_stop_request(true);
                 }
             }
