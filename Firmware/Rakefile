@@ -130,6 +130,7 @@ if TESTING
     # all tests
     src += FileList['TestUnits/TEST_*.cpp']
     src.exclude("TestUnits/TEST_diskio.cpp") # we do not want to do this as it wipes out the sdcard
+    src.exclude("TestUnits/TEST_temperatureswitch.cpp") # as it requires dependencies
     if ENV['exclude']
       ENV['exclude'].split(',').map { |i| "TestUnits/TEST_#{i}.cpp" }.each do |e|
         src.exclude(e)
@@ -142,7 +143,13 @@ if TESTING
     tests.each do |t|
       src += FileList["TestUnits/TEST_#{t}.cpp"]
     end
-    src += FileList["src/modules/tools/temperatureswitch/*.{c,cpp}"] # TODO we need to be able to specify modules
+    # specify modules to include in build (as tools/temperatureswitch,utils/killbutton)
+    unless ENV['modules'].nil?
+      modules= ENV['modules'].split(',')
+      modules.each do |t|
+        src += FileList["src/modules/#{t}/*.{c,cpp}"]
+      end
+    end
   end
   src += FileList['TestUnits/main.cpp']
 
