@@ -428,10 +428,11 @@ static void usb_comms(void *)
     static const char *welcome_message = "Welcome to Smoothie\nok\n";
     const TickType_t waitms = pdMS_TO_TICKS( 300 );
 
-    size_t n;
+    size_t n, il= 0;
     bool done = false;
 
     // first we wait for an initial '\n' sent from host
+    // anything preceding the first '\n' is discarded
     while (!done && !abort_comms) {
         // Wait to be notified that there has been a USB irq.
         ulTaskNotifyTake( pdTRUE, waitms );
@@ -445,6 +446,13 @@ static void usb_comms(void *)
                         write_cdc(config_error_msg.c_str(), config_error_msg.size());
                     }
                     done = true;
+                    if(i+1 < n) {
+                        // we had another command after the first \n
+                        il= i+1;
+                        n -= il;
+                    }else{
+                        il= 0;
+                    }
                     break;
                 }
             }
@@ -459,6 +467,12 @@ static void usb_comms(void *)
     char line[MAX_LINE_LENGTH];
     size_t cnt = 0;
     bool discard = false;
+
+    if(il > 0 && !abort_comms) {
+        // process anything after the first \n
+        process_command_buffer(n, &usb_rx_buf[il], &os, line, cnt, discard);
+    }
+
     while(!abort_comms) {
         // Wait to be notified that there has been a received vcom packet.
         // treat as a counting semaphore, so will only block if count is zero.
