@@ -376,17 +376,13 @@ bool process_command_buffer(size_t n, char *rx_buf, OutputStream *os, char *line
                     queries.push_back({os, strdup(line)});
                 }
 
-            }else if(line[0] != '\0') {
+            }else {
                 if(!send_message_queue(line, os, wait)) {
                     // we were told not to wait and the queue was full
                     // the caller will now need to call send_message_queue()
                     cnt= 0;
                     return false;
                 }
-
-            }else {
-                // blank line
-                os->puts("ok\n");
             }
             cnt = 0;
 
