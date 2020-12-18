@@ -155,14 +155,6 @@ _ramfunc_  void StepTicker::step_tick (void)
         missed_unsteps++; // keep trck for diagnostics
     }
 
-    if(Module::is_halted()) {
-        running = false;
-        current_tick = 0;
-        current_block = nullptr;
-        continuing= false;
-        return;
-    }
-
     // if nothing has been setup we ignore the ticks
     if(!running) {
         // check if anything new available
@@ -172,6 +164,14 @@ _ramfunc_  void StepTicker::step_tick (void)
         } else {
             return;
         }
+    }
+
+    if(Module::is_halted()) {
+        running = false;
+        current_tick = 0;
+        current_block = nullptr;
+        continuing= false;
+        return;
     }
 
     bool still_moving = false;

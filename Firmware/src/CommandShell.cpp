@@ -1070,16 +1070,12 @@ bool CommandShell::test_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
 {
-    HELP("instant jog: $J X0.01 [S0.5] [-C] - axis can be XYZABC, optional speed (Snnn) is scale of max_rate. -C turns on continuous jog mode");
-
-    if(Module::is_halted())
-        return true;
+    HELP("instant jog: $J [-c] X0.01 [S0.5] - axis can be XYZABC, optional speed (Snnn) is scale of max_rate. -c turns on continuous jog mode");
 
     os.set_no_response(true);
 
     AutoPushPop app;
 
-    // $J X0.1 [Y0.2] [S0.5]
     int n_motors= Robot::getInstance()->get_number_registered_motors();
 
     // get axis to move and amount (X0.1)
@@ -1093,7 +1089,7 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
     }
 
     if(params.empty()) {
-        os.printf("usage: $J X0.01 [S0.5] [-C] - axis can be XYZABC, optional speed is scale of max_rate. -C turns on continuous jog mode\n");
+        os.printf("usage: $J [-c] X0.01 [S0.5] - axis can be XYZABC, optional speed is scale of max_rate. -c turns on continuous jog mode\n");
         return true;
     }
 
@@ -1158,6 +1154,18 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
         return true;
     }
 
+    if(Module::is_halted()) {
+        if(cont_mode) {
+            // if we are in ALARM state and cont mode we send relevant error response
+            if(THEDISPATCHER->is_grbl_mode()) {
+                os.printf("error:Alarm lock\n");
+            } else {
+                os.printf("!!\n");
+            }
+        }
+        return true;
+    }
+
     float fr= rate_mm_s*scale;
 
     auto savect= Robot::getInstance()->compensationTransform;
@@ -1204,7 +1212,7 @@ bool CommandShell::jog_cmd(std::string& params, OutputStream& os)
         // we have to wait for the continuous move to be stopped
         Conveyor::getInstance()->wait_for_idle();
         // unset continuous mode is superfluous as it had to be unset to get here
-        // Conveyor::getInstance()->set_continuous_mode(false);
+        Conveyor::getInstance()->set_continuous_mode(false);
 
         // reset the position based on current actuator position
         Robot::getInstance()->reset_position_from_current_actuator_position();

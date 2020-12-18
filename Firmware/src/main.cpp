@@ -153,9 +153,8 @@ bool dispatch_line(OutputStream& os, const char *ln)
 
         }else if(!os.is_no_response()) {
             os.puts("ok\n");
-        }else{
-            os.set_no_response(false);
         }
+        os.set_no_response(false);
 
         return true;
     }
