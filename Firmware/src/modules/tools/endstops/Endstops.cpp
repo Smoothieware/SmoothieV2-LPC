@@ -408,14 +408,8 @@ void Endstops::check_limits()
                 }else {
                     char report_string[132];
                     // endstop triggered
-                    if(!THEDISPATCHER->is_grbl_mode()) {
-                        // this needs to go to all connected consoles
-                        snprintf(report_string, sizeof(report_string), "Limit switch %c%c was hit - reset or M999 required\n", STEPPER[i->axis_index]->which_direction() ? '-' : '+', i->axis);
-
-                    }else{
-                        // this needs to go to all connected consoles
-                        snprintf(report_string, sizeof(report_string), "ALARM: Hard limit %c%c was hit - $X needed\n", STEPPER[i->axis_index]->which_direction() ? '-' : '+', i->axis);
-                    }
+                    // this needs to go to all connected consoles
+                    snprintf(report_string, sizeof(report_string), "ALARM: Hard limit %c%c was hit - $X or M999 needed\n", STEPPER[i->axis_index]->which_direction() ? '-' : '+', i->axis);
                     print_to_all_consoles(report_string);
                     print_to_all_consoles("// NOTICE hard limits are disabled until all have been cleared\n");
 
