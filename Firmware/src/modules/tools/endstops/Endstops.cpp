@@ -409,7 +409,7 @@ void Endstops::check_limits()
                     char report_string[132];
                     // endstop triggered
                     // this needs to go to all connected consoles
-                    snprintf(report_string, sizeof(report_string), "ALARM: Hard limit %c%c was hit - $X or M999 needed\n", STEPPER[i->axis_index]->which_direction() ? '-' : '+', i->axis);
+                    snprintf(report_string, sizeof(report_string), "ALARM: Hard limit %c%c was hit - $X or M999 needed\n", STEPPER[i->axis_index]->which_direction() ? '+' : '-', i->axis);
                     print_to_all_consoles(report_string);
                     print_to_all_consoles("// NOTICE hard limits are disabled until all have been cleared\n");
 
