@@ -1076,7 +1076,7 @@ extern "C" void vApplicationIdleHook( void )
                 if(Module::is_halted()) {
                     Board_LED_Toggle(1);
                     if(aux_play_led != nullptr) {
-                        aux_play_led->set(!aux_play_led->get());
+                        aux_play_led->set(Board_LED_Test(1));
                     }
                 }else{
                     bool f= !Conveyor::getInstance()->is_idle();
