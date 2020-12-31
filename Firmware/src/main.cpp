@@ -1079,9 +1079,10 @@ extern "C" void vApplicationIdleHook( void )
                         aux_play_led->set(!aux_play_led->get());
                     }
                 }else{
-                    Board_LED_Set(1, !Conveyor::getInstance()->is_idle());
+                    bool f= !Conveyor::getInstance()->is_idle();
+                    Board_LED_Set(1, f);
                     if(aux_play_led != nullptr) {
-                        aux_play_led->set(!Conveyor::getInstance()->is_idle());
+                        aux_play_led->set(f);
                     }
                 }
             }

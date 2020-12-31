@@ -567,6 +567,7 @@ void Endstops::home(axis_bitmap_t a)
 
     if(Module::is_halted()) {
         Robot::getInstance()->disable_segmentation= false;
+        this->status = NOT_HOMING;
         return;
     }
 

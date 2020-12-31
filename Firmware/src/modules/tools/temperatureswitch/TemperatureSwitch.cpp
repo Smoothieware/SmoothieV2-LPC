@@ -32,13 +32,11 @@ REGISTER_MODULE(TemperatureSwitch, TemperatureSwitch::load)
 
 TemperatureSwitch::TemperatureSwitch(const char *name) : Module("temperature switch", name)
 {
-    printf("DEBUG: TemperatureSwitch ctor: %p\n", this);
     last_time = xTaskGetTickCount();
 }
 
 TemperatureSwitch::~TemperatureSwitch()
 {
-    printf("DEBUG: TemperatureSwitch dtor: %p\n", this);
 }
 
 bool TemperatureSwitch::load(ConfigReader& cr)
