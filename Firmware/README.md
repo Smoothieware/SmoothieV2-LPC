@@ -40,7 +40,10 @@ on the Prime Alpha there are 4 leds..
 1. led3 - smoothie led, flashes slowly when idle, does not flash when busy
 2. led4 - smoothie led, on when executing moves, flashes when in HALT
 
-The debug UART port is on PF.10 (TX) and PF.11 (RX) on the PrimeAlpha.
+Both flash if there was a serious config error.
+All 4 leds flash if there is no sdcard inserted.
+
+The debug UART port is on PF.10 (TX) and PF.11 (RX) on the PrimeAlpha (G5 pin 4 and 5)
 The debug UART port is on P6.4 (TX) and P6.5 (RX) on the Bambino Socket 2 pin 4,5.
 baud rate 115200.
 
@@ -70,8 +73,8 @@ Once an image has been flashed, new images can be downloaded and flashed using d
 There is a YModem reciever and the script in the tools folder called upload-ym.py can be used to write a firmware bin file to the sdcard. This python script uses the linux command sx to do the actual ymodem. You could also use the ymodem built into most screen programs.
 
 If you do not have a jlink you can use the built in ROM UART3 bootloader and load the flashloader.bin file (from here https://github.com/Smoothieware/SmoothieV2/blob/master/flashloader/bins/flashloader.bin?raw=true) using the  ```tools/boot-uart.py``` program. This will flash the flashme.bin file on the sdcard.
-To use this you must set the boot pins to  P2.9=1 P2.8=0 P1.2=0 P1.1=0, and use
-P2.3 and P2.4 for the UART. (on underside of proto board marked BOOT3, BOOT2, BOOT1, BOOT0) Then reset th eboard, once flashed set back to the intialy BOOT form SPIFI 0001.
+To use this you must set the boot pins to  P2.9=1 P2.8=0 P1.2=0 P1.1=0 (on underside of proto board marked BOOT3, BOOT2, BOOT1, BOOT0), and use
+P2.3 and P2.4 for the UART.  Then reset the board, once flashed set back to the intial BOOT from SPIFI 0001.
 
 Another option is to use the ROM based USB loader, you need to prepend the required header using ```dfu-prefix -L -a flashloader.bin```, then put the system into USB boot mode P2.9=0 P2.8=1 P1.2=0 P1.1=1 (Pull BOOT2 high) then reset then use 
 ```dfu-util -R -d 1fc9:000c -D flashloader.bin``` (you may need to use sudo on this) to load the modified flashloader.bin. This again would flash the flashme.bin file on sdcard.
