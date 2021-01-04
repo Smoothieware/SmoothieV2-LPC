@@ -248,6 +248,58 @@ void Board_LED_Toggle(uint8_t LEDNumber)
 	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
 }
 
+#elif defined(BOARD_MINIALPHA)
+static void Board_LED_Init()
+{
+    const PINMUX_GRP_T ledpinmuxing[] = {
+		/* Board LEDs */
+		{0x5, 1, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO2_10
+		{0x5, 0, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO2_9
+		{0xc, 14, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC0)}, // GPIO6_13
+		{0xc, 13, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN | SCU_MODE_FUNC4)}  // GPIO6_12
+	};
+	Chip_SCU_SetPinMuxing(ledpinmuxing, sizeof(ledpinmuxing) / sizeof(PINMUX_GRP_T));
+
+	// setup the 4 system leds
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 2, 10);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 2, 9);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 6, 13);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 6, 12);
+
+	/* Set initial states to off */
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 2, 10, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 2, 9, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 6, 13, (bool) false);
+	Chip_GPIO_SetPinState(LPC_GPIO_PORT, 6, 12, (bool) false);
+}
+
+void Board_LED_Set(uint8_t LEDNumber, bool On)
+{
+	switch(LEDNumber) {
+		case 0: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 2, 10, (bool)On); break;
+		case 1: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 2, 9, (bool)On); break;
+		case 2: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 6, 13, (bool)On); break;
+		case 3: Chip_GPIO_SetPinState(LPC_GPIO_PORT, 6, 12, (bool)On); break;
+	}
+}
+
+bool Board_LED_Test(uint8_t LEDNumber)
+{
+	switch(LEDNumber) {
+		case 0: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 2, 10);
+		case 1: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 2, 9);
+		case 2: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 6, 13);
+		case 3: return (bool)Chip_GPIO_GetPinState(LPC_GPIO_PORT, 6, 12);
+	}
+
+	return false;
+}
+
+void Board_LED_Toggle(uint8_t LEDNumber)
+{
+	Board_LED_Set(LEDNumber, !Board_LED_Test(LEDNumber));
+}
+
 #else
 
 #warning "No Board LEDS defined"
