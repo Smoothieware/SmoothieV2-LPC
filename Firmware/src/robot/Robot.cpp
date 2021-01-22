@@ -176,7 +176,7 @@ bool Robot::configure(ConfigReader& cr)
     }
 
     this->feed_rate = cr.get_float(m, default_feed_rate_key, 4000.0F); // mm/min
-    this->seek_rate = default_seek_rate = cr.get_float(m, default_seek_rate_key, 4000.0F); // mm/min
+    this->seek_rate = cr.get_float(m, default_seek_rate_key, 4000.0F); // mm/min
     this->compliant_seek_rate = cr.get_bool(m, compliant_seek_rate_key, false);
     this->mm_per_line_segment = cr.get_float(m, mm_per_line_segment_key, 0.0F);
     this->delta_segments_per_second = cr.get_float(m, delta_segments_per_second_key, is_delta?100:0);
@@ -1023,7 +1023,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                     }
 
                 } else {
-                    os.printf(" S:%g ", this->max_speed);
+                    os.printf(" S:%g ", this->seek_rate);
                 }
 
                 os.set_append_nl();
@@ -1038,7 +1038,10 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                 }
 
                 if (gcode.get_subcode() == 0 && gcode.has_arg('S')) {
-                    this->max_speed = gcode.get_arg('S'); // is specified in mm/sec
+                    this->seek_rate = gcode.get_arg('S'); // is specified in mm/sec
+                }
+                if (gcode.get_subcode() == 0 && gcode.has_arg('P')) {
+                    this->max_speed = gcode.get_arg('P'); // is specified in mm/sec
                     if(this->max_speed <= 0.1F) this->max_speed= 0; // disable it
                 }
 
@@ -1267,9 +1270,9 @@ bool Robot::handle_M500(GCode& gcode, OutputStream& os)
 
     os.printf(";X- Junction Deviation, Z- Z junction deviation, S - Minimum Planner speed mm/sec:\nM205 X%1.5f Z%1.5f S%1.5f\n", Planner::getInstance()->xy_junction_deviation, Planner::getInstance()->z_junction_deviation, Planner::getInstance()->minimum_planner_speed);
 
-    os.printf(";Max cartesian feedrates in mm/sec, S - overall max speed:\nM203 X%1.5f Y%1.5f Z%1.5f", this->max_speeds[X_AXIS], this->max_speeds[Y_AXIS], this->max_speeds[Z_AXIS]);
+    os.printf(";Max cartesian feedrates in mm/sec, S - Seek rate, P - overall max speed:\nM203 X%1.5f Y%1.5f Z%1.5f S%1.5f", max_speeds[X_AXIS], max_speeds[Y_AXIS], max_speeds[Z_AXIS], seek_rate);
     if(max_speed > 0.1F) {
-        os.printf(" S%1.5f\n", max_speed);
+        os.printf(" P%1.5f\n", max_speed);
     }else{
         os.printf("\n");
     }
