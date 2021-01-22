@@ -1023,7 +1023,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                     }
 
                 } else {
-                    os.printf(" S:%g ", this->seek_rate);
+                    os.printf(" S:%g ", this->seek_rate/60);
                 }
 
                 os.set_append_nl();
@@ -1038,7 +1038,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                 }
 
                 if (gcode.get_subcode() == 0 && gcode.has_arg('S')) {
-                    this->seek_rate = gcode.get_arg('S'); // is specified in mm/sec
+                    this->seek_rate = gcode.get_arg('S')*60; // is specified in mm/sec stored in mm/min
                 }
                 if (gcode.get_subcode() == 0 && gcode.has_arg('P')) {
                     this->max_speed = gcode.get_arg('P'); // is specified in mm/sec
@@ -1270,7 +1270,7 @@ bool Robot::handle_M500(GCode& gcode, OutputStream& os)
 
     os.printf(";X- Junction Deviation, Z- Z junction deviation, S - Minimum Planner speed mm/sec:\nM205 X%1.5f Z%1.5f S%1.5f\n", Planner::getInstance()->xy_junction_deviation, Planner::getInstance()->z_junction_deviation, Planner::getInstance()->minimum_planner_speed);
 
-    os.printf(";Max cartesian feedrates in mm/sec, S - Seek rate, P - overall max speed:\nM203 X%1.5f Y%1.5f Z%1.5f S%1.5f", max_speeds[X_AXIS], max_speeds[Y_AXIS], max_speeds[Z_AXIS], seek_rate);
+    os.printf(";Max cartesian feedrates in mm/sec, S - Seek rate, P - overall max speed:\nM203 X%1.5f Y%1.5f Z%1.5f S%1.5f", max_speeds[X_AXIS], max_speeds[Y_AXIS], max_speeds[Z_AXIS], seek_rate/60);
     if(max_speed > 0.1F) {
         os.printf(" P%1.5f\n", max_speed);
     }else{
