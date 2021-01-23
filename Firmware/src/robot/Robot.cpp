@@ -900,7 +900,7 @@ bool Robot::handle_gcodes(GCode& gcode, OutputStream& os)
 
                     if(gcode.get_subcode() == 2) {
                         // we also move
-                        delta_move(deltas, this->seek_rate / seconds_per_minute, 3);
+                        delta_move(deltas, this->seek_rate/60, 3);
                     }
                 }
                 break;
@@ -1023,7 +1023,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                     }
 
                 } else {
-                    os.printf(" S:%g ", this->seek_rate/60);
+                    os.printf(" S:%g P:%g ", this->seek_rate/60, this->max_speed);
                 }
 
                 os.set_append_nl();
@@ -1037,7 +1037,7 @@ bool Robot::handle_mcodes(GCode& gcode, OutputStream& os)
                     }
                 }
 
-                if (gcode.get_subcode() == 0 && gcode.has_arg('S')) {
+                if (compliant_seek_rate && gcode.get_subcode() == 0 && gcode.has_arg('S')) {
                     this->seek_rate = gcode.get_arg('S')*60; // is specified in mm/sec stored in mm/min
                 }
                 if (gcode.get_subcode() == 0 && gcode.has_arg('P')) {
