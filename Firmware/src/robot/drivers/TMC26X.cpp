@@ -173,6 +173,7 @@ TMC26X::TMC26X(char d) : designator(d)
     //by default cool step is not enabled
     cool_step_enabled = false;
     error_reported.reset();
+    error_detected.reset();
 
     // setup singleton spi instance
     if(spi == nullptr) {
@@ -951,6 +952,7 @@ void TMC26X::dump_status(OutputStream& stream, bool readable)
 {
     // always report errors
     error_reported.reset();
+    error_detected.set();
 
     if (readable) {
         stream.printf("designator %c, actuator %s, Chip type TMC2660\n", designator, name.c_str());
@@ -1049,61 +1051,45 @@ void TMC26X::dump_status(OutputStream& stream, bool readable)
         }
         stream.printf("\n");
     }
+
+    error_reported.reset();
+    error_detected.reset();
 }
 
-// check error bits and report, only report once
+
+// check error bits and report, only report once, and debounce the test
 bool TMC26X::check_error_status_bits(OutputStream& stream)
 {
+    // define tests here
+    using e_t = std::tuple<int, std::function<bool(void)>, const char*>;
+    std::vector<e_t> tests {
+        {0, [this](void){return this->getOverTemperature()&TMC26X_OVERTEMPERATURE_PREWARING;}, "Overtemperature Prewarning!"},
+        {1, [this](void){return this->getOverTemperature()&TMC26X_OVERTEMPERATURE_SHUTDOWN;}, "Overtemperature Shutdown!"},
+        {2, [this](void){return this->isShortToGroundA();}, "SHORT to ground on channel A!"},
+        {3, [this](void){return this->isShortToGroundB();}, "SHORT to ground on channel B!"},
+        {4, [this](void){return this->isStandStill() && this->isOpenLoadA();}, "Channel A seems to be unconnected!"},
+        {5, [this](void){return this->isStandStill() && this->isOpenLoadB();}, "Channel B seems to be unconnected!"}
+    };
+
     bool error = false;
     readStatus(TMC26X_READOUT_POSITION); // get the status bits
 
-    if (this->getOverTemperature()&TMC26X_OVERTEMPERATURE_PREWARING) {
-        if(!error_reported.test(0)) stream.printf("WARNING: %c: Overtemperature Prewarning!\n", designator);
-        error_reported.set(0);
-    } else {
-        error_reported.reset(0);
-    }
-
-    if (this->getOverTemperature()&TMC26X_OVERTEMPERATURE_SHUTDOWN) {
-        if(!error_reported.test(1)) stream.printf("WARNING: %c: Overtemperature Shutdown!\n", designator);
-        error = true;
-        error_reported.set(1);
-    } else {
-        error_reported.reset(1);
-    }
-
-    if (this->isShortToGroundA()) {
-        if(!error_reported.test(2)) stream.printf("WARNING: %c: SHORT to ground on channel A!\n", designator);
-        error = true;
-        error_reported.set(2);
-    } else {
-        error_reported.reset(2);
-    }
-
-    if (this->isShortToGroundB()) {
-        if(!error_reported.test(3)) stream.printf("WARNING: %c: SHORT to ground on channel B!\n", designator);
-        error = true;
-        error_reported.set(3);
-    } else {
-        error_reported.reset(3);
-    }
-
-    if(this->isStandStill()) {
-        // these seem to be triggered when moving so ignore them when moving
-        if (this->isOpenLoadA()) {
-            if(!error_reported.test(4)) stream.printf("WARNING: %c: Channel A seems to be unconnected!\n", designator);
-            error = false;
-            error_reported.set(4);
+    for(auto& i : tests) {
+        int n= std::get<0>(i);
+        if(std::get<1>(i)()) {
+            if(!error_detected.test(n)) {
+                // debounce, needs to be set when checked two times in a row
+                error_detected.set(n);
+            }else{
+                if(!error_reported.test(n)){
+                    // only reports error once until it has been cleared
+                    stream.printf("WARNING: %c: %s\n", designator, std::get<2>(i));
+                    error_reported.set(n);
+                }
+            }
         } else {
-            error_reported.reset(4);
-        }
-
-        if (this->isOpenLoadB()) {
-            if(!error_reported.test(5)) stream.printf("WARNING: %c: Channel B seems to be unconnected!\n", designator);
-            error = false;
-            error_reported.set(5);
-        } else {
-            error_reported.reset(5);
+            error_reported.reset(n);
+            error_detected.reset(n);
         }
     }
 

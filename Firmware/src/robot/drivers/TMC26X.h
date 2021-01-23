@@ -442,6 +442,8 @@ private:
     //status values
     int microsteps; //the current number of micro steps
 
+    // used to debounce the errors
+    std::bitset<8> error_detected;
     std::bitset<8> error_reported;
 
     // only needed for the tuning app report

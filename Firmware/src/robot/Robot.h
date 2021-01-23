@@ -173,5 +173,4 @@ private:
     uint8_t n_motors;                                    //count of the motors/axis registered
 
     volatile bool halted{false};
-    bool new_status_format{true};
 };
