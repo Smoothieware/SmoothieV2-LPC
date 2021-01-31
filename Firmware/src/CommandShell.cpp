@@ -1322,10 +1322,10 @@ bool CommandShell::config_set_cmd(std::string& params, OutputStream& os)
     const char *value = valuestr.c_str();
 
     if(cw.write(section, key, value)) {
-        os.printf("config changed ok\n");
+        os.printf("set config: [%s] %s = %s\n", section, key, value);
 
     } else {
-        os.printf("failed to change config\n");
+        os.printf("failed to set config: [%s] %s = %s\n", section, key, value);
         return true;
     }
 
