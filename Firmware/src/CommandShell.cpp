@@ -803,26 +803,20 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
         grblDP_cmd(cmd, os);
 
     } else if (what == "state") {
-        // also $G and $I
-        // [GC:G0 G54 G17 G21 G90 G94 M0 M5 M9 T0 F0.]
-        os.printf("[GC:G%d %s G%d G%d G%d G94 M0 M%c M9 T%d F%1.4f S%1.4f]\n",
-                  GCodeProcessor::get_group1_modal_code(),
-                  stringutils::wcs2gcode(Robot::getInstance()->get_current_wcs()).c_str(),
-                  Robot::getInstance()->plane_axis_0 == X_AXIS && Robot::getInstance()->plane_axis_1 == Y_AXIS && Robot::getInstance()->plane_axis_2 == Z_AXIS ? 17 :
-                  Robot::getInstance()->plane_axis_0 == X_AXIS && Robot::getInstance()->plane_axis_1 == Z_AXIS && Robot::getInstance()->plane_axis_2 == Y_AXIS ? 18 :
-                  Robot::getInstance()->plane_axis_0 == Y_AXIS && Robot::getInstance()->plane_axis_1 == Z_AXIS && Robot::getInstance()->plane_axis_2 == X_AXIS ? 19 : 17,
-                  Robot::getInstance()->inch_mode ? 20 : 21,
-                  Robot::getInstance()->absolute_mode ? 90 : 91,
-                  get_spindle_state()?'3':'5',
-                  0, // TODO get_active_tool(),
-                  Robot::getInstance()->from_millimeters(Robot::getInstance()->get_feed_rate()),
-                  Robot::getInstance()->get_s_value());
+        // so we can see it in smoopi we strip off [...]
+        std::string str;
+        std::ostringstream oss;
+        OutputStream tos(&oss);
+        grblDG_cmd(str, tos);
+        str= oss.str();
+        os.printf("%s\n", str.substr(1,str.size()-3).c_str());
 
     } else if (what == "status") {
         // also ? on serial and usb
         std::string str;
         Robot::getInstance()->get_query_string(str);
-        os.printf("%s\n", str.c_str());
+        // so we can see this in smoopi we strip off the <...>
+        os.printf("%s\n", str.substr(1,str.size()-3).c_str());
 
     } else if (what == "volts") {
         std::string type = stringutils::shift_parameter( params );
@@ -851,8 +845,21 @@ bool CommandShell::get_cmd(std::string& params, OutputStream& os)
 
 bool CommandShell::grblDG_cmd(std::string& params, OutputStream& os)
 {
-    std::string cmd("state");
-    return get_cmd(cmd, os);
+    // also $G (sends ok) and $I (no ok) and get state (no [...])
+    // [GC:G0 G54 G17 G21 G90 G94 M0 M5 M9 T0 F0.]
+    os.printf("[GC:G%d %s G%d G%d G%d G94 M0 M%c M9 T%d F%1.4f S%1.4f]\n",
+              GCodeProcessor::get_group1_modal_code(),
+              stringutils::wcs2gcode(Robot::getInstance()->get_current_wcs()).c_str(),
+              Robot::getInstance()->plane_axis_0 == X_AXIS && Robot::getInstance()->plane_axis_1 == Y_AXIS && Robot::getInstance()->plane_axis_2 == Z_AXIS ? 17 :
+              Robot::getInstance()->plane_axis_0 == X_AXIS && Robot::getInstance()->plane_axis_1 == Z_AXIS && Robot::getInstance()->plane_axis_2 == Y_AXIS ? 18 :
+              Robot::getInstance()->plane_axis_0 == Y_AXIS && Robot::getInstance()->plane_axis_1 == Z_AXIS && Robot::getInstance()->plane_axis_2 == X_AXIS ? 19 : 17,
+              Robot::getInstance()->inch_mode ? 20 : 21,
+              Robot::getInstance()->absolute_mode ? 90 : 91,
+              get_spindle_state()?'3':'5',
+              0, // TODO get_active_tool(),
+              Robot::getInstance()->from_millimeters(Robot::getInstance()->get_feed_rate()),
+              Robot::getInstance()->get_s_value());
+    return true;
 }
 
 bool CommandShell::grblDH_cmd(std::string& params, OutputStream& os)
