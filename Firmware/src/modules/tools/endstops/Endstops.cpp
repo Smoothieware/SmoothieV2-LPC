@@ -431,13 +431,13 @@ void Endstops::back_off_home(axis_bitmap_t axis)
     std::vector<std::pair<char, float>> params;
     this->status = BACK_OFF_HOME;
     float deltas[3] {0, 0, 0};
-    float slow_rate= 0; // default mm/sec
+    float fast_rate= 0; // default mm/sec
 
     // these are handled differently
     if(is_delta) {
         // Move off of the endstop using a regular relative move in Z only
         deltas[Z_AXIS]= Robot::getInstance()->from_millimeters(homing_axis[Z_AXIS].retract * (homing_axis[Z_AXIS].home_direction ? 1 : -1));
-        slow_rate= homing_axis[Z_AXIS].slow_rate;
+        fast_rate= homing_axis[Z_AXIS].fast_rate;
 
     } else {
         // cartesians concatenate all the moves we need to do into one gcode
@@ -448,14 +448,14 @@ void Endstops::back_off_home(axis_bitmap_t axis)
             if(e.pin_info != nullptr && e.pin_info->limit_enable && e.pin_info->pin.get()) {
                 deltas[e.axis_index]= Robot::getInstance()->from_millimeters(e.retract * (e.home_direction ? 1 : -1));
                 // select slowest of them all
-                slow_rate= slow_rate == 0 ? e.slow_rate : std::min(slow_rate, e.slow_rate);
+                fast_rate= fast_rate == 0 ? e.fast_rate : std::min(fast_rate, e.fast_rate);
             }
         }
     }
 
     if(deltas[X_AXIS] > 0.00001F || deltas[Y_AXIS] > 0.00001F || deltas[Z_AXIS] > 0.00001F) {
         // Move off of the endstop using a delta relative move
-        Robot::getInstance()->delta_move(deltas, slow_rate, 3);
+        Robot::getInstance()->delta_move(deltas, fast_rate, 3);
         // Wait for above to finish
         Conveyor::getInstance()->wait_for_idle();
     }
