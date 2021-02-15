@@ -2,6 +2,7 @@
 
 #include "GCodeProcessor.h"
 #include "GCode.h"
+#include "nist_float.h"
 
 #include <map>
 #include <vector>
@@ -177,7 +178,7 @@ bool GCodeProcessor::parse(const char *line, GCodes_t& gcodes)
         }
         // parse argument word (X-1.23)
         char *np;
-        float f = strtof(p, &np);
+        float f = parse_float(p, &np);
         gc.add_arg(c, f);
         p= np;
     }

@@ -1,5 +1,6 @@
 #include "GCode.h"
 #include "GCodeProcessor.h"
+#include "nist_float.h"
 
 #include "../Unity/src/unity.h"
 #include "TestRegistry.h"
@@ -206,4 +207,60 @@ REGISTER_TEST(GCodeTest, illegal_parameter_word_value) {
     TEST_ASSERT_TRUE(gcodes.back().has_error());
     TEST_ASSERT_NOT_NULL(gcodes.back().get_error_message());
     TEST_ASSERT_TRUE(strlen(gcodes.back().get_error_message()) > 0);
+}
+
+REGISTER_TEST(GCodeTest, gcode_float_edge_cases) {
+    GCodeProcessor gp;
+    GCodeProcessor::GCodes_t gca;
+
+    // make sure 0X16 is not hex
+    const char *g1("G1Y0X16G1X1E4");
+    bool ok= gp.parse(g1, gca);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_INT(2, gca.size());
+    GCode gc= gca[0];
+    TEST_ASSERT_TRUE(gc.has_g());
+    TEST_ASSERT_EQUAL_INT(1, gc.get_code());
+    TEST_ASSERT_EQUAL_INT(2, gc.get_num_args());
+    TEST_ASSERT_TRUE(gc.has_arg('X'));
+    TEST_ASSERT_TRUE(gc.has_arg('Y'));
+    TEST_ASSERT_EQUAL_FLOAT(16.0, gc.get_arg('X'));
+    TEST_ASSERT_EQUAL_FLOAT(0, gc.get_arg('Y'));
+
+    GCode gc1= gca[1];
+    TEST_ASSERT_TRUE(gc1.has_g());
+    TEST_ASSERT_EQUAL_INT(1, gc1.get_code());
+    TEST_ASSERT_EQUAL_INT(2, gc1.get_num_args());
+    TEST_ASSERT_TRUE(gc1.has_arg('X'));
+    TEST_ASSERT_TRUE(gc1.has_arg('E'));
+    TEST_ASSERT_EQUAL_FLOAT(1.0, gc1.get_arg('X'));
+    TEST_ASSERT_EQUAL_FLOAT(4.0, gc1.get_arg('E'));
+}
+
+REGISTER_TEST(GCodeTest, nist_float) {
+    char *np= 0;
+    const char *p= "1.2345 -54.321 1e10 0x11.23";
+    float f = parse_float(p, &np);
+    TEST_ASSERT_EQUAL_FLOAT(1.2345, f);
+    TEST_ASSERT_TRUE(np == &p[6]);
+
+    const char *t= np;
+    f = parse_float(t, &np);
+    TEST_ASSERT_EQUAL_FLOAT(-54.321, f);
+    TEST_ASSERT_TRUE(np == &p[14]);
+
+    t= np;
+    f = parse_float(t, &np);
+    TEST_ASSERT_EQUAL_FLOAT(1.0, f);
+    TEST_ASSERT_TRUE(np == &p[16]);
+
+    t= &p[20];
+    f = parse_float(t, &np);
+    TEST_ASSERT_EQUAL_FLOAT(0.0, f);
+    TEST_ASSERT_TRUE(np == &p[21]);
+
+    t= &p[22];
+    f = parse_float(t, &np);
+    TEST_ASSERT_EQUAL_FLOAT(11.23, f);
+    TEST_ASSERT_TRUE(np == &p[27]);
 }
