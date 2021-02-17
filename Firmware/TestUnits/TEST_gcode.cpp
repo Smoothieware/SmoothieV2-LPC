@@ -264,3 +264,16 @@ REGISTER_TEST(GCodeTest, nist_float) {
     TEST_ASSERT_EQUAL_FLOAT(11.23, f);
     TEST_ASSERT_TRUE(np == &p[27]);
 }
+
+REGISTER_TEST(GCodeTest, nist_float_limits) {
+    char *np= 0;
+    const char *p= "1.12345678 1.12345678999 ";
+    float f = parse_float(p, &np);
+    TEST_ASSERT_FLOAT_WITHIN(0.000000001, 1.12345678, f);
+    TEST_ASSERT_TRUE(np == &p[10]);
+
+    const char *t= np;
+    f = parse_float(t, &np);
+    TEST_ASSERT_FLOAT_WITHIN(0.000000001, 1.12345678, f);
+    TEST_ASSERT_TRUE(np == &p[24]);
+}
