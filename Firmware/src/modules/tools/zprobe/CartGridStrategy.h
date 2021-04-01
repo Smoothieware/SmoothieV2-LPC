@@ -2,7 +2,7 @@
 
 #include "ZProbeStrategy.h"
 
-#include <string.h>
+#include <string>
 #include <tuple>
 
 class OutputStream;

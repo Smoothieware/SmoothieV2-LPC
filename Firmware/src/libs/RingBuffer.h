@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <stdlib.h>
+
 template <class kind, size_t length=0>
 class RingBuffer
 {

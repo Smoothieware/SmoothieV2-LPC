@@ -3,6 +3,7 @@
 #include <vector>
 #include <tuple>
 #include <functional>
+#include <stdint.h>
 
 class FastTicker
 {

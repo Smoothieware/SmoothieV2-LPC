@@ -157,7 +157,7 @@ bool Planner::append_block(ActuatorCoordinates& actuator_pos, uint8_t n_motors, 
         Block *prev_block = queue->tailward_get(); // gets block prior to head, ie last block
         float previous_nominal_speed = prev_block->primary_axis ? prev_block->nominal_speed : 0;
 
-        if (junction_deviation > 0.0F && previous_nominal_speed > 0.0F) {
+        if (junction_deviation > 0.000001F && previous_nominal_speed > 0.000001F) {
             // Compute cosine of angle between previous and current path. (prev_unit_vec is negative)
             // NOTE: Max junction velocity is computed without sin() or acos() by trig half angle identity.
             float cos_theta = - this->previous_unit_vec[X_AXIS] * unit_vec[X_AXIS]
@@ -201,7 +201,7 @@ bool Planner::append_block(ActuatorCoordinates& actuator_pos, uint8_t n_motors, 
     // Always calculate trapezoid for new block
     block->recalculate_flag = true;
 
-    // Update previous path unit_vector and nominal speed
+    // Update previous path unit_vector
     if(unit_vec != nullptr) {
         memcpy(previous_unit_vec, unit_vec, sizeof(previous_unit_vec)); // previous_unit_vec[] = unit_vec[]
     } else {

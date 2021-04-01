@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 
 #ifndef MAX_ROBOT_ACTUATORS
     // includes 1 extruder or A

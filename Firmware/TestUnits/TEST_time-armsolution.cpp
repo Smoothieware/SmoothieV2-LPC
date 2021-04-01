@@ -27,7 +27,7 @@ REGISTER_TEST(ArmSolution, delta_ik)
     std::stringstream ss1(str);
     ConfigReader cr(ss1);
 
-    float millimeters[3]= {100.0, 200.0, 300.0};
+    float millimeters[3]= {10.0, 20.0, 100.0};
     ActuatorCoordinates ac;
     BaseSolution* k= new LinearDeltaSolution(cr);
 
@@ -35,8 +35,9 @@ REGISTER_TEST(ArmSolution, delta_ik)
     systime_t st = clock_systimer();
 
     for(uint32_t i=0;i<n;i++) k->cartesian_to_actuator( millimeters, ac);
-
     systime_t en = clock_systimer();
+
+    printf("result: %f, %f, %f\n", ac[0], ac[1], ac[2]);
     printf("elapsed time %lu us over %lu iterations %1.4f us per iteration\n", TICK2USEC(en-st), n, TICK2USEC(en-st)/(float)n);
 
     delete k;
