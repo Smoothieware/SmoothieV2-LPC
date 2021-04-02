@@ -9,23 +9,19 @@ Firmware/... is for Smoothie firmware code and Test Units
 
 Currently uses the following toolchain..
 
-gcc version 7.3.1 20180622 (release) [ARM/embedded-7-branch revision 261907] 
-(GNU Tools for Arm Embedded Processors 7-2018-q3-update)
-
-(or any 7.x.x or 8.x.x will probably work).
+gcc version 9.2.1 20191025
+(or any 7.x.x thru 10.x.x will probably work).
 
 To get the tool chain you should do the following on Ubuntu based Linuxes...
 
-    sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa
-    sudo apt-get update
-    sudo apt-get install gcc-arm-embedded
+    sudo apt install gcc-arm-none-eabi
 
 or for Debian Stretch (and Ubuntu) get the tar from here...
     https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
-    and download gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2
 
-Then detar to a directory and do...
-    export ARMTOOLS=/downloaddir/gcc-arm-none-eabi-8-2018-q4-major/bin
+    Then detar to a directory and do...
+        export ARMTOOLS=/downloaddir/gcc-arm-none-eabi-{version}/bin
+        (replacing {version} with the version you downloaded)
 
 To build ```cd Firmware; rake target=Primealpha -m```
 
